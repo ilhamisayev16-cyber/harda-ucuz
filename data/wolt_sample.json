@@ -1,0 +1,573 @@
+[
+ {
+  "id": "eedb9d21e73c40ac6d254056",
+  "advertising_info": null,
+  "alcohol_permille": 0,
+  "allowed_delivery_methods": [
+   "homedelivery",
+   "eatin",
+   "takeaway"
+  ],
+  "available_times": [
+   {
+    "days": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "start_time": 0,
+    "end_time": 86400000
+   }
+  ],
+  "barcode_gtin": null,
+  "caffeine_info": null,
+  "can_be_promoted": {
+   "basket": true,
+   "venue": true,
+   "credits": true
+  },
+  "checksum": "66e7662a5bfb1d4999e8d15ada45ecf1",
+  "description": "",
+  "deposit": null,
+  "dietary_preferences": [],
+  "disabled_info": null,
+  "fulfillment_lead_time": null,
+  "has_extra_info": false,
+  "images": [
+   {
+    "url": "https://wolt-menu-images-cdn.wolt.com/menu-images/672b2063a6c24d27db115384/b4f70830-cdc0-11ef-8964-9e9b1908a648_297910.jpg",
+    "blurhash": "j3;fPYGG;;KXKXCptCpC;;Cp4gpC"
+   }
+  ],
+  "videos": [],
+  "is_cutlery": false,
+  "is_no_contact_delivery_allowed": true,
+  "is_wolt_plus_only": false,
+  "lowest_price": null,
+  "lowest_price_v2": null,
+  "max_quantity_per_purchase": null,
+  "min_quantity_per_purchase": null,
+  "name": "Lukasía Albalı və Süffləli Şokolad kq",
+  "options": [],
+  "original_price": null,
+  "original_net_price": null,
+  "item_price_discount_validity_period": null,
+  "price": 1355,
+  "net_price": null,
+  "product_hierarchy_level_id": "3c5d4b11-5568-4b65-b84b-1ee64364cee5",
+  "product_hierarchy_tags": [],
+  "purchasable_balance": 3,
+  "restrictions": [],
+  "return_policy": null,
+  "sell_by_weight_config": {
+   "grams_per_step": 250,
+   "input_type": "number_of_items",
+   "price_per_kg": 1355,
+   "net_price_per_kg": null
+  },
+  "should_display_purchasable_balance": false,
+  "tags": [],
+  "unit_info": null,
+  "unit_price": {
+   "base": 1,
+   "original_price": null,
+   "original_net_price": null,
+   "price": 1355,
+   "net_price": null,
+   "unit": "kilogram"
+  },
+  "variant": null,
+  "vat_category_code": null,
+  "vat_percentage": 18,
+  "vat_percentage_decimal": "18.0",
+  "external_compliance_link": null,
+  "consent_info": {
+   "ask_consent": false,
+   "blur_image": false
+  }
+ },
+ {
+  "id": "5c1c51ab3285be07926c81f6",
+  "advertising_info": null,
+  "alcohol_permille": 0,
+  "allowed_delivery_methods": [
+   "eatin",
+   "takeaway",
+   "homedelivery"
+  ],
+  "available_times": [
+   {
+    "days": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "start_time": 0,
+    "end_time": 86400000
+   }
+  ],
+  "barcode_gtin": null,
+  "caffeine_info": null,
+  "can_be_promoted": {
+   "basket": true,
+   "venue": true,
+   "credits": true
+  },
+  "checksum": "12cf817cc83e677a4f39ea5ebc28d5dd",
+  "description": "",
+  "deposit": null,
+  "dietary_preferences": [],
+  "disabled_info": {
+   "disable_text": "Sold out",
+   "disable_reason": null
+  },
+  "fulfillment_lead_time": null,
+  "has_extra_info": false,
+  "images": [
+   {
+    "url": "https://wolt-menu-images-cdn.wolt.com/menu-images/66348f21f221b23d85139cf6/966f8462-0928-11ef-80cd-da31903ec5ee_295630.jpg",
+    "blurhash": null
+   }
+  ],
+  "videos": [],
+  "is_cutlery": false,
+  "is_no_contact_delivery_allowed": true,
+  "is_wolt_plus_only": false,
+  "lowest_price": null,
+  "lowest_price_v2": null,
+  "max_quantity_per_purchase": null,
+  "min_quantity_per_purchase": null,
+  "name": "Alma Qala kq",
+  "options": [],
+  "original_price": 189,
+  "original_net_price": null,
+  "item_price_discount_validity_period": null,
+  "price": 149,
+  "net_price": null,
+  "product_hierarchy_level_id": "c7d3ec52-d2f4-4a6b-86a0-13ff940b92f9",
+  "product_hierarchy_tags": [
+   "PERISHABLE"
+  ],
+  "purchasable_balance": 0,
+  "restrictions": [],
+  "return_policy": null,
+  "sell_by_weight_config": {
+   "grams_per_step": 500,
+   "input_type": "grams",
+   "price_per_kg": 149,
+   "net_price_per_kg": null
+  },
+  "should_display_purchasable_balance": false,
+  "tags": [],
+  "unit_info": null,
+  "unit_price": {
+   "base": 1,
+   "original_price": 189,
+   "original_net_price": null,
+   "price": 149,
+   "net_price": null,
+   "unit": "kilogram"
+  },
+  "variant": null,
+  "vat_category_code": null,
+  "vat_percentage": 18,
+  "vat_percentage_decimal": "18.0",
+  "external_compliance_link": null,
+  "consent_info": {
+   "ask_consent": false,
+   "blur_image": false
+  }
+ },
+ {
+  "id": "738f2982bfbf4fc74a451ceb",
+  "advertising_info": null,
+  "alcohol_permille": 0,
+  "allowed_delivery_methods": [
+   "eatin",
+   "takeaway",
+   "homedelivery"
+  ],
+  "available_times": [
+   {
+    "days": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "start_time": 0,
+    "end_time": 86400000
+   }
+  ],
+  "barcode_gtin": null,
+  "caffeine_info": null,
+  "can_be_promoted": {
+   "basket": true,
+   "venue": true,
+   "credits": true
+  },
+  "checksum": "7fa198136d59aea74d511c3455313e8a",
+  "description": "",
+  "deposit": null,
+  "dietary_preferences": [],
+  "disabled_info": {
+   "disable_text": "Sold out",
+   "disable_reason": null
+  },
+  "fulfillment_lead_time": null,
+  "has_extra_info": false,
+  "images": [
+   {
+    "url": "https://wolt-menu-images-cdn.wolt.com/menu-images/66348f21f221b23d85139cf6/9665dade-0928-11ef-911f-1acd5b5fc077_295629.jpg",
+    "blurhash": null
+   }
+  ],
+  "videos": [],
+  "is_cutlery": false,
+  "is_no_contact_delivery_allowed": true,
+  "is_wolt_plus_only": false,
+  "lowest_price": null,
+  "lowest_price_v2": null,
+  "max_quantity_per_purchase": null,
+  "min_quantity_per_purchase": null,
+  "name": "Alma Golden kq",
+  "options": [],
+  "original_price": 169,
+  "original_net_price": null,
+  "item_price_discount_validity_period": null,
+  "price": 135,
+  "net_price": null,
+  "product_hierarchy_level_id": "c7d3ec52-d2f4-4a6b-86a0-13ff940b92f9",
+  "product_hierarchy_tags": [
+   "PERISHABLE"
+  ],
+  "purchasable_balance": 0,
+  "restrictions": [],
+  "return_policy": null,
+  "sell_by_weight_config": {
+   "grams_per_step": 500,
+   "input_type": "grams",
+   "price_per_kg": 135,
+   "net_price_per_kg": null
+  },
+  "should_display_purchasable_balance": false,
+  "tags": [],
+  "unit_info": null,
+  "unit_price": {
+   "base": 1,
+   "original_price": 169,
+   "original_net_price": null,
+   "price": 135,
+   "net_price": null,
+   "unit": "kilogram"
+  },
+  "variant": null,
+  "vat_category_code": null,
+  "vat_percentage": 18,
+  "vat_percentage_decimal": "18.0",
+  "external_compliance_link": null,
+  "consent_info": {
+   "ask_consent": false,
+   "blur_image": false
+  }
+ },
+ {
+  "id": "b9d69b4945dc72d9f9f57b7e",
+  "advertising_info": null,
+  "alcohol_permille": 0,
+  "allowed_delivery_methods": [
+   "eatin",
+   "takeaway",
+   "homedelivery"
+  ],
+  "available_times": [
+   {
+    "days": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "start_time": 0,
+    "end_time": 86400000
+   }
+  ],
+  "barcode_gtin": null,
+  "caffeine_info": null,
+  "can_be_promoted": {
+   "basket": true,
+   "venue": true,
+   "credits": true
+  },
+  "checksum": "9f13f6884d2c6f028c6871ebc8e020f7",
+  "description": "",
+  "deposit": null,
+  "dietary_preferences": [],
+  "disabled_info": {
+   "disable_text": "Sold out",
+   "disable_reason": null
+  },
+  "fulfillment_lead_time": null,
+  "has_extra_info": false,
+  "images": [
+   {
+    "url": "https://wolt-menu-images-cdn.wolt.com/menu-images/shared/790ab92e-224f-11ef-ae0a-4a2b5f29428b_image_photoroom___2024_06_04t125017.840.jpg",
+    "blurhash": null
+   }
+  ],
+  "videos": [],
+  "is_cutlery": false,
+  "is_no_contact_delivery_allowed": true,
+  "is_wolt_plus_only": false,
+  "lowest_price": null,
+  "lowest_price_v2": null,
+  "max_quantity_per_purchase": null,
+  "min_quantity_per_purchase": null,
+  "name": "Alma Granny Smith Super Kq",
+  "options": [],
+  "original_price": null,
+  "original_net_price": null,
+  "item_price_discount_validity_period": null,
+  "price": 299,
+  "net_price": null,
+  "product_hierarchy_level_id": "c7d3ec52-d2f4-4a6b-86a0-13ff940b92f9",
+  "product_hierarchy_tags": [
+   "PERISHABLE"
+  ],
+  "purchasable_balance": 0,
+  "restrictions": [],
+  "return_policy": null,
+  "sell_by_weight_config": {
+   "grams_per_step": 500,
+   "input_type": "grams",
+   "price_per_kg": 299,
+   "net_price_per_kg": null
+  },
+  "should_display_purchasable_balance": false,
+  "tags": [],
+  "unit_info": null,
+  "unit_price": {
+   "base": 1,
+   "original_price": null,
+   "original_net_price": null,
+   "price": 299,
+   "net_price": null,
+   "unit": "kilogram"
+  },
+  "variant": null,
+  "vat_category_code": null,
+  "vat_percentage": 18,
+  "vat_percentage_decimal": "18.0",
+  "external_compliance_link": null,
+  "consent_info": {
+   "ask_consent": false,
+   "blur_image": false
+  }
+ },
+ {
+  "id": "a7ed89431fdcd03786488deb",
+  "advertising_info": null,
+  "alcohol_permille": 0,
+  "allowed_delivery_methods": [
+   "eatin",
+   "takeaway",
+   "homedelivery"
+  ],
+  "available_times": [
+   {
+    "days": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "start_time": 0,
+    "end_time": 86400000
+   }
+  ],
+  "barcode_gtin": null,
+  "caffeine_info": null,
+  "can_be_promoted": {
+   "basket": true,
+   "venue": true,
+   "credits": true
+  },
+  "checksum": "b3faf959ea6ba35b6287c26b45743038",
+  "description": "",
+  "deposit": null,
+  "dietary_preferences": [],
+  "disabled_info": {
+   "disable_text": "Sold out",
+   "disable_reason": null
+  },
+  "fulfillment_lead_time": null,
+  "has_extra_info": false,
+  "images": [
+   {
+    "url": "https://wolt-menu-images-cdn.wolt.com/menu-images/66348f21f221b23d85139cf6/538d6a16-0927-11ef-93db-16b5d6efcecb_236124.jpg",
+    "blurhash": null
+   }
+  ],
+  "videos": [],
+  "is_cutlery": false,
+  "is_no_contact_delivery_allowed": true,
+  "is_wolt_plus_only": false,
+  "lowest_price": null,
+  "lowest_price_v2": null,
+  "max_quantity_per_purchase": null,
+  "min_quantity_per_purchase": null,
+  "name": "Alma Granny Smith kq",
+  "options": [],
+  "original_price": null,
+  "original_net_price": null,
+  "item_price_discount_validity_period": null,
+  "price": 165,
+  "net_price": null,
+  "product_hierarchy_level_id": "c7d3ec52-d2f4-4a6b-86a0-13ff940b92f9",
+  "product_hierarchy_tags": [
+   "PERISHABLE"
+  ],
+  "purchasable_balance": 0,
+  "restrictions": [],
+  "return_policy": null,
+  "sell_by_weight_config": {
+   "grams_per_step": 500,
+   "input_type": "grams",
+   "price_per_kg": 165,
+   "net_price_per_kg": null
+  },
+  "should_display_purchasable_balance": false,
+  "tags": [],
+  "unit_info": null,
+  "unit_price": {
+   "base": 1,
+   "original_price": null,
+   "original_net_price": null,
+   "price": 165,
+   "net_price": null,
+   "unit": "kilogram"
+  },
+  "variant": null,
+  "vat_category_code": null,
+  "vat_percentage": 18,
+  "vat_percentage_decimal": "18.0",
+  "external_compliance_link": null,
+  "consent_info": {
+   "ask_consent": false,
+   "blur_image": false
+  }
+ },
+ {
+  "id": "4fb933c786848092386cfe56",
+  "advertising_info": null,
+  "alcohol_permille": 0,
+  "allowed_delivery_methods": [
+   "eatin",
+   "takeaway",
+   "homedelivery"
+  ],
+  "available_times": [
+   {
+    "days": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ],
+    "start_time": 0,
+    "end_time": 86400000
+   }
+  ],
+  "barcode_gtin": null,
+  "caffeine_info": null,
+  "can_be_promoted": {
+   "basket": true,
+   "venue": true,
+   "credits": true
+  },
+  "checksum": "0fdc2dc5f258d061c37579df311204dc",
+  "description": "",
+  "deposit": null,
+  "dietary_preferences": [],
+  "disabled_info": {
+   "disable_text": "Sold out",
+   "disable_reason": null
+  },
+  "fulfillment_lead_time": null,
+  "has_extra_info": false,
+  "images": [
+   {
+    "url": "https://wolt-menu-images-cdn.wolt.com/menu-images/66348f21f221b23d85139cf6/a6870564-0928-11ef-93ba-86c398732af6_298983.jpg",
+    "blurhash": null
+   }
+  ],
+  "videos": [],
+  "is_cutlery": false,
+  "is_no_contact_delivery_allowed": true,
+  "is_wolt_plus_only": false,
+  "lowest_price": null,
+  "lowest_price_v2": null,
+  "max_quantity_per_purchase": null,
+  "min_quantity_per_purchase": null,
+  "name": "Alma Smirinka kq",
+  "options": [],
+  "original_price": null,
+  "original_net_price": null,
+  "item_price_discount_validity_period": null,
+  "price": 279,
+  "net_price": null,
+  "product_hierarchy_level_id": "c7d3ec52-d2f4-4a6b-86a0-13ff940b92f9",
+  "product_hierarchy_tags": [
+   "PERISHABLE"
+  ],
+  "purchasable_balance": 0,
+  "restrictions": [],
+  "return_policy": null,
+  "sell_by_weight_config": {
+   "grams_per_step": 500,
+   "input_type": "grams",
+   "price_per_kg": 279,
+   "net_price_per_kg": null
+  },
+  "should_display_purchasable_balance": false,
+  "tags": [],
+  "unit_info": null,
+  "unit_price": {
+   "base": 1,
+   "original_price": null,
+   "original_net_price": null,
+   "price": 279,
+   "net_price": null,
+   "unit": "kilogram"
+  },
+  "variant": null,
+  "vat_category_code": null,
+  "vat_percentage": 18,
+  "vat_percentage_decimal": "18.0",
+  "external_compliance_link": null,
+  "consent_info": {
+   "ask_consent": false,
+   "blur_image": false
+  }
+ }
+]

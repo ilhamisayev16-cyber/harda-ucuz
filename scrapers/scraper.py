@@ -362,8 +362,6 @@ def _session():
     ses.headers.update(WOLT_HEADS)
     return ses
 
-WOLT_SAMPLE = []
-
 def _wolt_url(slug):
     return (f"https://consumer-api.wolt.com/consumer-api/consumer-assortment"
             f"/v1/venues/slug/{slug}/assortment/items/search?language=az")
@@ -376,36 +374,33 @@ def _wolt_price(item):
             return round(v / 100, 2)
     return None
 
-_WT = re.compile(r"~\s*(\d+[.,]?\d*)\s*(kq|kg|qr|gr|q|g)(?![a-zA-Zəöüçşğı])", re.I)
-
-def _wolt_weight(item, depth=0):
-    """Çəkiyə görə satılan məhsulda Wolt-un göstərdiyi təxmini parça çəkisi (qramla): "~250 q" -> 250."""
-    vals = item.values() if isinstance(item, dict) else item if isinstance(item, list) else []
-    for k, v in (item.items() if isinstance(item, dict) else enumerate(vals)):
-        if k in ("name", "images", "image", "description"): continue
-        if isinstance(v, str):
-            m = _WT.search(v)
-            if m:
-                n = float(m.group(1).replace(",", "."))
-                return round(n * 1000 if m.group(2).lower() in ("kq", "kg") else n)
-        elif depth < 2 and isinstance(v, (dict, list)):
-            r = _wolt_weight(v, depth + 1)
-            if r: return r
+def _wolt_weight(item):
+    """Çəkiyə görə satılan "ədəd" məhsulda bir ədədin təxmini çəkisi (qram): sell_by_weight_config.grams_per_step.
+    input_type="grams" olanlarda (meyvə-tərəvəz) parça çəkisi yoxdur, qiymət 1 kq üçün qalır."""
+    c = item.get("sell_by_weight_config")
+    if isinstance(c, dict) and c.get("input_type") == "number_of_items":
+        g = c.get("grams_per_step")
+        if isinstance(g, (int, float)) and g > 0:
+            return round(g)
     return None
 
 def scrape_wolt(store):
     """Wolt-dan çəkir: filialları yoxlayır, sorğuları paralel göndərir."""
     ses = _session()
     url = None
-    for slug in wolt_slugs(store):
-        try:
-            r = ses.post(_wolt_url(slug), json={"q": "süd"}, timeout=15)
-            if r.status_code == 200 and (r.json().get("items") is not None):
-                url = _wolt_url(slug)
-                print(f"  [Wolt/{store}] filial: {slug}")
-                break
-        except Exception:
-            continue
+    for attempt in range(3):
+        for slug in wolt_slugs(store):
+            try:
+                r = ses.post(_wolt_url(slug), json={"q": "süd"}, timeout=15)
+                if r.status_code == 200 and (r.json().get("items") is not None):
+                    url = _wolt_url(slug)
+                    print(f"  [Wolt/{store}] filial: {slug}")
+                    break
+                print(f"  [Wolt/{store}] {slug}: HTTP {r.status_code}")
+            except Exception as e:
+                print(f"  [Wolt/{store}] {slug}: {type(e).__name__}")
+        if url: break
+        time.sleep(10 * (attempt + 1))   # müvəqqəti blok/limit ola bilər
     if not url:
         print(f"  [Wolt/{store}] ✗ heç bir filial cavab vermədi "
               f"(WOLT_SLUG_{store.upper()} ilə düzgün slug verin)")
@@ -439,8 +434,6 @@ def scrape_wolt(store):
                     if im: e["img"] = im
                     wt = _wolt_weight(item)
                     if wt: e["wt"] = wt
-                    if re.search(r"(^|[\s,(])kq\.?($|[\s,)\d])", name, re.I) and len(WOLT_SAMPLE) < 6:
-                        WOLT_SAMPLE.append(item)   # diaqnostika: çəkiyə görə satılan məhsulun xam cavabı
                     results[cat].append(e)
     total = sum(len(v) for v in results.values())
     print(f"  [Wolt/{store}] {total} məhsul")
@@ -560,9 +553,6 @@ def main():
 
         apply_to_data(own_res, wolt_res, sname, data)
 
-    if WOLT_SAMPLE:   # Wolt sahə adlarını yoxlamaq üçün
-        with open(out.parent / "wolt_sample.json", "w", encoding="utf-8") as f:
-            json.dump(WOLT_SAMPLE, f, ensure_ascii=False, indent=1)
     data["groups"] = GROUPS
     data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
     out.parent.mkdir(parents=True, exist_ok=True)

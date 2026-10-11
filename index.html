@@ -135,6 +135,25 @@ details.more-f summary::-webkit-details-marker{display:none}
   .list{grid-template-columns:repeat(2,1fr)}
 }
 @media (min-width:900px){ .grid{grid-template-columns:repeat(4,1fr)} }
+
+.tools .view{padding:0;width:44px;font-size:18px}
+@media (min-width:600px){.tools .view{display:none}}
+@media (max-width:599px){
+  .list.two{grid-template-columns:1fr 1fr;gap:8px}
+  .list.two .item{padding:10px;display:flex;flex-direction:column;min-width:0}
+  .list.two .head{flex-direction:column;align-items:stretch;gap:8px}
+  .list.two .logo-p{width:100%;height:92px;font-size:38px}
+  .list.two .item h3{font-size:13px;-webkit-line-clamp:3}
+  .list.two .meta{font-size:11px;margin-top:3px}
+  .list.two .best{flex-direction:column;align-items:flex-start;gap:2px;padding:8px;margin:8px 0 6px}
+  .list.two .best b{font-size:18px}
+  .list.two .best small{font-size:10px}
+  .list.two .offers{grid-template-columns:1fr;gap:4px;margin-top:auto}
+  .list.two .o,.list.two .offers.kg .o{flex-direction:row;flex-wrap:wrap;align-items:center;padding:5px 8px}
+  .list.two .o span{font-size:12px}
+  .list.two .o b{font-size:13px}
+  .list.two .o b small.kgp{display:inline;margin-left:4px}
+}
 </style>
 </head>
 <body>
@@ -181,6 +200,7 @@ details.more-f summary::-webkit-details-marker{display:none}
         <option value="price_asc">Ucuz</option>
         <option value="name">A → Z</option>
       </select>
+      <button class="btn view" id="view" type="button" aria-label="Görünüş: 1 və ya 2 sütun">▦</button>
     </div>
     <details class="more-f">
       <summary>⚙ Ölçü və yağ filtri</summary>
@@ -457,6 +477,12 @@ $("q").oninput=debounce(e=>{
 $("results").onclick=e=>{const b=e.target.closest("[data-go]"); if(!b)return; $("results").innerHTML=""; $("q").value=""; go(b.dataset.go);};
 addEventListener("keydown",e=>{ if(e.key==="Escape"){$("results").innerHTML="";$("q").blur();} });
 addEventListener("click",e=>{ if(!e.target.closest(".search")) $("results").innerHTML=""; });
+
+/* telefonda 1 / 2 sütun seçimi */
+let TWO=false; try{TWO=localStorage.getItem("cols")==="2";}catch(e){}
+function setCols(){ $("list").classList.toggle("two",TWO); $("view").textContent=TWO?"☰":"▦"; $("view").setAttribute("aria-pressed",TWO); }
+$("view").onclick=()=>{ TWO=!TWO; try{localStorage.setItem("cols",TWO?"2":"1");}catch(e){} setCols(); };
+setCols();
 
 $("skelgrid").innerHTML=Array(8).fill('<div class="skel" style="height:64px"></div>').join("");
 load();

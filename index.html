@@ -204,12 +204,11 @@ details.more-f summary::-webkit-details-marker{display:none}
       <button class="btn view" id="view" type="button" aria-label="Görünüş: 1 və ya 2 sütun">▦</button>
     </div>
     <details class="more-f">
-      <summary>⚙ Ölçü və yağ filtri</summary>
+      <summary>⚙ Ölçü və faiz filtri</summary>
       <div class="fx">
-        <div class="row"><span class="lbl">Ölçü</span><div class="row" id="modes"></div>
-          <input id="minW" type="number" inputmode="numeric" min="0" placeholder="Min q/ml" aria-label="Minimum çəki">
-          <input id="maxW" type="number" inputmode="numeric" min="0" placeholder="Maks q/ml" aria-label="Maksimum çəki"></div>
-        <div class="row" id="fatRow"><span class="lbl">Yağ faizi</span><div class="row" id="fats"></div></div>
+        <div class="row"><span class="lbl">Növ</span><div class="row" id="modes"></div></div>
+        <div class="row" id="sizeRow"><span class="lbl">Ölçü (həcm, çəki, ədəd)</span><div class="row" id="sizes"></div></div>
+        <div class="row" id="fatRow"><span class="lbl">Faiz (%)</span><div class="row" id="fats"></div></div>
       </div>
     </details>
     <p class="count" id="count"></p>
@@ -261,14 +260,14 @@ const SYN={milk:"sud",cheese:"pendir",butter:"kere_yagi",yogurt:"yoqurt qatiq",y
   "baby food":"usaq_qidasi",formula:"sud_qarisigi",cat:"pisik",dog:"it",pet:"pisik it",toy:"oyuncaq",toys:"oyuncaq",notebook:"defter",pen:"qelem",pencil:"karandas"};
 SYN.sourcream="xama"; SYN.toiletpaper="tualet_kagiz"; SYN.babyfood="usaq_qidasi";
 const PHR=["ice cream","toilet paper","sour cream","baby food"];
-const fold=s=>String(s).toLowerCase().replace(/[çəğıöşü]/g,c=>TR[c]);
+const fold=s=>String(s).toLowerCase().replace(/[çəğıöşü]/g,c=>TR[c]).replace(/sh/g,"s").replace(/ch/g,"c");   // sud=süd, cay=çay=chay, shokolad=şokolad
 /* sorğu -> hər söz üçün alternativlər (diakritiksiz, ingilis sinonimləri ilə) */
 function expandQ(q){
   let t=fold(q).replace(/[^\w\s.%]/g," ").replace(/\s+/g," ").trim();
   PHR.forEach(p=>{t=t.replace(p,p.replace(" ",""));});
   return t.split(" ").filter(Boolean).map(w=>{
     const alts=new Set([w]), base=w.length>3&&w.endsWith("s")&&!SYN[w]?w.slice(0,-1):w;
-    for(const k of [w,base]) if(SYN[k]) SYN[k].split(" ").forEach(a=>alts.add(a.replace(/_/g," ")));
+    for(const k of [w,base]) if(SYN[k]) SYN[k].split(" ").forEach(a=>alts.add(fold(a.replace(/_/g," "))));
     return [...alts];
   });
 }
@@ -293,26 +292,50 @@ function jaccard(a,b){
   const u=a.size+b.size-i; return u?i/u:1;
 }
 const AL="[a-zA-ZğüşıöçĞÜŞIÖÇəƏ]";
-const WPATS=[[/(\d+[.,]?\d*)\s*kq(?!AL)/i,"kq"],[/(\d+[.,]?\d*)\s*kg(?!AL)/i,"kq"],[/(\d+[.,]?\d*)\s*litr/i,"L"],
-  [/(\d+[.,]?\d*)\s*lt(?!AL)/i,"L"],[/(\d+[.,]?\d*)\s*[lL](?!AL)/,"L"],[/(\d+[.,]?\d*)\s*ml(?!AL)/i,"ml"],
-  [/(\d+[.,]?\d*)\s*gr(?!AL)/i,"q"],[/(\d+[.,]?\d*)\s*[gG](?!AL)/,"q"],[/(\d+[.,]?\d*)\s*qr?(?!AL)/i,"q"]]
-  .map(([r,u])=>[new RegExp(r.source.replace(/AL/g,AL),r.flags),u]);
+/* ölçü oxunuşu: çəki (q/kq), həcm (ml/L), ədəd; çoxlu qablaşdırma (12x1.5kq); yazı səhvləri */
+const UNIT="(?:kq|kg|qr|gr|ml|ltr|litr|lt|q|g|l)", NOLET="(?!"+AL.slice(0,-1)+"])";
+const SIZE_RX=new RegExp("(\\d+\\s*[x×*]\\s*)?(\\d*\\.?\\d+)\\s*("+UNIT+")"+NOLET,"i");
+const PIECE_RX=new RegExp("(\\d+)\\s*-?\\s*(?:əd|ed|ədəd|adet|ad|pcs?|dənə|l[üuıi]k?|l[ıi]q|l[uü]q)"+NOLET,"i");
+const UNITMAP={kq:"kq",kg:"kq",q:"q",g:"q",qr:"q",gr:"q",ml:"ml",l:"L",lt:"L",ltr:"L",litr:"L"};
+function parseSize(name){
+  const n=name.replace(/(\d)\s*,\s*(\d)/g,"$1.$2").replace(/(\d)\.\s+(\d)/g,"$1.$2");
+  const m=n.match(SIZE_RX);
+  if(m){
+    let raw=m[2], v=parseFloat(/^0\d+$/.test(raw)?"0."+raw.slice(1):raw), u=UNITMAP[m[3].toLowerCase()];
+    const cnt=m[1]?parseInt(m[1],10):1;
+    if(v>0&&isFinite(v)){
+      if(u==="L"&&v>=1000) return null;                 // "6002l": barkod yapışıb
+      if(u==="L"&&v>=50){u="ml";}                       // "500l" -> 500 ml (yazı səhvi)
+      if(u==="kq"&&v>60){u="q";}                        // "1750kq", "180 kq" -> qram
+      if((u==="q"||u==="ml")&&v*cnt>50000) return null;
+      const bu=u; let tv=v*cnt; if(u==="ml"&&tv>=1000){tv/=1000;u="L";} if(u==="q"&&tv>=1000){tv/=1000;u="kq";}
+      return {wv:Math.round(tv*1000)/1000,wu:u,pack:cnt>1?cnt:0,unit:cnt>1?v:0,uu:cnt>1?bu:""};
+    }
+  }
+  const p=n.match(PIECE_RX);
+  if(p&&+p[1]>1&&+p[1]<1000) return {wv:+p[1],wu:"ədəd",pack:0,unit:0,uu:""};
+  return null;
+}
 function attrs(name){
   let fat=null; const f=name.match(/(\d+[.,]?\d*)\s*%/);
-  if(f){const v=parseFloat(f[1].replace(",","."));if(!isNaN(v))fat=v;}
-  let wv=null,wu=null;
-  for(const [re,u] of WPATS){const m=name.match(re); if(m){const v=parseFloat(m[1].replace(",","."));if(v>0){wv=v;wu=u;break;}}}
-  if(!wv){
-    if(/10-luq|10\s*[əea]d[əe]d|10\s*adet/i.test(name)){wv=10;wu="ədəd";}
-    else if(/15-lik|15\s*[əe]d[əe]d/i.test(name)){wv=15;wu="ədəd";}
-    else if(/30-luq|30\s*[əe]d[əe]d/i.test(name)){wv=30;wu="ədəd";}
-    else if(/6-l[ıi]q|6\s*[əe]d[əe]d/i.test(name)){wv=6;wu="ədəd";}
-  }
-  // ölçüsü yazılmayan "kq" = çəkiyə görə satılır, qiymət 1 kq üçündür
+  if(f){const v=parseFloat(f[1].replace(",","."));if(!isNaN(v)&&v<=100)fat=v;}
+  const s=parseSize(name);
+  const wv=s?s.wv:null, wu=s?s.wu:null;
+  // ölçüsüz "kq" = çəkiyə görə satılır, qiymət 1 kq üçündür
   const kg=wv==null&&/(^|[\s,(])kq\.?(?=$|[\s,)\d])/i.test(name);
-  return {wv,wu,fat,kg};
+  return {wv,wu,fat,kg,pack:s?s.pack:0,unit:s?s.unit:0,uu:s?s.uu:""};
 }
-const norm=(v,u)=>v==null||!u?null:(u==="kq"||u==="L")?v*1000:v;
+/* göstəriş: 1000 q -> 1 kq, 0.5 L -> 500 ml, 12×1.5 kq */
+const trim=n=>String(+n.toFixed(2));
+function fmtSize(a){
+  if(a.wv==null) return "";
+  let v=a.wv,u=a.wu;
+  if(u==="q"&&v>=1000){v/=1000;u="kq";} if(u==="kq"&&v<1){v*=1000;u="q";}
+  if(u==="ml"&&v>=1000){v/=1000;u="L";} if(u==="L"&&v<1){v*=1000;u="ml";}
+  const t=trim(v)+" "+u;
+  return a.pack?`${a.pack}×${trim(a.unit)} ${a.uu} = ${t}`:t;
+}
+const norm=(v,u)=>v==null||!u?null:(u==="kq"||u==="L")?v*1000:v;   // q/ml/ədəd üçün özü
 const fam=u=>u==="kq"||u==="q"?"w":u==="L"||u==="ml"?"v":"n";
 /* eyni məhsul: eyni satış növü (kq ilə / qablaşdırılmış), eyni ölçü, eyni yağlılıq */
 function compat(a,b){
@@ -349,6 +372,7 @@ function group(cat){
     }
   }
   for(const g of out){ // precompute price stats once
+    g.sk=g.a.kg?"kg":(g.a.wv!=null?fam(g.a.wu)+":"+Math.round(norm(g.a.wv,g.a.wu)*100)/100:"");
     const o=Object.values(g.offers), v=o.map(x=>x.p);
     g.img=(o.find(x=>x.i&&!x.w)||o.find(x=>x.i)||{}).i||null;
     g.n=v.length; g.min=Math.min(...v); g.max=Math.max(...v); g.save=g.n>1?g.max-g.min:0;
@@ -364,7 +388,7 @@ function mk(it,kgp){
 /* ─────────── state ─────────── */
 let DB=null; const GROUPS={}; let stores=[], GL=[], GM={};
 let cur=null, filtered=[], shown=PAGE, hl=null;
-const F={sub:null,mode:"Hamısı",min:"",max:"",fat:null,q:"",sort:"savings_desc"};
+const F={sub:null,mode:"Hamısı",size:null,fat:null,q:"",sort:"savings_desc"};
 /* ümumi kateqoriya = bir neçə alt kateqoriyanın birləşməsi */
 function groups(gid){
   if(GROUPS[gid]) return GROUPS[gid];
@@ -405,8 +429,8 @@ function renderHome(){
 /* ─────────── category view ─────────── */
 function openCat(id,focus){
   cur=id; hl=focus||null; shown=PAGE;
-  Object.assign(F,{sub:null,mode:"Hamısı",min:"",max:"",fat:null,q:"",sort:"savings_desc"});
-  $("minW").value=$("maxW").value=$("tq").value=""; $("sort").value=F.sort;
+  Object.assign(F,{sub:null,mode:"Hamısı",size:null,fat:null,q:"",sort:"savings_desc"});
+  $("tq").value=""; $("sort").value=F.sort;
   document.querySelector("details.more-f").open=false;
   $("catEm").textContent=EMOJI[id]||"📦"; $("catName").textContent=GM[id].name;
   const gs=groups(id), subs=new Map(), fats=new Map();
@@ -416,8 +440,13 @@ function openCat(id,focus){
   const hasKg=gs.some(g=>g.a.kg), hasW=gs.some(g=>!g.a.kg&&["kq","q"].includes(g.a.wu)), hasV=gs.some(g=>["L","ml"].includes(g.a.wu));
   const modes=[["Hamısı",1],["⚖ Çəki",hasW],["💧 Həcm",hasV],["🛒 Kq ilə satılan",hasKg],["📦 Digər",1]].filter(m=>m[1]).map(m=>m[0]);
   $("modes").innerHTML=modes.map(m=>pill(m,m,"mode")).join("");
-  const fl=[...fats].filter(x=>x[1]>=3).map(x=>x[0]).sort((a,b)=>a-b); $("fatRow").hidden=fl.length<2;
-  $("fats").innerHTML=fl.length<2?"":pill("Hamısı",null,"fat")+fl.map(f=>pill(f+"%",f,"fat")).join("");
+  const fl=[...fats].filter(x=>x[1]>=3).sort((a,b)=>b[1]-a[1]).slice(0,12).map(x=>x[0]).sort((a,b)=>a-b);   // ən çox rast gələn 12 faiz $("fatRow").hidden=fl.length<2;
+  $("fats").innerHTML=fl.length<2?"":pill("Hamısı",null,"fat")+fl.map(f=>pill(trim(f)+"%",f,"fat")).join("");
+  const sz=new Map(); gs.forEach(g=>{ if(!g.sk||g.sk==="kg")return; const e=sz.get(g.sk)||{n:0,g,fam:g.sk[0]}; e.n++; sz.set(g.sk,e); });
+  const pickF=f=>[...sz].filter(([k,e])=>e.fam===f&&e.n>=3).sort((x,y)=>y[1].n-x[1].n).slice(0,9).sort((x,y)=>parseFloat(x[0].slice(2))-parseFloat(y[0].slice(2)));
+  const sp=[...pickF("v"),...pickF("w"),...pickF("n")];
+  $("sizeRow").hidden=!sp.length;
+  $("sizes").innerHTML=sp.length?pill("Hamısı",null,"size")+sp.map(([k,e])=>pill(({v:"💧 ",w:"⚖ ",n:"📦 "}[e.fam])+fmtSize({wv:e.g.a.wv,wu:e.g.a.wu,pack:e.g.a.pack,unit:e.g.a.unit,uu:e.g.a.uu}),k,"size")).join(""):"";
   const cnt={}; gs.forEach(g=>{ if(g.n<2)return; for(const[s,o]of Object.entries(g.offers)) if(o.p===g.min) cnt[s]=(cnt[s]||0)+1; });
   const ch=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
   $("champ").hidden=!ch; if(ch) $("champ").textContent=`🏆 Ən sərfəli: ${ch[0]} (${ch[1]} məhsulda ən ucuz)`;
@@ -436,9 +465,7 @@ function apply(){
   if(F.mode!=="Hamısı") l=l.filter(g=>{const u=g.a.wu;
     return F.mode==="⚖ Çəki"?(!g.a.kg&&(u==="kq"||u==="q")):F.mode==="💧 Həcm"?(u==="L"||u==="ml"):
       F.mode==="🛒 Kq ilə satılan"?g.a.kg:(!g.a.kg&&(u==="ədəd"||u==null));});
-  const mn=parseFloat(F.min), mx=parseFloat(F.max);
-  if(!isNaN(mn)) l=l.filter(g=>{const n=norm(g.a.wv,g.a.wu);return n!=null&&n>=mn;});
-  if(!isNaN(mx)) l=l.filter(g=>{const n=norm(g.a.wv,g.a.wu);return n!=null&&n<=mx;});
+  if(F.size) l=l.filter(g=>g.sk===F.size);
   if(F.fat!=null) l=l.filter(g=>g.a.fat===+F.fat);
   if(F.q.trim()){const ex=expandQ(F.q); if(ex.length) l=l.filter(g=>matchQ(g.fd,ex));}
   if(F.sort==="name") l.sort((a,b)=>a.name.localeCompare(b.name,"az"));
@@ -462,7 +489,7 @@ function render(){
   $("count").textContent=`${filtered.length} məhsul`;
   $("list").innerHTML=list.length?list.map(g=>{
     const a=g.a, em=EMOJI[g.c]||"📦";
-    const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",a.wv?`${a.ap?"~":""}${a.wv} ${a.wu}`:"",a.fat!=null?a.fat+"%":""].filter(Boolean).join(" · ");
+    const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",a.wv?`${a.ap?"~":""}${fmtSize(a)}`:"",a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
     return `<article class="item${hl===g.id?" hl":""}" id="r-${g.id}">
       <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div>
       <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
@@ -498,8 +525,6 @@ $("catView").addEventListener("click",e=>{
 });
 $("more").onclick=()=>{shown+=PAGE;render();};
 const debounce=(f,t=120)=>{let h;return(...a)=>{clearTimeout(h);h=setTimeout(()=>f(...a),t);};};
-$("minW").oninput=debounce(e=>{F.min=e.target.value;shown=PAGE;apply();});
-$("maxW").oninput=debounce(e=>{F.max=e.target.value;shown=PAGE;apply();});
 $("tq").oninput=debounce(e=>{F.q=e.target.value;shown=PAGE;apply();});
 $("sort").onchange=e=>{F.sort=e.target.value;apply();};
 

@@ -117,6 +117,32 @@ def clean_price(raw):
     v = float(m.group())
     return round(v, 2) if 0.05 < v < 9999 else None
 
+_IMG_KEYS = ("image","img","image_url","imageUrl","thumbnail","thumb","photo","picture","cover","main_image")
+_IMG_LISTS = ("images","photos","pictures","media","gallery")
+_IMG_INNER = ("url","src","original","large","medium","small","path","thumbnail")
+
+def _pick_img(v):
+    if isinstance(v, str): return v.strip()
+    if isinstance(v, dict):
+        for k in _IMG_INNER:
+            r = _pick_img(v.get(k))
+            if r: return r
+    if isinstance(v, list):
+        for x in v:
+            r = _pick_img(x)
+            if r: return r
+    return None
+
+def img_of(item, base=""):
+    """Məhsul obyektindən şəkil linkini çıxarır (sahə adları mənbədən asılı olaraq fərqlənir)."""
+    for k in _IMG_KEYS + _IMG_LISTS:
+        u = _pick_img(item.get(k))
+        if not u: continue
+        if u.startswith("//"): u = "https:" + u
+        elif u.startswith("/") and base: u = base.rstrip("/") + u
+        if u.startswith("https://"): return u
+    return None
+
 def has_juice(name):
     n = name.lower()
     return any(w in n for w in JUICE_WORDS)
@@ -219,7 +245,11 @@ def scrape_bravo():
                 if price is None: continue
                 seen.add(pid); total += 1
                 cat = assign_cat(name)
-                if cat: results[cat].append({"name": name, "price": price})
+                if cat:
+                    e = {"name": name, "price": price}
+                    im = img_of(p, "https://birmarket.az")
+                    if im: e["img"] = im
+                    results[cat].append(e)
             print(f"  [Bravo] səhifə {page} — {total} məhsul", end="\r")
             last = (d.get("data",{}).get("last_page") or d.get("last_page") or
                     d.get("meta",{}).get("last_page"))
@@ -341,7 +371,11 @@ def scrape_araz():
                 if pid in seen or not name or price is None: continue
                 seen.add(pid); total += 1
                 cat = assign_cat(name)
-                if cat: results[cat].append({"name": name, "price": price})
+                if cat:
+                    e = {"name": name, "price": price}
+                    im = img_of(p, "https://arazmarket.az")
+                    if im: e["img"] = im
+                    results[cat].append(e)
     print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)")
     return results if total else None
 
@@ -416,7 +450,11 @@ def scrape_wolt(store):
                 if uid in seen: continue
                 seen.add(uid)
                 cat = assign_cat(name)
-                if cat: results[cat].append({"name": name, "wolt_price": price})
+                if cat:
+                    e = {"name": name, "wolt_price": price}
+                    im = img_of(item)
+                    if im: e["img"] = im
+                    results[cat].append(e)
     total = sum(len(v) for v in results.values())
     print(f"  [Wolt/{store}] {total} məhsul")
     return results if total else None
@@ -427,6 +465,7 @@ def merge_own_wolt(own_list, wolt_list):
     used = set()
     for item in own_list:
         entry = {"name": item["name"], "price": item["price"]}
+        if item.get("img"): entry["img"] = item["img"]
         best_s, best_i = 0, -1
         for i, w in enumerate(wolt_list):
             s = sim(item["name"], w["name"])
@@ -435,12 +474,14 @@ def merge_own_wolt(own_list, wolt_list):
             wp = wolt_list[best_i]["wolt_price"]
             if abs(wp - item["price"]) > 0.005:
                 entry["wolt_price"] = wp
+            if "img" not in entry and wolt_list[best_i].get("img"):
+                entry["img"] = wolt_list[best_i]["img"]
             used.add(best_i)
         merged.append(entry)
     # Wolt-only items
     for i, w in enumerate(wolt_list):
         if i not in used:
-            merged.append({"name": w["name"], "wolt_price": w["wolt_price"]})
+            merged.append({k: w[k] for k in ("name", "wolt_price", "img") if k in w})
     return merged
 
 def apply_to_data(own_res, wolt_res, store, data):
@@ -451,7 +492,7 @@ def apply_to_data(own_res, wolt_res, store, data):
     wolt_only = store in ("Neptun",)
     for cid in CATEGORIES:
         if wolt_only:
-            items = [{"name":w["name"],"wolt_price":w["wolt_price"]}
+            items = [{k: w[k] for k in ("name", "wolt_price", "img") if k in w}
                      for w in wolt_res.get(cid,[])]
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))

@@ -58,8 +58,9 @@ h1.hero{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;line-height:1.15}
 .cat:active{border-color:var(--brand);background:var(--brand-soft)}
 .cat .em{font-size:28px;line-height:1;flex:none}
 .cat span:last-child{min-width:0}
-.cat b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cat small{color:var(--mute);font-size:12px}
+.cat b{display:block;font-size:15px;line-height:1.2}
+.cat small{display:block;color:var(--mute);font-size:12px;line-height:1.35;margin-top:3px}
+.cat small i{font-style:normal;color:var(--text);font-weight:600}
 .note{margin-top:20px;color:var(--mute);font-size:12.5px;line-height:1.6}
 
 /* category view */
@@ -73,6 +74,12 @@ h1.hero{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;line-height:1.15}
 .scroll::-webkit-scrollbar{display:none}
 .pill{flex:none;min-height:38px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:0 14px;
   font-size:14px;font-weight:600;color:var(--mute);white-space:nowrap}
+.subs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.subs.collapsed .pill:nth-child(n+10){display:none}
+.subs[hidden]{display:none}
+.subs.collapsed .pill.sm{display:inline-flex;align-items:center}
+.pill small{font-weight:500;opacity:.7;margin-left:4px}
+.pill.sm{border-style:dashed;color:var(--brand)}
 .pill.on{background:var(--brand);border-color:var(--brand);color:#fff}
 .tools{display:flex;gap:8px;margin-bottom:10px}
 .tools input,.tools select,.fx input{height:44px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:0 12px;outline:none;min-width:0}
@@ -193,7 +200,7 @@ details.more-f summary::-webkit-details-marker{display:none}
       <h1 class="title"><span id="catEm"></span> <span id="catName"></span></h1>
     </div>
     <div class="champ" id="champ" hidden></div>
-    <div class="scroll" id="subs"></div>
+    <div class="subs collapsed" id="subs"></div>
     <div class="tools">
       <input id="tq" type="search" placeholder="Siyahıda süz…" aria-label="Siyahıda süz">
       <select id="sort" aria-label="Sıralama">
@@ -236,15 +243,15 @@ const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"�
   mandarin:"🍊",ekzotik:"🥭",gile:"🍓",qarpiz:"🍉",bulgur:"🌾",seher:"🥣",bulyon:"🍲",avto:"🚗",sous_diger:"🥫",
   qabyuyan:"🧽",yuyucu:"🧺",temizlik:"🧹",gigiyena:"🧼",
   heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🍿",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",oyuncaq:"🧸",dereterlik:"✏️",kagiz:"🧻",qadin_gig:"🌸",usaq_baxim:"🍼",dis_baximi:"🪥",sac_baximi:"💇",beden_baximi:"🧴",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
-  usaq:"👶",hazir:"🍿",heyvan:"🐾",tutun:"🚬",geyim:"👕",ayaqqabi:"🧦",tekstil:"🛏️",
+  usaq:"👶",hazir:"🍿",heyvan:"🐾",tutun:"🚬",geyim:"👕",saglam:"💪",ayaqqabi:"🧦",tekstil:"🛏️",
   meyve:"🍎",sebze:"🥕",et:"🍗",bakaliya:"🍚",sirniyyat:"🍫",iceckiler:"🥤",yag_sous:"🫒",ev:"🧴"};
 /* ingiliscə ad / axtarış: ana kateqoriya adları və söz uyğunluqları */
-const GEN={geyim:"clothes clothing shoes socks textile towel",konserv:"canned pickles olives",tutun:"tobacco cigarettes",meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
+const GEN={saglam:"healthy diet protein gluten free diabetic fitness",geyim:"clothes clothing shoes socks textile towel",konserv:"canned pickles olives",tutun:"tobacco cigarettes",meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
   corek:"bread bakery",bakaliya:"grains rice pasta flour cereal",sirniyyat:"sweets chocolate biscuits candy dessert honey",
   hazir:"snacks chips nuts ready meals frozen",iceckiler:"drinks beverages water juice tea coffee soda",yag_sous:"oil sauce spices sugar salt canned pickles",
   usaq:"baby kids",gigiyena:"hygiene personal care soap shampoo toothpaste toilet paper",ev:"household cleaning detergent kitchen",
   heyvan:"pet food cat dog",oyuncaq:"toys stationery",spirtli:"alcohol beer wine vodka",diger:"other misc"};
-const GEN_NAME={geyim:"Clothes & textile",konserv:"Canned & pickles",tutun:"Tobacco",meyve:"Fruit",sebze:"Vegetables",sud:"Dairy & eggs",et:"Meat & fish",corek:"Bread",bakaliya:"Grains & pasta",sirniyyat:"Sweets",
+const GEN_NAME={saglam:"Healthy & diet",geyim:"Clothes & textile",konserv:"Canned & pickles",tutun:"Tobacco",meyve:"Fruit",sebze:"Vegetables",sud:"Dairy & eggs",et:"Meat & fish",corek:"Bread",bakaliya:"Grains & pasta",sirniyyat:"Sweets",
   hazir:"Snacks & ready meals",iceckiler:"Drinks",yag_sous:"Oil, sauces, spices",usaq:"Baby & kids",gigiyena:"Personal care",ev:"Household",
   heyvan:"Pet food",oyuncaq:"Toys & stationery",spirtli:"Alcohol",diger:"Other"};
 /* ingilis -> azərbaycan (diakritiksiz) */
@@ -424,9 +431,11 @@ async function load(){
 function renderHome(){
   const raw=g=>g.cats.reduce((a,c)=>a+Object.values((DB.categories[c]||{stores:{}}).stores).reduce((x,l)=>x+l.length,0),0);
   const list=GL.map(g=>[g,raw(g)]).filter(x=>x[1]>0);   // sıra data-dakı qrup sırasıdır ("Digər" sonda)
+  const tops=g=>g.cats.map(c=>[c,Math.max(0,...Object.values((DB.categories[c]||{stores:{}}).stores).map(l=>l.length))])
+    .filter(x=>x[1]>0&&!/_diger$|^diger$/.test(x[0])).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>catName(x[0]).split(/[,(]/)[0].trim());
   $("catGrid").innerHTML=list.map(([g,n])=>
     `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span><b>${esc(g.name)}</b>
-     <small>${GEN_NAME[g.id]?esc(GEN_NAME[g.id])+" · ":""}${n.toLocaleString("az")}</small></span></button>`).join("");
+     <small>${esc(tops(g).join(" · "))}</small><small><i>${n.toLocaleString("az")}</i> məhsul</small></span></button>`).join("");
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazanın öz saytından alınan qiymətlər dəqiqdir;
     Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
 }
@@ -440,8 +449,10 @@ function openCat(id,focus){
   $("catEm").textContent=EMOJI[id]||"📦"; $("catName").textContent=GM[id].name;
   const gs=groups(id), subs=new Map(), fats=new Map();
   gs.forEach(g=>{subs.set(g.c,(subs.get(g.c)||0)+1); if(g.a.fat!=null)fats.set(g.a.fat,(fats.get(g.a.fat)||0)+1);});
-  $("subs").hidden=subs.size<2;
-  $("subs").innerHTML=pill("Hamısı",null,"sub")+[...subs].sort((a,b)=>b[1]-a[1]).map(([c])=>pill(catName(c),c,"sub")).join("");
+  const ord=GM[id].cats, sl=[...subs].sort((a,b)=>ord.indexOf(a[0])-ord.indexOf(b[0]));
+  $("subs").hidden=sl.length<2; $("subs").classList.toggle("collapsed",sl.length>9);
+  $("subs").innerHTML=pill("Hamısı",null,"sub",gs.length)+sl.map(([c,n])=>pill((EMOJI[c]?EMOJI[c]+" ":"")+catName(c),c,"sub",n)).join("")
+    +(sl.length>9?`<button class="pill sm" id="subsMore">Daha çox ▾</button>`:"");
   const hasKg=gs.some(g=>g.a.kg), hasW=gs.some(g=>!g.a.kg&&["kq","q"].includes(g.a.wu)), hasV=gs.some(g=>["L","ml"].includes(g.a.wu));
   const modes=[["Hamısı",1],["⚖ Çəki",hasW],["💧 Həcm",hasV],["🛒 Kq ilə satılan",hasKg],["📦 Digər",1]].filter(m=>m[1]).map(m=>m[0]);
   $("modes").innerHTML=modes.map(m=>pill(m,m,"mode")).join("");
@@ -457,7 +468,7 @@ function openCat(id,focus){
   $("champ").hidden=!ch; if(ch) $("champ").textContent=`🏆 Ən sərfəli: ${ch[0]} (${ch[1]} məhsulda ən ucuz)`;
   syncPills(); apply();
 }
-const pill=(label,val,k)=>`<button class="pill" data-k="${k}" data-v="${val==null?"":esc(val)}">${esc(label)}</button>`;
+const pill=(label,val,k,n)=>`<button class="pill" data-k="${k}" data-v="${val==null?"":esc(val)}">${esc(label)}${n!=null?`<small>${n}</small>`:""}</button>`;
 function syncPills(){
   document.querySelectorAll("#catView .pill").forEach(b=>{
     const k=b.dataset.k, v=b.dataset.v, cv=F[k];
@@ -525,6 +536,7 @@ $("retry").onclick=load;
 $("catGrid").onclick=e=>{const b=e.target.closest(".cat"); if(b) go("#/c/"+b.dataset.id);};
 $("catView").addEventListener("click",e=>{
   const b=e.target.closest(".pill"); if(!b) return;
+  if(b.id==="subsMore"){ const c=$("subs").classList.toggle("collapsed"); b.textContent=c?"Daha çox ▾":"Daha az ▴"; return; }
   const k=b.dataset.k, v=b.dataset.v;
   F[k]=k==="mode"?v:(v===""?null:v); syncPills(); hl=null; shown=PAGE; apply();
 });

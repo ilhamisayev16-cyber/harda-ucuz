@@ -19,7 +19,7 @@ qiymet-project/
 ## Necə işləyir?
 
 1. GitHub Actions hər gün saat 06:00-da (Bakı vaxtı) `scraper.py`-ı işlədir
-2. Scraper Bravo, Neptun, Araz, OBA saytlarından qiymətləri toplayır
+2. Scraper Bravo, Neptun (Wolt), Araz, OBA-dan qiymətləri toplayır
 3. `data/prices.json` faylını yeniləyir
 4. `index.html` bu JSON-dan oxuyaraq cədvəli göstərir
 
@@ -48,9 +48,10 @@ Scraper hər gün avtomatik işləyəcək.
 - Wolt filialının slug-ı dəyişibsə, mühit dəyişəni ilə verin: `WOLT_SLUG_NEPTUN=neptun-supermarket-...` (vergüllə bir neçə).
 
 ## Mağazalar
-- **Bravo** → birmarket.az
-- **Neptun** → neptun.az  
+- **Bravo** → Wolt
+- **Neptun** → Wolt  
 - **OBA** → oba.az
+- **Araz** → arazmarket.az API (+ Wolt)
 
 ## Yeni mağaza əlavə etmək
 `scraper.py` faylında `SCRAPERS` lüğətinə yeni scrape funksiyası əlavə edin.

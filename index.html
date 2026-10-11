@@ -11,172 +11,131 @@
 <style>
 :root{
   --bg:#faf6ee; --card:#fff; --ink:#281505; --mute:#6b5a46; --line:#eedcc4; --soft:#f6efe2;
-  --brand:#e35600; --brand-soft:#fff1e6; --good:#0f9d58; --good-soft:#e6f6ee; --bad:#d93025; --bad-soft:#fdecea;
-  --shadow:0 1px 2px rgba(40,21,5,.06),0 4px 14px rgba(40,21,5,.05);
+  --brand:#e35600; --brand-soft:#fff1e6; --good:#0f9d58; --good-soft:#e6f6ee; --bad:#d93025;
   --Bravo:#d93025; --OBA:#0b79d0; --Araz:#8e44ad; --Neptun:#0f9d58;
 }
 @media (prefers-color-scheme:dark){:root{
   --bg:#151009; --card:#1f1810; --ink:#f5ebdc; --mute:#b4a58f; --line:#3a2e20; --soft:#2a2118;
-  --brand:#ff7a2f; --brand-soft:#33210f; --good:#3ddc84; --good-soft:#12301f; --bad:#ff6b5e; --bad-soft:#3a1a17;
-  --shadow:none;
+  --brand:#ff7a2f; --brand-soft:#33210f; --good:#3ddc84; --good-soft:#12301f; --bad:#ff6b5e;
 }}
-*{box-sizing:border-box}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);
-  font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+  font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 button,input,select{font:inherit;color:inherit}
 button{cursor:pointer}
-.wrap{max-width:1180px;margin:0 auto;padding:0 16px 56px}
+.wrap{max-width:960px;margin:0 auto;padding:0 14px 48px}
 .mono{font-variant-numeric:tabular-nums}
 
-/* header */
-.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);
-  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.top .wrap{display:flex;align-items:center;gap:14px;padding-top:10px;padding-bottom:10px}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em;
-  background:none;border:0;padding:0;white-space:nowrap}
-.logo i{font-style:normal;display:grid;place-items:center;width:36px;height:36px;border-radius:11px;
-  background:var(--ink);color:var(--bg);font-size:18px}
-.logo b{color:var(--brand)}
-.search{position:relative;flex:1;max-width:560px;margin-left:auto}
-.search input{width:100%;border:1px solid var(--line);background:var(--card);border-radius:12px;
-  padding:9px 12px 9px 36px;outline:none}
-.search input:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 18%,transparent)}
-.search:before{content:"🔍";position:absolute;left:11px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.7}
+/* header: logo + search on one row */
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:10px;padding-top:8px;padding-bottom:8px}
+.logo{display:grid;place-items:center;width:44px;height:44px;flex:none;border-radius:12px;border:0;
+  background:var(--ink);color:var(--bg);font-size:20px;padding:0}
+.logo-t{display:none;font-weight:800;font-size:18px;letter-spacing:-.02em}
+.logo-t b{color:var(--brand)}
+.search{position:relative;flex:1}
+.search input{width:100%;height:44px;border:1px solid var(--line);background:var(--card);border-radius:12px;
+  padding:0 12px 0 38px;outline:none}
+.search input:focus{border-color:var(--brand)}
+.search:before{content:"🔍";position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.7}
 .results{position:absolute;left:0;right:0;top:calc(100% + 6px);background:var(--card);border:1px solid var(--line);
-  border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.18);max-height:70vh;overflow:auto}
+  border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.2);max-height:65vh;overflow:auto}
 .results:empty{display:none}
-.res{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 14px}
+.res{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 14px}
 .res:last-child{border:0}
-.res:hover,.res:focus{background:var(--soft);outline:none}
-.res small{color:var(--mute)}
-.res strong{display:block;font-size:14px}
+.res:active{background:var(--soft)}
+.res small{color:var(--mute);display:block}
+.res strong{display:block;font-size:15px}
 
-/* hero */
-.hero{padding:26px 0 8px}
-.hero h1{margin:0 0 4px;font-size:clamp(22px,4vw,32px);letter-spacing:-.03em;line-height:1.15}
-.hero p{margin:0;color:var(--mute)}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 22px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:var(--shadow);min-width:0}
-.stat span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute)}
-.stat b{display:block;font-size:24px;line-height:1.2;margin-top:2px}
-.stat small{display:block;color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.stat.good b{color:var(--good)}
-
-/* store freshness */
-.stores{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
-.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);
-  border-radius:999px;padding:4px 11px;font-size:12px;color:var(--mute)}
-.dot{width:9px;height:9px;border-radius:50%;background:var(--c,#999);flex:none}
-
-/* category grid */
-h2.sec{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--mute);margin:0 0 12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
-.cat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 14px;text-align:left;
-  display:flex;flex-direction:column;gap:6px;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
-.cat:hover{transform:translateY(-2px);border-color:var(--brand)}
-.cat .em{font-size:30px;line-height:1}
-.cat b{font-size:15px}
+/* home */
+h1.hero{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;line-height:1.15}
+.sub-h{margin:0 0 16px;color:var(--mute);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left;
+  display:flex;align-items:center;gap:10px;min-height:64px;min-width:0}
+.cat:active{border-color:var(--brand);background:var(--brand-soft)}
+.cat .em{font-size:28px;line-height:1;flex:none}
+.cat span:last-child{min-width:0}
+.cat b{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cat small{color:var(--mute);font-size:12px}
+.note{margin-top:20px;color:var(--mute);font-size:12.5px;line-height:1.6}
 
 /* category view */
-.bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:20px 0 14px}
-.btn{border:1px solid var(--line);background:var(--card);border-radius:11px;padding:7px 13px;font-size:13px;font-weight:600}
-.btn:hover{border-color:var(--brand);color:var(--brand)}
+.bar{display:flex;align-items:center;gap:10px;margin:12px 0}
+.btn{border:1px solid var(--line);background:var(--card);border-radius:12px;min-height:44px;padding:0 16px;font-weight:600}
+.btn:active{border-color:var(--brand);color:var(--brand)}
 .btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
-.title{display:flex;align-items:center;gap:12px;margin:0}
-.title span{font-size:34px}
-.title h1{margin:0;font-size:26px;letter-spacing:-.02em}
-.champ{margin-left:auto;background:var(--good-soft);color:var(--good);border-radius:11px;padding:7px 13px;font-size:13px;font-weight:600}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:14px;box-shadow:var(--shadow)}
-.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.row + .row{margin-top:10px}
-.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--mute);margin-right:4px}
-.pill{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--mute)}
-.pill.on{background:var(--brand);border-color:var(--brand);color:#fff}
-.scroll{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;flex:1;min-width:0}
+.title{margin:0;font-size:22px;letter-spacing:-.02em;line-height:1.2;min-width:0}
+.champ{background:var(--good-soft);color:var(--good);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:12px}
+.scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -14px 12px;padding:0 14px}
 .scroll::-webkit-scrollbar{display:none}
-.scroll .pill{flex:none}
-.panel input,.panel select{border:1px solid var(--line);background:var(--card);border-radius:9px;padding:6px 9px;width:110px;font-size:13px;outline:none}
-.panel select{width:auto}
-.panel input:focus,.panel select:focus{border-color:var(--brand)}
-.bargains{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-bottom:14px}
-.barg{background:var(--brand-soft);border:1px solid var(--line);border-radius:14px;padding:11px 14px;display:flex;justify-content:space-between;gap:10px}
-.barg small{color:var(--mute);display:block}
-.barg b{white-space:nowrap}
+.pill{flex:none;min-height:38px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:0 14px;
+  font-size:14px;font-weight:600;color:var(--mute);white-space:nowrap}
+.pill.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.tools{display:flex;gap:8px;margin-bottom:10px}
+.tools input,.tools select,.fx input{height:44px;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:0 12px;outline:none;min-width:0}
+.tools input{flex:1}
+.tools input:focus,.fx input:focus{border-color:var(--brand)}
+details.more-f{margin-bottom:10px}
+details.more-f summary{list-style:none;cursor:pointer;color:var(--brand);font-weight:600;font-size:14px;padding:6px 0}
+details.more-f summary::-webkit-details-marker{display:none}
+.fx{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:6px;display:grid;gap:10px}
+.fx .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.fx input{width:calc(50% - 4px)}
+.lbl{font-size:12px;color:var(--mute);width:100%}
+.count{color:var(--mute);font-size:13px;margin:0 0 8px}
 
-/* table */
-.tablewrap{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:auto;box-shadow:var(--shadow);max-height:78vh}
-table{border-collapse:separate;border-spacing:0;width:100%;min-width:760px}
-th{position:sticky;top:0;z-index:2;background:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.06em;
-  color:var(--mute);padding:11px 12px;text-align:center;border-bottom:1px solid var(--line)}
-th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card);z-index:1;min-width:220px;max-width:320px}
-th:first-child{background:var(--soft);z-index:3}
-th .dot{margin-right:5px}
-td{padding:10px 12px;text-align:center;border-bottom:1px solid var(--line);vertical-align:middle}
-tr:last-child td{border:0}
-tr.hl td{background:var(--brand-soft)}
-td .name{font-weight:600;font-size:14px;line-height:1.3}
-td .sub{font-size:11px;color:var(--mute);margin-top:2px}
-.p{font-weight:700;font-size:14px}
-.p.min{color:var(--good);font-size:15px;font-weight:800}
-.p.max{color:var(--bad)}
-.p sup{font-size:9px;color:var(--mute);font-weight:600;margin-left:1px;cursor:help}
-.na{color:var(--line);font-weight:700}
-.save{font-weight:800;color:var(--good);font-size:14px}
-.save small{display:block;font-size:11px;font-weight:600;background:var(--good-soft);border-radius:6px;padding:0 6px;margin-top:2px}
-.more{display:block;margin:16px auto 0}
-.empty{padding:50px 16px;text-align:center;color:var(--mute)}
-.note{margin-top:18px;color:var(--mute);font-size:12.5px;line-height:1.6}
-.note sup{font-weight:700}
+/* product cards */
+.list{display:grid;gap:10px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px}
+.item.hl{background:var(--brand-soft);border-color:var(--brand)}
+.item h3{margin:0;font-size:15px;line-height:1.3;font-weight:600}
+.meta{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:2px 0 10px;font-size:12px;color:var(--mute)}
+.save{flex:none;background:var(--good-soft);color:var(--good);font-weight:700;border-radius:8px;padding:1px 8px}
+.offers{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:6px}
+.o{border:1px solid var(--line);border-radius:10px;padding:6px 8px;min-width:0}
+.o span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mute)}
+.o b{display:block;font-size:15px;margin-top:1px}
+.o.min{background:var(--good-soft);border-color:var(--good)}
+.o.min b{color:var(--good)}
+.o.max b{color:var(--bad)}
+.o sup{font-size:9px;color:var(--mute);font-weight:600}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--c,#999);flex:none}
+.more{display:block;margin:16px auto 0;width:100%}
+.empty{padding:40px 16px;text-align:center;color:var(--mute)}
 
-/* states */
 .skel{border-radius:14px;background:linear-gradient(90deg,var(--soft) 25%,var(--line) 50%,var(--soft) 75%);
   background-size:400% 100%;animation:sh 1.4s infinite}
 @keyframes sh{from{background-position:100% 0}to{background-position:0 0}}
 .err{padding:40px 16px;text-align:center}
 [hidden]{display:none!important}
 
-@media (max-width:760px){
-  .stats{grid-template-columns:repeat(2,1fr)}
-  .top .wrap{flex-wrap:wrap}
-  .search{max-width:none;order:3;flex-basis:100%}
-  .champ{margin-left:0}
-  .tablewrap{max-height:none;overflow:visible;background:none;border:0;box-shadow:none}
-  table{min-width:0}
-  thead{display:none}
-  table,tbody{display:block}
-  tr{display:grid;grid-template-columns:repeat(3,1fr);gap:6px 8px;background:var(--card);border:1px solid var(--line);
-    border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:var(--shadow)}
-  td{display:block;border:0;padding:0;text-align:left}
-  td:first-child{grid-column:1/-1;position:static;max-width:none;min-width:0}
-  td.sz{grid-column:1/-1;font-size:12px;color:var(--mute)}
-  td[data-l]:not(.sz):not(.sv):before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;
-    letter-spacing:.05em;color:var(--mute)}
-  td.sv{grid-column:1/-1}
-  td.sv .save{display:flex;align-items:center;gap:8px}
-  td.sv .save small{display:inline-block;margin:0}
-  tr.hl{background:var(--brand-soft)}
-  tr.hl td{background:none}
-  td.empty{grid-column:1/-1;text-align:center}
+@media (min-width:600px){
+  .grid{grid-template-columns:repeat(3,1fr)}
+  .logo-t{display:block}
+  .logo{display:none}
+  .top .wrap{gap:18px}
+  .search{max-width:480px;margin-left:auto}
+  .list{grid-template-columns:repeat(2,1fr)}
 }
+@media (min-width:900px){ .grid{grid-template-columns:repeat(4,1fr)} }
 </style>
 </head>
 <body>
 
 <header class="top"><div class="wrap">
-  <button class="logo" id="home" aria-label="Ana səhifə"><i>🛒</i><span>Qiymət<b>Müqayisə</b></span></button>
+  <button class="logo" id="home" aria-label="Ana səhifə">🛒</button>
+  <span class="logo-t" id="home2">Qiymət<b>Müqayisə</b></span>
   <div class="search">
-    <input id="q" type="search" placeholder="Məhsul axtar: süd, banan, kartof…" autocomplete="off" aria-label="Axtarış">
+    <input id="q" type="search" placeholder="Məhsul axtar: süd, banan…" autocomplete="off" aria-label="Axtarış">
     <div class="results" id="results" role="listbox"></div>
   </div>
 </div></header>
 
 <main class="wrap">
   <div id="loading">
-    <div class="hero"><div class="skel" style="height:34px;width:60%"></div></div>
-    <div class="stats"><div class="skel" style="height:78px"></div><div class="skel" style="height:78px"></div>
-      <div class="skel" style="height:78px"></div><div class="skel" style="height:78px"></div></div>
+    <div class="skel" style="height:30px;width:70%;margin:18px 0 16px"></div>
     <div class="grid" id="skelgrid"></div>
   </div>
 
@@ -187,55 +146,41 @@ td .sub{font-size:11px;color:var(--mute);margin-top:2px}
   </div>
 
   <section id="homeView" hidden>
-    <div class="hero">
-      <h1>Hansı market daha ucuzdur?</h1>
-      <p>Bravo, OBA, Araz və Neptun qiymətləri bir cədvəldə.</p>
-    </div>
-    <div class="stats" id="stats"></div>
-    <div class="stores" id="storeChips"></div>
-    <h2 class="sec">Kateqoriyalar</h2>
+    <h1 class="hero">Hansı market daha ucuzdur?</h1>
+    <p class="sub-h">Bravo, OBA, Araz və Neptun qiymətləri bir yerdə. Kateqoriya seç:</p>
     <div class="grid" id="catGrid"></div>
     <p class="note" id="srcNote"></p>
   </section>
 
   <section id="catView" hidden>
     <div class="bar">
-      <button class="btn" id="back">← Geri</button>
-      <h1 class="title"><span id="catEm"></span><span id="catName" style="font-size:26px"></span></h1>
-      <div class="champ" id="champ" hidden></div>
+      <button class="btn" id="back" aria-label="Geri">←</button>
+      <h1 class="title"><span id="catEm"></span> <span id="catName"></span></h1>
     </div>
-    <div class="bargains" id="bargains"></div>
-    <div class="panel">
-      <div class="row">
-        <span class="lbl">Növ</span>
-        <div class="scroll" id="subs"></div>
-      </div>
-      <div class="row">
-        <span class="lbl">Ölçü</span>
-        <div class="row" id="modes" style="gap:6px"></div>
-        <input id="minW" type="number" min="0" placeholder="Min q/ml" aria-label="Minimum çəki">
-        <input id="maxW" type="number" min="0" placeholder="Maks q/ml" aria-label="Maksimum çəki">
-        <span class="lbl" id="fatLbl">Yağ</span>
-        <div class="row" id="fats" style="gap:6px"></div>
-      </div>
-      <div class="row">
-        <input id="tq" type="search" placeholder="Siyahıda süz…" style="width:200px" aria-label="Siyahıda süz">
-        <span class="lbl" style="margin-left:auto">Sıralama</span>
-        <select id="sort" aria-label="Sıralama">
-          <option value="savings_desc">Ən çox qənaət</option>
-          <option value="price_asc">Ən ucuz</option>
-          <option value="name">A → Z</option>
-        </select>
-      </div>
-      <div class="row" style="color:var(--mute);font-size:13px"><span id="count"></span></div>
+    <div class="champ" id="champ" hidden></div>
+    <div class="scroll" id="subs"></div>
+    <div class="tools">
+      <input id="tq" type="search" placeholder="Siyahıda süz…" aria-label="Siyahıda süz">
+      <select id="sort" aria-label="Sıralama">
+        <option value="savings_desc">Qənaət</option>
+        <option value="price_asc">Ucuz</option>
+        <option value="name">A → Z</option>
+      </select>
     </div>
-    <div class="tablewrap"><table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
-    </table></div>
+    <details class="more-f">
+      <summary>⚙ Ölçü və yağ filtri</summary>
+      <div class="fx">
+        <div class="row"><span class="lbl">Ölçü</span><div class="row" id="modes"></div>
+          <input id="minW" type="number" inputmode="numeric" min="0" placeholder="Min q/ml" aria-label="Minimum çəki">
+          <input id="maxW" type="number" inputmode="numeric" min="0" placeholder="Maks q/ml" aria-label="Maksimum çəki"></div>
+        <div class="row" id="fatRow"><span class="lbl">Yağ faizi</span><div class="row" id="fats"></div></div>
+      </div>
+    </details>
+    <p class="count" id="count"></p>
+    <div class="list" id="list"></div>
     <button class="btn primary more" id="more" hidden>Daha çox göstər</button>
-    <p class="note"><b>★ yaşıl</b> — ən ucuz, <b style="color:var(--bad)">qırmızı</b> — ən baha qiymət.
-      <sup>W</sup> — qiymət Wolt-dan götürülüb və mağaza rəfindəki qiymətdən bir qədər yüksək ola bilər.</p>
+    <p class="note"><b style="color:var(--good)">Yaşıl</b> — ən ucuz, <b style="color:var(--bad)">qırmızı</b> — ən baha.
+      <sup>W</sup> — qiymət Wolt-dan götürülüb, rəf qiymətindən bir qədər yüksək ola bilər.</p>
   </section>
 </main>
 
@@ -341,69 +286,37 @@ async function load(){
 
 /* ─────────── home ─────────── */
 function renderHome(){
-  const cats=Object.entries(DB.categories);
   const raw=id=>Object.values(DB.categories[id].stores).reduce((a,l)=>a+l.length,0);
-  const shownCats=cats.filter(([id])=>raw(id)>0).sort((a,b)=>raw(b[0])-raw(a[0]));
-  $("catGrid").innerHTML=shownCats.map(([id,c])=>
-    `<button class="cat" data-id="${id}"><span class="em">${EMOJI[id]||"📦"}</span><b>${esc(c.name)}</b>
-     <small>${raw(id)} qiymət</small></button>`).join("");
-  const total=shownCats.reduce((a,[id])=>a+raw(id),0);
-  $("stats").innerHTML=stat("Mağaza",stores.length,"Bravo · OBA · Araz · Neptun")+
-    stat("Kateqoriya",shownCats.length,"ərzaq qrupu")+stat("Qiymət qeydi",total.toLocaleString("az"),"bütün mağazalar üzrə")+
-    `<div class="stat good"><span>Maks. qənaət</span><b id="maxSave">…</b><small id="maxSaveP">hesablanır</small></div>`;
-  const meta=DB.meta||{};
-  $("storeChips").innerHTML=stores.map(s=>{
-    const m=meta[s], n=cats.reduce((a,[,c])=>a+(c.stores[s]||[]).length,0);
-    return `<span class="chip" style="--c:var(--${s})"><span class="dot"></span><b>${s}</b> ${n?n+" məhsul":"məlumat yoxdur"}${m?` · ${esc(m.updated)}`:""}</span>`;
-  }).join("");
+  const cats=Object.entries(DB.categories).filter(([id])=>raw(id)>0).sort((a,b)=>raw(b[0])-raw(a[0]));
+  $("catGrid").innerHTML=cats.map(([id,c])=>
+    `<button class="cat" data-id="${id}"><span class="em">${EMOJI[id]||"📦"}</span><span><b>${esc(c.name)}</b>
+     <small>${raw(id)} qiymət</small></span></button>`).join("");
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazanın öz saytından alınan qiymətlər dəqiqdir;
     Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
-  // heavy stats computed after first paint, in small slices
-  let i=0,best=0,bp="",ids=shownCats.map(x=>x[0]);
-  (function step(){
-    const t=performance.now();
-    while(i<ids.length&&performance.now()-t<12){
-      for(const g of groups(ids[i])) if(g.save>best){best=g.save;bp=g.name;} i++;
-    }
-    if($("maxSave")){ $("maxSave").textContent="+ "+fmt(best); $("maxSaveP").textContent=bp||"—"; }
-    if(i<ids.length) (window.requestIdleCallback||setTimeout)(step);
-  })();
 }
-const stat=(l,v,s)=>`<div class="stat"><span>${l}</span><b class="mono">${v}</b><small>${s}</small></div>`;
 
 /* ─────────── category view ─────────── */
 function openCat(id,focus){
   cur=id; hl=focus||null; shown=PAGE;
   Object.assign(F,{sub:null,mode:"Hamısı",min:"",max:"",fat:null,q:"",sort:"savings_desc"});
   $("minW").value=$("maxW").value=$("tq").value=""; $("sort").value=F.sort;
+  document.querySelector("details.more-f").open=false;
   $("catEm").textContent=EMOJI[id]||"📦"; $("catName").textContent=DB.categories[id].name;
-  $("thead").innerHTML="<tr><th>Məhsul</th><th>Ölçü</th>"+stores.map(s=>`<th><span class="dot" style="--c:var(--${s})"></span>${s}</th>`).join("")+"<th>Qənaət</th></tr>";
   const gs=groups(id), subs=new Map(), fats=new Set();
   gs.forEach(g=>{subs.set(g.a.subtype,(subs.get(g.a.subtype)||0)+1); if(g.a.fat!=null)fats.add(g.a.fat);});
   const top=[...subs].sort((a,b)=>b[1]-a[1]).slice(0,40).map(x=>x[0]).sort((a,b)=>a.localeCompare(b,"az"));
   $("subs").innerHTML=pill("Hamısı",null,"sub")+top.map(s=>pill(s,s,"sub")).join("");
   $("modes").innerHTML=["Hamısı","⚖ Çəki","💧 Həcm","📦 Digər"].map(m=>pill(m,m,"mode")).join("");
-  const fl=[...fats].sort((a,b)=>a-b); $("fatLbl").hidden=$("fats").hidden=fl.length<2;
+  const fl=[...fats].sort((a,b)=>a-b); $("fatRow").hidden=fl.length<2;
   $("fats").innerHTML=fl.length<2?"":pill("Hamısı",null,"fat")+fl.map(f=>pill(f+"%",f,"fat")).join("");
-  // champion + unit bargains
   const cnt={}; gs.forEach(g=>{ if(g.n<2)return; for(const[s,o]of Object.entries(g.offers)) if(o.p===g.min) cnt[s]=(cnt[s]||0)+1; });
   const ch=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
   $("champ").hidden=!ch; if(ch) $("champ").textContent=`🏆 Ən sərfəli: ${ch[0]} (${ch[1]} məhsulda ən ucuz)`;
-  const kg=[],lt=[];
-  gs.forEach(g=>{ const {wv:v,wu:u}=g.a; if(!v||!u)return;
-    for(const[s,o]of Object.entries(g.offers)){
-      if(u==="kq"||u==="q"){const q=u==="kq"?v:v/1000; q>0&&kg.push({l:"1 kq",n:g.name,s,u:o.p/q,o:o.p,q:v+" "+u});}
-      else if(u==="L"||u==="ml"){const q=u==="L"?v:v/1000; q>0&&lt.push({l:"1 L",n:g.name,s,u:o.p/q,o:o.p,q:v+" "+u});}
-    }});
-  const bst=a=>a.sort((x,y)=>x.u-y.u)[0];
-  $("bargains").innerHTML=[kg,lt].filter(a=>a.length).map(bst).map(b=>
-    `<div class="barg"><div style="min-width:0"><small>✨ ${b.l} üzrə ən ucuz</small><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(b.n)}</b>
-     <small>${esc(b.q)} · ${fmt(b.o)} · ${esc(b.s)}</small></div><b class="mono">${fmt(b.u)}</b></div>`).join("");
   syncPills(); apply();
 }
 const pill=(label,val,k)=>`<button class="pill" data-k="${k}" data-v="${val==null?"":esc(val)}">${esc(label)}</button>`;
 function syncPills(){
-  document.querySelectorAll(".pill").forEach(b=>{
+  document.querySelectorAll("#catView .pill").forEach(b=>{
     const k=b.dataset.k, v=b.dataset.v, cv=F[k];
     b.classList.toggle("on",(cv==null&&v==="")||(cv!=null&&String(cv)===v));
   });
@@ -423,21 +336,21 @@ function apply(){
   else l.sort((a,b)=>b.save-a.save||b.n-a.n);
   filtered=l; shown=Math.max(shown,PAGE); render();
 }
-function cell(g,s){
-  const o=g.offers[s]; if(!o) return `<td data-l="${s}"><span class="na">—</span></td>`;
+function offer(g,s){
+  const o=g.offers[s]; if(!o) return "";
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
-  return `<td data-l="${s}"><span class="p mono${c}">${c===" min"?"★ ":""}${fmt(o.p)}${o.w?`<sup title="Wolt qiyməti">W</sup>`:""}</span></td>`;
+  return `<div class="o${c}"><span><i class="dot" style="--c:var(--${s})"></i>${s}</span>
+    <b class="mono">${fmt(o.p)}${o.w?"<sup>W</sup>":""}</b></div>`;
 }
 function render(){
   const list=filtered.slice(0,shown);
-  $("count").textContent=`${filtered.length} məhsul qrupu`;
-  $("tbody").innerHTML=list.length?list.map(g=>{
-    const a=g.a, size=a.wv?`${a.wv} ${a.wu}`:"—", fat=a.fat!=null?` · ${a.fat}%`:"";
-    return `<tr id="r-${g.id}"${hl===g.id?' class="hl"':""}><td><div class="name">${esc(g.name)}</div>
-      <div class="sub">${esc(a.subtype)}${g.n<stores.length?` · ${stores.length-g.n} mağazada yoxdur`:""}</div></td>
-      <td class="mono sz" data-l="Ölçü" style="white-space:nowrap">${size}${fat}</td>${stores.map(s=>cell(g,s)).join("")}
-      <td class="sv" data-l="Qənaət">${g.n>1?`<div class="save mono">+ ${fmt(g.save)}<small>${(g.save/g.max*100).toFixed(0)}%</small></div>`:'<span class="na">—</span>'}</td></tr>`;
-  }).join(""):`<tr><td colspan="${stores.length+3}" class="empty">Filtrə uyğun məhsul tapılmadı.</td></tr>`;
+  $("count").textContent=`${filtered.length} məhsul`;
+  $("list").innerHTML=list.length?list.map(g=>{
+    const a=g.a, info=[a.wv?`${a.wv} ${a.wu}`:"",a.fat!=null?a.fat+"%":""].filter(Boolean).join(" · ");
+    return `<article class="item${hl===g.id?" hl":""}" id="r-${g.id}"><h3>${esc(g.name)}</h3>
+      <div class="meta"><span>${esc(info||a.subtype)}</span>${g.n>1?`<span class="save mono">qənaət ${fmt(g.save)}</span>`:""}</div>
+      <div class="offers">${stores.map(s=>offer(g,s)).join("")}</div></article>`;
+  }).join(""):'<div class="empty">Filtrə uyğun məhsul tapılmadı.</div>';
   $("more").hidden=shown>=filtered.length;
   $("more").textContent=`Daha çox göstər (${filtered.length-shown} qalıb)`;
 }
@@ -456,7 +369,8 @@ addEventListener("hashchange",route);
 const go=h=>{ location.hash===h?route():(location.hash=h); };
 
 /* ─────────── events ─────────── */
-$("home").onclick=()=>{ $("q").value=""; $("results").innerHTML=""; go("#/"); };
+const goHome=()=>{ $("q").value=""; $("results").innerHTML=""; go("#/"); };
+$("home").onclick=$("home2").onclick=goHome;
 $("back").onclick=()=>go("#/");
 $("retry").onclick=load;
 $("catGrid").onclick=e=>{const b=e.target.closest(".cat"); if(b) go("#/c/"+b.dataset.id);};
@@ -493,7 +407,7 @@ $("results").onclick=e=>{const b=e.target.closest("[data-go]"); if(!b)return; $(
 addEventListener("keydown",e=>{ if(e.key==="Escape"){$("results").innerHTML="";$("q").blur();} });
 addEventListener("click",e=>{ if(!e.target.closest(".search")) $("results").innerHTML=""; });
 
-$("skelgrid").innerHTML=Array(8).fill('<div class="skel" style="height:104px"></div>').join("");
+$("skelgrid").innerHTML=Array(8).fill('<div class="skel" style="height:64px"></div>').join("");
 load();
 </script>
 </body>

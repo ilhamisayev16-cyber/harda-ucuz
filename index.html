@@ -230,6 +230,8 @@ const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"�
   pecenye:"🍪",cay:"🍵",qehve:"☕",sire:"🧃",su:"💧",kola:"🥤",energetik:"⚡",sokolad:"🍫",halva:"🍬",bal:"🍯",
   dondurma:"🍦",zeytun_yagi:"🫒",bitki_yagi:"🌻",mayonez:"🫙",ketcup:"🍅",duz:"🧂",sekerqum:"🍬",istiot:"🌶️",
   qabyuyan:"🧽",yuyucu:"🧺",temizlik:"🧹",gigiyena:"🧼",
+  heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🍿",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
+  usaq:"👶",hazir:"🍿",heyvan:"🐾",
   meyve:"🍎",sebze:"🥕",et:"🍗",bakaliya:"🍚",sirniyyat:"🍫",iceckiler:"🥤",yag_sous:"🫒",ev:"🧴"};
 const PAGE=60;
 const $=id=>document.getElementById(id);
@@ -348,7 +350,7 @@ async function load(){
 /* ─────────── home ─────────── */
 function renderHome(){
   const raw=g=>g.cats.reduce((a,c)=>a+Object.values((DB.categories[c]||{stores:{}}).stores).reduce((x,l)=>x+l.length,0),0);
-  const list=GL.map(g=>[g,raw(g)]).filter(x=>x[1]>0);
+  const list=GL.map(g=>[g,raw(g)]).filter(x=>x[1]>0).sort((a,b)=>(a[0].id==="diger")-(b[0].id==="diger")); // "Digər" sonda
   $("catGrid").innerHTML=list.map(([g,n])=>
     `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span><b>${esc(g.name)}</b>
      <small>${n} qiymət</small></span></button>`).join("");

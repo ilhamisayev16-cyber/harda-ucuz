@@ -5,6 +5,7 @@ QiymətMüqayisə Scraper
   OBA    -> oba.az
   Araz   -> arazmarket.az API (+ Wolt)
   Neptun -> Wolt
+  Tamstore -> Wolt
 
 İstifadə:
   python scraper.py
@@ -134,7 +135,7 @@ GROUPS = [
 _missing = {c for g in GROUPS for c in g["cats"]} ^ set(CATEGORIES)
 assert not _missing, _missing
 
-ALL_STORES = ["Bravo","OBA","Araz","Neptun"]
+ALL_STORES = ["Bravo","OBA","Araz","Neptun","Tamstore"]
 
 # Hər mağaza üçün bir neçə Wolt filialı: ilk işləyən istifadə olunur.
 # Mühit dəyişəni ilə əvəz etmək olar: WOLT_SLUG_NEPTUN=... (vergüllə bir neçə)
@@ -144,6 +145,7 @@ WOLT_SLUGS = {
     "OBA":    ["oba-market-nerimanov-1", "oba-market-narimanov", "oba-market-yasamal"],
     "Araz":   ["araz-supermarket-20-yanvarr", "araz-supermarket-narimanov", "araz-supermarket-yasamal",
                "araz-supermarket-28-may"],
+    "Tamstore": ["tamstore-narimanov-1", "tamstore-papanin"],
     "Neptun": ["neptun-supermarket-narimanovv", "neptun-supermarket-28", "neptun-supermarket-narimanov",
                "neptun-supermarket-nizami"],
 }
@@ -606,7 +608,7 @@ def apply_to_data(own_res, wolt_res, store, data):
     if not any(own_res.values()) and not any(wolt_res.values()):
         print(f"  [{store}] ⚠ nəticə boşdur — köhnə qiymətlər saxlanıldı")
         return False
-    wolt_only = store in ("Bravo", "Neptun")
+    wolt_only = store in ("Bravo", "Neptun", "Tamstore")
     for cid in CATEGORIES:
         if wolt_only:
             items = [{k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w}
@@ -648,7 +650,7 @@ def recategorize(data):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--recategorize", action="store_true")
-    ap.add_argument("--store", choices=["bravo","oba","araz","neptun","all"], default="all")
+    ap.add_argument("--store", choices=["bravo","oba","araz","neptun","tamstore","all"], default="all")
     ap.add_argument("--wolt-only",  action="store_true")
     ap.add_argument("--own-only",   action="store_true")
     ap.add_argument("--out", default="../data/prices.json")
@@ -658,7 +660,7 @@ def main():
     if out.exists():
         with open(out, encoding="utf-8") as f:
             data = json.load(f)
-        if "stores" not in data: data["stores"] = ALL_STORES
+        data["stores"] = ALL_STORES
         # köhnə (artıq istifadə olunmayan) kateqoriyaları at: onlarda köhnəlmiş qiymətlər qalır
         data["categories"] = {k: v for k, v in data["categories"].items() if k in CATEGORIES}
         for cid, info in CATEGORIES.items():
@@ -674,7 +676,7 @@ def main():
         print("✅  Yenidən təsnif edildi:", out)
         return
 
-    name_map = {"bravo":"Bravo","oba":"OBA","araz":"Araz","neptun":"Neptun"}
+    name_map = {"bravo":"Bravo","oba":"OBA","araz":"Araz","neptun":"Neptun","tamstore":"Tamstore"}
     targets = list(name_map.keys()) if args.store=="all" else [args.store]
 
     for t in targets:

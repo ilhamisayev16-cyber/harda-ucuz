@@ -360,8 +360,8 @@ def _araz_price(p):
     return clean_price(p.get("sales_price"))
 
 def scrape_araz():
-    """Araz-ın öz API-si. Ana kateqoriya alt kateqoriyaların məhsullarını da verir (cəm eynidir),
-    ona görə 2320 yarpaq əvəzinə 26 ana kateqoriya + səhifələr paralel çəkilir.
+    """Araz-ın öz API-si. Səhifələmə etibarsızdır (səhifələr arasında təkrar/itkin məhsullar), ona görə
+    hər ana kateqoriya (alt kateqoriyaları da əhatə edir) per_page=5000 ilə BİR sorğuda çəkilir.
     Uğursuz olarsa None qaytarır (Wolt-a keçilir)."""
     ses = _session()
     ses.headers.update({"Accept": "application/json", "Origin": "https://arazmarket.az",
@@ -375,42 +375,36 @@ def scrape_araz():
         return None
     print(f"  [Araz] {len(tops)} ana kateqoriya", flush=True)
 
-    def get(cid, page):
-        try:
-            r = ses.get(f"{ARAZ_API}/products/category/{cid}", params={"page": page}, timeout=60)
-            return (r.json().get("data") or {}) if r.status_code == 200 else None
-        except Exception:
-            return None
+    def get(top):
+        cid, title = top
+        for attempt in range(3):
+            try:
+                r = ses.get(f"{ARAZ_API}/products/category/{cid}", params={"page": 1, "per_page": 5000}, timeout=180)
+                if r.status_code == 200:
+                    return title, (r.json().get("data") or {})
+            except Exception:
+                pass
+            time.sleep(3 * (attempt + 1))
+        return title, None
 
     results = {c: [] for c in CATEGORIES}
-    seen, failed = set(), 0
-    def ingest(top, d):
-        n = 0
-        for p in d.get("products") or []:
-            pid, name, price = p.get("id"), (p.get("title") or "").strip(), _araz_price(p)
-            if pid in seen or not name or price is None: continue
-            seen.add(pid); n += 1
-            cat = classify(name, f"{top} > {p.get('category_title') or ''}")
-            e = {"name": name, "price": price}
-            im = img_of(p, "https://arazmarket.az")
-            if im: e["img"] = im
-            results[cat].append(e)
-        return n
-
-    with ThreadPoolExecutor(max_workers=16) as ex:
-        first = list(ex.map(lambda t: (t, get(t[0], 1)), tops))
-        jobs = []
-        for (cid, title), d in first:
-            if d is None: failed += 1; continue
-            ingest(title, d)
-            last = int((d.get("pagination") or {}).get("last_page") or 1)
-            jobs += [(cid, title, pg) for pg in range(2, min(last, 400) + 1)]
-        print(f"  [Araz] {len(jobs)} əlavə səhifə", flush=True)
-        for (cid, title, pg), d in zip(jobs, ex.map(lambda j: get(j[0], j[2]), jobs)):
-            if d is None: failed += 1; continue
-            ingest(title, d)
+    seen, failed = set(), []
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for title, d in ex.map(get, tops):
+            if d is None: failed.append(title); continue
+            if int((d.get("pagination") or {}).get("last_page") or 1) > 1:
+                print(f"  [Araz] ⚠ {title}: bir səhifəyə sığmadı", flush=True)
+            for p in d.get("products") or []:
+                pid, name, price = p.get("id"), (p.get("title") or "").strip(), _araz_price(p)
+                if pid in seen or not name or price is None: continue
+                seen.add(pid)
+                cat = classify(name, f"{title} > {p.get('category_title') or ''}")
+                e = {"name": name, "price": price}
+                im = img_of(p, "https://arazmarket.az")
+                if im: e["img"] = im
+                results[cat].append(e)
     total = len(seen)
-    print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)" + (f", {failed} səhifə alınmadı" if failed else ""))
+    print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)" + (f"; alınmadı: {failed}" if failed else ""), flush=True)
     return results if total else None
 
 # ── WOLT ─────────────────────────────────────────────────────────────────

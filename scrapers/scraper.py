@@ -362,6 +362,8 @@ def _session():
     ses.headers.update(WOLT_HEADS)
     return ses
 
+WOLT_SAMPLE = []
+
 def _wolt_url(slug):
     return (f"https://consumer-api.wolt.com/consumer-api/consumer-assortment"
             f"/v1/venues/slug/{slug}/assortment/items/search?language=az")
@@ -372,6 +374,23 @@ def _wolt_price(item):
         if isinstance(v, dict): v = v.get("amount") or v.get("value")
         if isinstance(v, (int, float)) and v > 0:
             return round(v / 100, 2)
+    return None
+
+_WT = re.compile(r"~\s*(\d+[.,]?\d*)\s*(kq|kg|qr|gr|q|g)(?![a-zA-Zəöüçşğı])", re.I)
+
+def _wolt_weight(item, depth=0):
+    """Çəkiyə görə satılan məhsulda Wolt-un göstərdiyi təxmini parça çəkisi (qramla): "~250 q" -> 250."""
+    vals = item.values() if isinstance(item, dict) else item if isinstance(item, list) else []
+    for k, v in (item.items() if isinstance(item, dict) else enumerate(vals)):
+        if k in ("name", "images", "image", "description"): continue
+        if isinstance(v, str):
+            m = _WT.search(v)
+            if m:
+                n = float(m.group(1).replace(",", "."))
+                return round(n * 1000 if m.group(2).lower() in ("kq", "kg") else n)
+        elif depth < 2 and isinstance(v, (dict, list)):
+            r = _wolt_weight(v, depth + 1)
+            if r: return r
     return None
 
 def scrape_wolt(store):
@@ -418,6 +437,10 @@ def scrape_wolt(store):
                     e = {"name": name, "wolt_price": price}
                     im = img_of(item)
                     if im: e["img"] = im
+                    wt = _wolt_weight(item)
+                    if wt: e["wt"] = wt
+                    if re.search(r"(^|[\s,(])kq\.?($|[\s,)\d])", name, re.I) and len(WOLT_SAMPLE) < 6:
+                        WOLT_SAMPLE.append(item)   # diaqnostika: çəkiyə görə satılan məhsulun xam cavabı
                     results[cat].append(e)
     total = sum(len(v) for v in results.values())
     print(f"  [Wolt/{store}] {total} məhsul")
@@ -440,12 +463,14 @@ def merge_own_wolt(own_list, wolt_list):
                 entry["wolt_price"] = wp
             if "img" not in entry and wolt_list[best_i].get("img"):
                 entry["img"] = wolt_list[best_i]["img"]
+            if wolt_list[best_i].get("wt"):
+                entry["wt"] = wolt_list[best_i]["wt"]
             used.add(best_i)
         merged.append(entry)
     # Wolt-only items
     for i, w in enumerate(wolt_list):
         if i not in used:
-            merged.append({k: w[k] for k in ("name", "wolt_price", "img") if k in w})
+            merged.append({k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w})
     return merged
 
 def apply_to_data(own_res, wolt_res, store, data):
@@ -456,7 +481,7 @@ def apply_to_data(own_res, wolt_res, store, data):
     wolt_only = store in ("Bravo", "Neptun")
     for cid in CATEGORIES:
         if wolt_only:
-            items = [{k: w[k] for k in ("name", "wolt_price", "img") if k in w}
+            items = [{k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w}
                      for w in wolt_res.get(cid,[])]
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))
@@ -535,6 +560,9 @@ def main():
 
         apply_to_data(own_res, wolt_res, sname, data)
 
+    if WOLT_SAMPLE:   # Wolt sahə adlarını yoxlamaq üçün
+        with open(out.parent / "wolt_sample.json", "w", encoding="utf-8") as f:
+            json.dump(WOLT_SAMPLE, f, ensure_ascii=False, indent=1)
     data["groups"] = GROUPS
     data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
     out.parent.mkdir(parents=True, exist_ok=True)

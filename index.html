@@ -113,6 +113,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 .o b,.best b{white-space:nowrap}
 .offers.kg .o{flex-direction:column;align-items:flex-start;gap:0}
 .o b small{font-size:10px;font-weight:600;color:var(--mute)}
+.o b small.kgp{display:block;font-weight:600}
 .best b small{display:inline;font-size:11px;opacity:.8}
 .o sup{font-size:9px;color:var(--mute);font-weight:600}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--c,#999);flex:none}
@@ -253,7 +254,11 @@ const fam=u=>u==="kq"||u==="q"?"w":u==="L"||u==="ml"?"v":"n";
 function compat(a,b){
   if(a.kg!==b.kg) return false;
   if(a.fat!=null&&b.fat!=null&&a.fat!==b.fat) return false;
-  if(!a.kg&&a.wv&&b.wv) return fam(a.wu)===fam(b.wu)&&Math.abs(norm(a.wv,a.wu)-norm(b.wv,b.wu))<.5;
+  if(!a.kg&&a.wv&&b.wv){
+    if(fam(a.wu)!==fam(b.wu)) return false;
+    const x=norm(a.wv,a.wu), y=norm(b.wv,b.wu);
+    return Math.abs(x-y)<=((a.ap||b.ap)?.12*Math.max(x,y):.5);
+  }
   return true;
 }
 
@@ -262,15 +267,17 @@ function group(cat){
   const out=[], idx=new Map(); let n=1;
   for(const store of Object.keys(cat.stores||{})){
     for(const it of cat.stores[store]||[]){
-      const tk=tokens(it.name), a=attrs(it.name); let best=null,bs=0; const seen=new Set();
+      const tk=tokens(it.name); let a=attrs(it.name), kgp=null; let best=null,bs=0; const seen=new Set();
+      if(a.kg&&it.wt){ kgp=it.price??it.wolt_price; a={...a,kg:false,wv:it.wt,wu:"q",ap:true}; } // "~250 q" parça: qiymət 1 kq üçündür
       for(const t of tk){
         const l=idx.get(t); if(!l) continue;
         for(const e of l){ if(seen.has(e)) continue; seen.add(e);
           if(!compat(e.g.a,a)) continue;
           const s=jaccard(e.tk,tk); if(s>bs){bs=s;best=e.g;} }
       }
-      if(best&&bs>=.5){ if(!best.offers[store]) best.offers[store]=mk(it); continue; }
-      const g={id:"p"+n++,name:it.name,a,c:it._c,offers:{[store]:mk(it)},lc:it.name.toLowerCase()};
+      const o=mk(it,kgp);
+      if(best&&bs>=.5){ const ex=best.offers[store]; if(!ex||o.p<ex.p) best.offers[store]=o; continue; }
+      const g={id:"p"+n++,name:it.name,a,c:it._c,offers:{[store]:o},lc:it.name.toLowerCase()};
       out.push(g); const e={g,tk};
       for(const t of tk){ (idx.get(t)||idx.set(t,[]).get(t)).push(e); }
     }
@@ -282,7 +289,11 @@ function group(cat){
   }
   return out;
 }
-function mk(it){ const own=it.price!=null; return {p:own?it.price:(it.wolt_price||0), w:!own, i:it.img||null}; }
+function mk(it,kgp){
+  const own=it.price!=null, p=own?it.price:(it.wolt_price||0);
+  return kgp?{p:Math.round(kgp*it.wt)/1000,w:!own,i:it.img||null,k:kgp}   // təxmini parça qiyməti + 1 kq qiyməti
+            :{p,w:!own,i:it.img||null};
+}
 
 /* ─────────── state ─────────── */
 let DB=null; const GROUPS={}; let stores=[], GL=[], GM={};
@@ -373,19 +384,19 @@ function offer(g,s){
   const o=g.offers[s], c0=`<i class="dot" style="--c:var(--${s})"></i>${s}`;
   if(!o) return `<div class="o na"><span>${c0}</span><b>—</b></div>`;
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
-  return `<div class="o${c}"><span>${c0}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}</b></div>`;
+  return `<div class="o${c}"><span>${c0}</span><b class="mono">${o.k?"~":""}${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${o.k?`<small class="kgp">${fmt(o.k)}/kq</small>`:""}</b></div>`;
 }
 function bestOf(g){
   const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0];
   const sv=g.n>1?`<small>${fmt(g.save)} qənaət (ən bahadan)</small>`:`<small>yalnız bu mağazada</small>`;
-  return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${fmt(e[1].p)}${unit(g)}</b></div>`;
+  return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${e[1].k?"~":""}${fmt(e[1].p)}${unit(g)}</b></div>`;
 }
 function render(){
   const list=filtered.slice(0,shown);
   $("count").textContent=`${filtered.length} məhsul`;
   $("list").innerHTML=list.length?list.map(g=>{
     const a=g.a, em=EMOJI[g.c]||"📦";
-    const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",a.wv?`${a.wv} ${a.wu}`:"",a.fat!=null?a.fat+"%":""].filter(Boolean).join(" · ");
+    const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",a.wv?`${a.ap?"~":""}${a.wv} ${a.wu}`:"",a.fat!=null?a.fat+"%":""].filter(Boolean).join(" · ");
     return `<article class="item${hl===g.id?" hl":""}" id="r-${g.id}">
       <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div>
       <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>

@@ -359,57 +359,52 @@ def _araz_price(p):
         if v: return v
     return clean_price(p.get("sales_price"))
 
-def _araz_leaves(nodes, out, trail=""):
-    for n in nodes or []:
-        t = f"{trail} > {n.get('title') or n.get('name') or ''}" if trail else (n.get("title") or n.get("name") or "")
-        if n.get("sub"): _araz_leaves(n["sub"], out, t)
-        else: out.append((n["id"], t))
-    return out
-
 def scrape_araz():
-    """Araz-ın öz API-si. Uğursuz olarsa None qaytarır (Wolt-a keçilir)."""
+    """Araz-ın öz API-si. Səhifələmə etibarsızdır (səhifələr arasında təkrar/itkin məhsullar), ona görə
+    hər ana kateqoriya (alt kateqoriyaları da əhatə edir) per_page=5000 ilə BİR sorğuda çəkilir.
+    Uğursuz olarsa None qaytarır (Wolt-a keçilir)."""
     ses = _session()
     ses.headers.update({"Accept": "application/json", "Origin": "https://arazmarket.az",
                         "Referer": "https://arazmarket.az/", "Accept-Language": "az"})
     try:
         r = ses.get(f"{ARAZ_API}/categories", timeout=40)
         r.raise_for_status()
-        leaves = _araz_leaves(r.json().get("data"), [])
+        tops = [(n["id"], n.get("title") or "") for n in r.json().get("data") or []]
     except Exception as e:
         print(f"  [Araz] ✗ kateqoriyalar alınmadı: {e}")
         return None
-    print(f"  [Araz] {len(leaves)} alt kateqoriya")
+    print(f"  [Araz] {len(tops)} ana kateqoriya", flush=True)
 
-    def fetch(leaf):
-        cid, trail = leaf
-        items, page = [], 1
-        while page <= 60:
+    def get(top):
+        cid, title = top
+        for attempt in range(3):
             try:
-                r = ses.get(f"{ARAZ_API}/products/category/{cid}", params={"page": page}, timeout=30)
-                if r.status_code != 200: break
-                d = (r.json().get("data") or {})
-                items += d.get("products") or []
-                if page >= int((d.get("pagination") or {}).get("last_page") or 1): break
-                page += 1
+                r = ses.get(f"{ARAZ_API}/products/category/{cid}", params={"page": 1, "per_page": 5000}, timeout=180)
+                if r.status_code == 200:
+                    return title, (r.json().get("data") or {})
             except Exception:
-                break
-        return trail, items
+                pass
+            time.sleep(3 * (attempt + 1))
+        return title, None
 
     results = {c: [] for c in CATEGORIES}
-    seen, total = set(), 0
+    seen, failed = set(), []
     with ThreadPoolExecutor(max_workers=8) as ex:
-        for trail, items in ex.map(fetch, leaves):
-            for p in items:
+        for title, d in ex.map(get, tops):
+            if d is None: failed.append(title); continue
+            if int((d.get("pagination") or {}).get("last_page") or 1) > 1:
+                print(f"  [Araz] ⚠ {title}: bir səhifəyə sığmadı", flush=True)
+            for p in d.get("products") or []:
                 pid, name, price = p.get("id"), (p.get("title") or "").strip(), _araz_price(p)
                 if pid in seen or not name or price is None: continue
-                seen.add(pid); total += 1
-                cat = classify(name, trail)
-                if cat:
-                    e = {"name": name, "price": price}
-                    im = img_of(p, "https://arazmarket.az")
-                    if im: e["img"] = im
-                    results[cat].append(e)
-    print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)")
+                seen.add(pid)
+                cat = classify(name, f"{title} > {p.get('category_title') or ''}")
+                e = {"name": name, "price": price}
+                im = img_of(p, "https://arazmarket.az")
+                if im: e["img"] = im
+                results[cat].append(e)
+    total = len(seen)
+    print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)" + (f"; alınmadı: {failed}" if failed else ""), flush=True)
     return results if total else None
 
 # ── WOLT ─────────────────────────────────────────────────────────────────
@@ -502,18 +497,25 @@ def scrape_wolt_full(store):
             elif c.get("slug"): leaves.append((c["slug"], t))
     walk(tree)
 
+    failed = []   # alınmayan səhifələr (limit/şəbəkə); səssizcə itməsin
     def fetch(leaf):
         cs, trail = leaf
         out, tok = [], None
         for _ in range(100):
             params = {"language": "az"}
             if tok: params["page_token"] = tok
-            try:
-                r = ses.get(f"{base}/categories/slug/{cs}", params=params, timeout=30)
-                if r.status_code != 200: break
-                d = r.json()
-            except Exception:
-                break
+            d = None
+            for attempt in range(4):
+                try:
+                    r = ses.get(f"{base}/categories/slug/{cs}", params=params, timeout=30)
+                    if r.status_code == 200:
+                        d = r.json(); break
+                    status = r.status_code
+                except Exception as e:
+                    status = type(e).__name__
+                time.sleep(2 * (attempt + 1))
+            if d is None:
+                failed.append((cs, status)); break
             out += d.get("items") or []
             tok = (d.get("metadata") or {}).get("next_page_token")
             if not tok: break
@@ -530,7 +532,8 @@ def scrape_wolt_full(store):
                 r = _wolt_entry(item, trail)
                 if r: results[r[0]].append(r[1])
     total = sum(len(v) for v in results.values())
-    print(f"  [Wolt/{store}] tam kataloq: {len(leaves)} kateqoriya, {total} məhsul")
+    print(f"  [Wolt/{store}] tam kataloq: {len(leaves)} kateqoriya, {total} məhsul"
+          + (f"; {len(failed)} sorğu alınmadı {sorted({str(f[1]) for f in failed})}" if failed else ""), flush=True)
     return results if total else None
 
 def scrape_wolt(store):
@@ -619,6 +622,13 @@ def apply_to_data(own_res, wolt_res, store, data):
     return True
 
 # ── MAIN ─────────────────────────────────────────────────────────────────
+def _save(data, out):
+    data["groups"] = GROUPS
+    data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+
 def recategorize(data):
     """Mövcud məhsulları yenidən təsnif edir (şəbəkə tələb olunmur)."""
     old = data.get("categories", {})
@@ -684,6 +694,7 @@ def main():
             wolt_res = scrape_wolt(sname)
 
         apply_to_data(own_res, wolt_res, sname, data)
+        _save(data, out)   # timeout olarsa əvvəlki mağazaların nəticəsi itməsin
 
     data["groups"] = GROUPS
     data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")

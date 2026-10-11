@@ -12,7 +12,7 @@
 :root{
   --bg:#faf6ee; --card:#fff; --ink:#281505; --mute:#6b5a46; --line:#eedcc4; --soft:#f6efe2;
   --brand:#e35600; --brand-soft:#fff1e6; --good:#0f9d58; --good-soft:#e6f6ee; --bad:#d93025;
-  --Bravo:#d93025; --OBA:#0b79d0; --Araz:#8e44ad; --Neptun:#0f9d58; --Tamstore:#e6a100;
+  --Bravo:#d93025; --OBA:#0b79d0; --Araz:#8e44ad; --Neptun:#0f9d58; --Tamstore:#e6a100; --Rahat:#c2185b; --Bazarstore:#00897b;
 }
 @media (prefers-color-scheme:dark){:root{
   --bg:#151009; --card:#1f1810; --ink:#f5ebdc; --mute:#b4a58f; --line:#3a2e20; --soft:#2a2118;
@@ -181,7 +181,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 
   <section id="homeView" hidden>
     <h1 class="hero">Hansı market daha ucuzdur?</h1>
-    <p class="sub-h">Bravo, OBA, Araz, Neptun və Tamstore qiymətləri bir yerdə. Kateqoriya seç:</p>
+    <p class="sub-h">Bravo, OBA, Araz, Neptun, Tamstore, Rahat və Bazarstore qiymətləri bir yerdə. Kateqoriya seç:</p>
     <div class="grid" id="catGrid"></div>
     <p class="note" id="srcNote"></p>
   </section>
@@ -230,7 +230,7 @@ const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"�
   pecenye:"🍪",cay:"🍵",qehve:"☕",sire:"🧃",su:"💧",kola:"🥤",energetik:"⚡",sokolad:"🍫",halva:"🍬",bal:"🍯",
   dondurma:"🍦",zeytun_yagi:"🫒",bitki_yagi:"🌻",mayonez:"🫙",ketcup:"🍅",duz:"🧂",sekerqum:"🍬",istiot:"🌶️",
   qabyuyan:"🧽",yuyucu:"🧺",temizlik:"🧹",gigiyena:"🧼",
-  heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🍿",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
+  heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🍿",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",oyuncaq:"🧸",dereterlik:"✏️",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
   usaq:"👶",hazir:"🍿",heyvan:"🐾",
   meyve:"🍎",sebze:"🥕",et:"🍗",bakaliya:"🍚",sirniyyat:"🍫",iceckiler:"🥤",yag_sous:"🫒",ev:"🧴"};
 const PAGE=60;
@@ -246,6 +246,7 @@ function tokens(str){
      .replace(/(\d)\s*(?:litr|lt|l)(?![a-z])/g,"$1l").replace(/(\d)\s*ml(?![a-z])/g,"$1ml");
   return new Set(s.replace(/[^\w\s.]/g," ").split(/\s+/).filter(Boolean));
 }
+const alpha=tk=>new Set([...tk].filter(t=>/^[a-z]+$/.test(t)));   // yalnız hərfli sözlər
 function jaccard(a,b){
   let i=0; for(const t of a) if(b.has(t)) i++;
   const u=a.size+b.size-i; return u?i/u:1;
@@ -276,6 +277,7 @@ const fam=u=>u==="kq"||u==="q"?"w":u==="L"||u==="ml"?"v":"n";
 function compat(a,b){
   if(a.kg!==b.kg) return false;
   if(a.fat!=null&&b.fat!=null&&a.fat!==b.fat) return false;
+  if(!a.kg&&((a.wv==null)!==(b.wv==null))) return false;   // biri ölçülü, digəri ölçüsüz: eyni məhsul olmaya bilər
   if(!a.kg&&a.wv&&b.wv){
     if(fam(a.wu)!==fam(b.wu)) return false;
     const x=norm(a.wv,a.wu), y=norm(b.wv,b.wu);
@@ -289,18 +291,19 @@ function group(cat){
   const out=[], idx=new Map(); let n=1;
   for(const store of Object.keys(cat.stores||{})){
     for(const it of cat.stores[store]||[]){
-      const tk=tokens(it.name); let a=attrs(it.name), kgp=null; let best=null,bs=0; const seen=new Set();
+      const tk=tokens(it.name), al=alpha(tk); let a=attrs(it.name), kgp=null; let best=null,bs=0; const seen=new Set();
       if(a.kg&&it.wt){ kgp=it.price??it.wolt_price; a={...a,kg:false,wv:it.wt,wu:"q",ap:true}; } // "~250 q" parça: qiymət 1 kq üçündür
       for(const t of tk){
         const l=idx.get(t); if(!l) continue;
         for(const e of l){ if(seen.has(e)) continue; seen.add(e);
           if(!compat(e.g.a,a)) continue;
+          if(jaccard(e.al,al)<.5) continue;   // marka/ad fərqli (rəqəmlər üst-üstə düşsə də): eyni məhsul deyil
           const s=jaccard(e.tk,tk); if(s>bs){bs=s;best=e.g;} }
       }
       const o=mk(it,kgp);
       if(best&&bs>=.5){ const ex=best.offers[store]; if(!ex||o.p<ex.p) best.offers[store]=o; continue; }
       const g={id:"p"+n++,name:it.name,a,c:it._c,offers:{[store]:o},lc:it.name.toLowerCase()};
-      out.push(g); const e={g,tk};
+      out.push(g); const e={g,tk,al};
       for(const t of tk){ (idx.get(t)||idx.set(t,[]).get(t)).push(e); }
     }
   }
@@ -404,7 +407,7 @@ function apply(){
 }
 function offer(g,s){
   const o=g.offers[s], c0=`<i class="dot" style="--c:var(--${s})"></i>${s}`;
-  if(!o) return `<div class="o na"><span>${c0}</span><b>—</b></div>`;
+  if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   return `<div class="o${c}"><span>${c0}</span><b class="mono">${o.k?"~":""}${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${o.k?`<small class="kgp">${fmt(o.k)}/kq</small>`:""}</b></div>`;
 }

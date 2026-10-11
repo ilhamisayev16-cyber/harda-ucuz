@@ -52,6 +52,7 @@ Scraper hər gün avtomatik işləyəcək.
 - **Neptun** → Wolt  
 - **OBA** → oba.az
 - **Araz** → arazmarket.az API (+ Wolt)
+- **Tamstore** → Wolt
 
 ## Yeni mağaza əlavə etmək
 `scraper.py` faylında `SCRAPERS` lüğətinə yeni scrape funksiyası əlavə edin.

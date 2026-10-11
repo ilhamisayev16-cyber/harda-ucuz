@@ -103,25 +103,32 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     "sekerqum":  {"name":"Şəkər",            "kw":["şəkər"]},
     "istiot":    {"name":"İstiot/Ədviyyat",  "kw":["istiot","ədviyyat","zirə","darçın"]},
     "mesis":     {"name":"Məişət əşyaları",  "kw":["stəkan","boşqab","qaşıq","çəngəl","tava","qazan","süpürgə","əlcək","zibil","folqa","pergament","batareya","lampa","kibrit","plastik","sellofan","paket"]},
+    # aşağıdakıların açar sözü yoxdur: yalnız mağazanın öz kateqoriya adına görə təyin olunur (CATEGORY_PATH_RULES)
+    "spirtli":   {"name":"Spirtli içkilər",  "kw":[]},
+    "meyve_diger":{"name":"Digər meyvə",     "kw":[]},
+    "sebze_diger":{"name":"Digər tərəvəz",   "kw":[]},
+    "dondurulmus":{"name":"Dondurulmuş məhsul","kw":[]},
+    "bakliyyat": {"name":"Taxıl/Bakliyyat",  "kw":[]},
     "diger":     {"name":"Digər məhsullar",  "kw":[]},   # heç bir kateqoriyaya düşməyənlər (atılmasın)
 }
 
 # Saytda göstərilən ümumi kateqoriyalar (alt növlər = yuxarıdakı kateqoriyalar)
 GROUPS = [
-    {"id":"meyve",    "name":"Meyvə",                 "cats":["alma","armud","saftal","gilas","uzum","banan","kivi","limon","portaqal","nar"]},
-    {"id":"sebze",    "name":"Tərəvəz",               "cats":["kartof","pomidor","xiyar","soyan","kelem","yerkoyu","cuqundur","badimcan","biber","sarimsaq"]},
+    {"id":"meyve",    "name":"Meyvə",                 "cats":["alma","armud","saftal","gilas","uzum","banan","kivi","limon","portaqal","nar","meyve_diger"]},
+    {"id":"sebze",    "name":"Tərəvəz",               "cats":["kartof","pomidor","xiyar","soyan","kelem","yerkoyu","cuqundur","badimcan","biber","sarimsaq","sebze_diger"]},
     {"id":"sud",      "name":"Süd məhsulları",        "cats":["sud","qatiq","xama","kefir","ayran","kere_yagi","pendir","yumurta"]},
     {"id":"et",       "name":"Ət və balıq",           "cats":["toyuq","dana_ati","qoyun_ati","hindi","kolbasa","sosis","baliq"]},
-    {"id":"bakaliya", "name":"Taxıl və makaron",      "cats":["duyu","merci","noxud","fasulya","qarabashaq","yulaf","un","makaron"]},
+    {"id":"bakaliya", "name":"Taxıl və makaron",      "cats":["duyu","merci","noxud","fasulya","qarabashaq","yulaf","un","makaron","bakliyyat"]},
     {"id":"corek",    "name":"Çörək",                 "cats":["corek"]},
     {"id":"sirniyyat","name":"Şirniyyat",             "cats":["pecenye","sokolad","halva","dondurma","bal","murebbe"]},
     {"id":"iceckiler","name":"İçkilər",               "cats":["cay","qehve","sire","su","kola","energetik"]},
     {"id":"yag_sous", "name":"Yağ, sous, ədviyyat",   "cats":["zeytun_yagi","bitki_yagi","mayonez","ketcup","duz","sekerqum","istiot","konserv"]},
     {"id":"ev",       "name":"Ev və məişət",          "cats":["qabyuyan","yuyucu","temizlik","mesis"]},
     {"id":"gigiyena", "name":"Gigiyena",              "cats":["gigiyena"]},
-    {"id":"hazir",    "name":"Qəlyanaltı və hazır yemək","cats":["hazir_yemek","cips","qoz"]},
+    {"id":"hazir",    "name":"Qəlyanaltı və hazır yemək","cats":["hazir_yemek","cips","qoz","dondurulmus"]},
     {"id":"usaq",     "name":"Uşaq qidası",           "cats":["usaq_qida"]},
     {"id":"heyvan",   "name":"Heyvan yemi",           "cats":["heyvan_yemi"]},
+    {"id":"spirtli",  "name":"Spirtli içkilər",       "cats":["spirtli"]},
     {"id":"diger",    "name":"Digər məhsullar",       "cats":["diger"]},
 ]
 _missing = {c for g in GROUPS for c in g["cats"]} ^ set(CATEGORIES)
@@ -210,7 +217,7 @@ _PET = _kw_re(["yem","pişik","itlər","bulyon","əriştə","kub"])
 _LIQUID = re.compile(r"\d\s*(?:ml|l|lt|litr)(?!\w)")
 
 def assign_cat(name):
-    n = name.lower()
+    n = _low(name)
     if _WATER.search(n):
         return "su"
     if has_juice(n):
@@ -232,6 +239,52 @@ def assign_cat(name):
             continue
         return cid
     return "diger"
+
+# Mağazanın öz kateqoriya adı (Wolt/Araz/OBA) -> bizim kateqoriya. Sıra vacibdir.
+CATEGORY_PATH_RULES = [(re.compile(r, re.I), cid) for r, cid in [
+    (r"spirtsiz piv", "kola"), (r"piv|araq|viski|şərab|spirtli|likor|tekila|vermut|konyak|şampan", "spirtli"),
+    (r"uşaq.*(bez|baxım|sabun|salfet|krem|diş)", "gigiyena"), (r"uşaq", "usaq_qida"),
+    (r"ev heyvan|it və pişik|pişiklər|itlər üçün", "heyvan_yemi"),
+    (r"qabyuyan", "qabyuyan"), (r"yuyucu|paltaryuyan|yumşaldıcı|ağardıcı|çamaşır", "yuyucu"),
+    (r"təmizlik|təmizləyici|həşərat|hava təravət", "temizlik"),
+    (r"saç|şampun|dezodar|dezodor|ətir|kaloniya|sabun|duş gel|gigiyen|diş|dəri|təraş|kosmetik|manikür|qoruyucu|günəş krem|şəxsi baxım|salfet|kağız məhsulları|tualet|ağız təravət", "gigiyena"),
+    (r"xırdavat|məişət|bişirmə|folqa|streç|birdəfə|zibil|şamlar|difüzor|batareya|lampa|ləvazimat", "mesis"),
+    (r"tütün|siqaret|alışqan|terea|oyuncaq|məktəb|ofis|maşın|avtomobil|tekstil|hədiyyə|sağlam qida|dietik", "diger"),
+    (r"energetik|enerji", "energetik"), (r"şirə|nektar|kompot", "sire"),
+    (r"sular|su$|mineral", "su"), (r"cola|soda|limonad|spirtsiz içki|soyuq çay", "kola"),
+    (r"qəhvə|kofe|kakao", "qehve"), (r"çay", "cay"),
+    (r"dondurma", "dondurma"), (r"dondurulmuş|donmuş", "dondurulmus"),
+    (r"konserv|turşu|zeytun", "konserv"), (r"hazır", "hazir_yemek"),
+    (r"yumurta", "yumurta"), (r"toyuq", "toyuq"), (r"dəniz|balıq", "baliq"),
+    (r"kolbasa|delikates|sosis|qastronom|hisə verilmiş", "kolbasa"), (r"ət məhsulları|təzə ət", "dana_ati"),
+    (r"pendir|şor|labne", "pendir"), (r"xama", "xama"), (r"qatıq|ayran|kefir|dovğa", "qatiq"),
+    (r"zeytun yağ|günəbaxan|qarğıdalı yağ|duru yağ", "bitki_yagi"), (r"kərə|spred", "kere_yagi"),
+    (r"süd|kəsmik|qaymaq|yoqurt|sırok", "sud"),
+    (r"çips|tum|snack|qəlyanaltı", "cips"), (r"çərəz|quru meyvə", "qoz"),
+    (r"bal,|cem|mürəbbə|əzmə|krem pasta|\bbal\b", "murebbe"),
+    (r"şokolad", "sokolad"), (r"vafli|kurabiy|keks|kruassan", "pecenye"),
+    (r"şirniyyat|şirin|konfet|halva|marmelad|lokum|saqqız", "halva"),
+    (r"mayonez", "mayonez"), (r"ketçup|sous", "ketcup"), (r"duz", "duz"), (r"ədviyyat|bulyon|xardal|sirkə", "istiot"),
+    (r"şəkər", "sekerqum"), (r"makaron", "makaron"), (r"düyü", "duyu"), (r"dənli|paxla|bakliyyat|taxıl|müsli|sıyıq|səhər", "bakliyyat"),
+    (r"^un$|un məhsul|(^|> )un\b", "un"), (r"çörək|lavaş|un məmulat", "corek"),
+    (r"tərəvəz", "sebze_diger"), (r"meyvə", "meyve_diger"),
+]]
+
+def _low(t):
+    return t.replace("İ", "i").lower()   # "SPİRTLİ".lower() -> "spi̇rtli̇" (birləşən nöqtə) olmasın
+
+def cat_from_path(path):
+    p = _low(path)
+    for rx, cid in CATEGORY_PATH_RULES:
+        if rx.search(p): return cid
+    return None
+
+def classify(name, path=""):
+    """Əvvəl məhsulun adına, tapılmazsa mağazanın kateqoriya adına görə."""
+    cid = assign_cat(name)
+    if cid == "diger" and path:
+        return cat_from_path(path) or "diger"
+    return cid
 
 def sim(a, b):
     wa = set(re.sub(r"[^\w\s]","",a.lower()).split())
@@ -283,12 +336,12 @@ def scrape_oba():
             offsets = [start + i * OBA_STEP for i in range(8)]
             new_in_batch = 0
             for cards in ex.map(page, offsets):
-                for name, _cat, raw in cards:
+                for name, ocat, raw in cards:
                     price = clean_price(raw)
                     key = (name.lower(), price)
                     if not name or price is None or key in seen: continue
                     seen.add(key); total += 1; new_in_batch += 1
-                    cat = assign_cat(name)
+                    cat = classify(name, ocat)
                     if cat: results[cat].append({"name": name, "price": price})
             if new_in_batch == 0: empty += 1
             start += 8 * OBA_STEP
@@ -306,10 +359,11 @@ def _araz_price(p):
         if v: return v
     return clean_price(p.get("sales_price"))
 
-def _araz_leaves(nodes, out):
+def _araz_leaves(nodes, out, trail=""):
     for n in nodes or []:
-        if n.get("sub"): _araz_leaves(n["sub"], out)
-        else: out.append(n["id"])
+        t = f"{trail} > {n.get('title') or n.get('name') or ''}" if trail else (n.get("title") or n.get("name") or "")
+        if n.get("sub"): _araz_leaves(n["sub"], out, t)
+        else: out.append((n["id"], t))
     return out
 
 def scrape_araz():
@@ -326,7 +380,8 @@ def scrape_araz():
         return None
     print(f"  [Araz] {len(leaves)} alt kateqoriya")
 
-    def fetch(cid):
+    def fetch(leaf):
+        cid, trail = leaf
         items, page = [], 1
         while page <= 60:
             try:
@@ -338,17 +393,17 @@ def scrape_araz():
                 page += 1
             except Exception:
                 break
-        return items
+        return trail, items
 
     results = {c: [] for c in CATEGORIES}
     seen, total = set(), 0
     with ThreadPoolExecutor(max_workers=8) as ex:
-        for items in ex.map(fetch, leaves):
+        for trail, items in ex.map(fetch, leaves):
             for p in items:
                 pid, name, price = p.get("id"), (p.get("title") or "").strip(), _araz_price(p)
                 if pid in seen or not name or price is None: continue
                 seen.add(pid); total += 1
-                cat = assign_cat(name)
+                cat = classify(name, trail)
                 if cat:
                     e = {"name": name, "price": price}
                     im = img_of(p, "https://arazmarket.az")
@@ -398,28 +453,100 @@ def _wolt_weight(item):
             return round(g)
     return None
 
-def scrape_wolt(store):
-    """Wolt-dan çəkir: filialları yoxlayır, sorğuları paralel göndərir."""
-    ses = _session()
-    url = None
+def _wolt_entry(item, path=""):
+    """Wolt məhsul obyektindən (ad, kateqoriya, yazı) çıxarır; uyğun deyilsə None."""
+    name = item.get("name", "")
+    if isinstance(name, dict): name = name.get("az") or name.get("en") or ""
+    price = _wolt_price(item)
+    if not name or price is None or price >= 999: return None
+    e = {"name": name, "wolt_price": price}
+    im = img_of(item)
+    if im: e["img"] = im
+    wt = _wolt_weight(item)
+    if wt: e["wt"] = wt
+    return classify(name, path), e
+
+def _wolt_base(slug):
+    return f"https://consumer-api.wolt.com/consumer-api/consumer-assortment/v1/venues/slug/{slug}/assortment"
+
+def _wolt_pick_venue(ses, store, probe):
+    """İşləyən filialı tapır (müvəqqəti blok üçün 3 cəhd). probe(slug) -> True/False."""
     for attempt in range(3):
         for slug in wolt_slugs(store):
             try:
-                r = ses.post(_wolt_url(slug), json={"q": "süd"}, timeout=15)
-                if r.status_code == 200 and (r.json().get("items") is not None):
-                    url = _wolt_url(slug)
+                if probe(slug):
                     print(f"  [Wolt/{store}] filial: {slug}")
-                    break
-                print(f"  [Wolt/{store}] {slug}: HTTP {r.status_code}")
+                    return slug
+                print(f"  [Wolt/{store}] {slug}: cavab yoxdur")
             except Exception as e:
                 print(f"  [Wolt/{store}] {slug}: {type(e).__name__}")
-        if url: break
-        time.sleep(10 * (attempt + 1))   # müvəqqəti blok/limit ola bilər
-    if not url:
-        print(f"  [Wolt/{store}] ✗ heç bir filial cavab vermədi "
-              f"(WOLT_SLUG_{store.upper()} ilə düzgün slug verin)")
-        return None   # None = uğursuz, boş nəticə ilə qarışdırılmasın
+        time.sleep(10 * (attempt + 1))
+    return None
 
+def scrape_wolt_full(store):
+    """Filialın BÜTÜN kataloqu: kateqoriya ağacı -> hər yarpaq kateqoriya (səhifələmə ilə).
+    Açar söz axtarışından çox məhsul verir. Uğursuz olarsa None."""
+    ses = _session()
+    def probe(slug):
+        r = ses.get(_wolt_base(slug), params={"language": "az"}, timeout=30)
+        return r.status_code == 200 and bool(r.json().get("categories"))
+    slug = _wolt_pick_venue(ses, store, probe)
+    if not slug: return None
+    base = _wolt_base(slug)
+    tree = ses.get(base, params={"language": "az"}, timeout=30).json()["categories"]
+    leaves = []   # (slug, "Üst > Alt")
+    def walk(nodes, trail=""):
+        for c in nodes:
+            t = f"{trail} > {c.get('name','')}" if trail else c.get("name", "")
+            if c.get("subcategories"): walk(c["subcategories"], t)
+            elif c.get("slug"): leaves.append((c["slug"], t))
+    walk(tree)
+
+    def fetch(leaf):
+        cs, trail = leaf
+        out, tok = [], None
+        for _ in range(100):
+            params = {"language": "az"}
+            if tok: params["page_token"] = tok
+            try:
+                r = ses.get(f"{base}/categories/slug/{cs}", params=params, timeout=30)
+                if r.status_code != 200: break
+                d = r.json()
+            except Exception:
+                break
+            out += d.get("items") or []
+            tok = (d.get("metadata") or {}).get("next_page_token")
+            if not tok: break
+        return trail, out
+
+    results = {c: [] for c in CATEGORIES}
+    seen = set()
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        for trail, items in ex.map(fetch, leaves):
+            for item in items:
+                uid = item.get("id") or item.get("name")
+                if uid in seen: continue
+                seen.add(uid)
+                r = _wolt_entry(item, trail)
+                if r: results[r[0]].append(r[1])
+    total = sum(len(v) for v in results.values())
+    print(f"  [Wolt/{store}] tam kataloq: {len(leaves)} kateqoriya, {total} məhsul")
+    return results if total else None
+
+def scrape_wolt(store):
+    """Əvvəl tam kataloq; alınmasa açar söz axtarışı (köhnə üsul)."""
+    full = scrape_wolt_full(store)
+    if full: return full
+    print(f"  [Wolt/{store}] tam kataloq alınmadı → açar söz axtarışı")
+    ses = _session()
+    def probe(slug):
+        r = ses.post(_wolt_url(slug), json={"q": "süd"}, timeout=15)
+        return r.status_code == 200 and r.json().get("items") is not None
+    slug = _wolt_pick_venue(ses, store, probe)
+    if not slug:
+        print(f"  [Wolt/{store}] ✗ heç bir filial cavab vermədi (WOLT_SLUG_{store.upper()} ilə düzgün slug verin)")
+        return None   # None = uğursuz, boş nəticə ilə qarışdırılmasın
+    url = _wolt_url(slug)
     queries = sorted({kw.strip() for info in CATEGORIES.values() for kw in info["kw"]})
 
     def run(q):
@@ -434,21 +561,12 @@ def scrape_wolt(store):
     with ThreadPoolExecutor(max_workers=8) as ex:
         for items in ex.map(run, queries):
             for item in items:
-                name = item.get("name", "")
-                if isinstance(name, dict): name = name.get("az") or name.get("en") or ""
-                price = _wolt_price(item)
-                if not name or price is None or price >= 999: continue
-                uid = name.lower().strip()
+                r = _wolt_entry(item)
+                if not r: continue
+                uid = r[1]["name"].lower().strip()
                 if uid in seen: continue
                 seen.add(uid)
-                cat = assign_cat(name)
-                if cat:
-                    e = {"name": name, "wolt_price": price}
-                    im = img_of(item)
-                    if im: e["img"] = im
-                    wt = _wolt_weight(item)
-                    if wt: e["wt"] = wt
-                    results[cat].append(e)
+                results[r[0]].append(r[1])
     total = sum(len(v) for v in results.values())
     print(f"  [Wolt/{store}] {total} məhsul")
     return results if total else None

@@ -23,7 +23,10 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     "yuyucu":    {"name":"Yuyucu toz/gel",   "kw":["yuyucu toz","paltaryuyan","kir yuyan","ariel","persil","yumşaldıcı","kondisioner"]},
     "temizlik":  {"name":"Təmizləyici",      "kw":["təmizləyici","ağardıcı","dezinfeksiya","domestos","cif "]},
     "gigiyena":  {"name":"Sabun/Şampun/Kağız","kw":["sabun","şampun","duş geli","dezodorant","diş pastası","diş fırçası",
-                  "tualet kağız","kağız dəsmal","salfet","bədən üçün","üz üçün","uşaq bezi"]},
+                  "tualet kağız","kağız dəsmal","salfet","bədən üçün","üz üçün","uşaq bezi","pambıq","ülgüc","tampon",
+                  "gigiyenik","losyon","parfüm","maska","saç ","vanna"]},
+    "heyvan_yemi":{"name":"Heyvan yemi",     "kw":["pişik","itlər","köpək","nəm yem","quru yem","whiskas","purina","pedigree","felix","kitekat","royal canin","sheba"]},
+    "usaq_qida": {"name":"Uşaq qidası",      "kw":["uşaq","sıyıq","bebi","aptamil","nutrilon","kabrita","gerber","hipp","agusha","nanny","fruto"]},
     # şirniyyat / içki (emal olunmuş məhsullar meyvə-tərəvəzdən əvvəl)
     "pecenye":   {"name":"Peçenye/Biskvit",  "kw":["peçenye","biskvit","kraker","vafli"]},
     "sokolad":   {"name":"Şokolad",          "kw":["şokolad"]},
@@ -41,8 +44,12 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     "ketcup":    {"name":"Ketçup/Sous",      "kw":["ketçup","ketchup","sous"]},
     "zeytun_yagi":{"name":"Zeytun yağı",     "kw":["zeytun yağ"]},
     "bitki_yagi":{"name":"Bitki yağı",       "kw":["günəbaxan yağ","ayçiçəyi yağ","bitki yağ"]},
-    "makaron":   {"name":"Makaron",          "kw":["makaron","spagetti","vermişel"]},
+    "makaron":   {"name":"Makaron/Əriştə",   "kw":["makaron","spagetti","vermişel","əriştə","doşirak","noodle"]},
     "corek":     {"name":"Çörək",            "kw":["çörək","lavaş"]},
+    "hazir_yemek":{"name":"Hazır yemək",     "kw":["pelmen","manti","xinkali","vareniki","naget","nuggets","pizza","piroq","lahmacun","hazır yemək"]},
+    "cips":      {"name":"Çips/Qəlyanaltı",  "kw":["çips","chips","suxari","popkorn","lays","pringles","cheetos","qəlyanaltı"]},
+    "konserv":   {"name":"Konserv/Turşu/Zeytun","kw":["konserv","turşu","zeytun","maslin","qarğıdalı konserv"]},
+    "murebbe":   {"name":"Mürəbbə/Cem",      "kw":["mürəbbə","povidla","cem "]},
     # ət
     "sosis":     {"name":"Sosis",            "kw":["sosis","sosiska"]},
     "kolbasa":   {"name":"Kolbasa",          "kw":["kolbasa","salam"],"excl":["sosis"]},
@@ -61,6 +68,7 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     "ayran":     {"name":"Ayran",            "kw":["ayran"]},
     "sud":       {"name":"Süd",              "kw":["süd"],"excl":["kakao","soya"]},
     "yumurta":   {"name":"Yumurta",          "kw":["yumurta"]},
+    "qoz":       {"name":"Qoz-fındıq/Quru meyvə","kw":["fındıq","qoz","badam","fıstıq","kişmiş","qurudulmuş","çərəz","püstə","kaju","xurma","quru ərik","innab"]},
     # tərəvəz
     "kartof":    {"name":"Kartof",           "kw":["kartof"]},
     "pomidor":   {"name":"Pomidor",          "kw":["pomidor","tomat"]},
@@ -94,6 +102,8 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     "duz":       {"name":"Duz",              "kw":["duz"]},
     "sekerqum":  {"name":"Şəkər",            "kw":["şəkər"]},
     "istiot":    {"name":"İstiot/Ədviyyat",  "kw":["istiot","ədviyyat","zirə","darçın"]},
+    "mesis":     {"name":"Məişət əşyaları",  "kw":["stəkan","boşqab","qaşıq","çəngəl","tava","qazan","süpürgə","əlcək","zibil","folqa","pergament","batareya","lampa","kibrit","plastik","sellofan","paket"]},
+    "diger":     {"name":"Digər məhsullar",  "kw":[]},   # heç bir kateqoriyaya düşməyənlər (atılmasın)
 }
 
 # Saytda göstərilən ümumi kateqoriyalar (alt növlər = yuxarıdakı kateqoriyalar)
@@ -104,11 +114,15 @@ GROUPS = [
     {"id":"et",       "name":"Ət və balıq",           "cats":["toyuq","dana_ati","qoyun_ati","hindi","kolbasa","sosis","baliq"]},
     {"id":"bakaliya", "name":"Taxıl və makaron",      "cats":["duyu","merci","noxud","fasulya","qarabashaq","yulaf","un","makaron"]},
     {"id":"corek",    "name":"Çörək",                 "cats":["corek"]},
-    {"id":"sirniyyat","name":"Şirniyyat",             "cats":["pecenye","sokolad","halva","dondurma","bal"]},
+    {"id":"sirniyyat","name":"Şirniyyat",             "cats":["pecenye","sokolad","halva","dondurma","bal","murebbe"]},
     {"id":"iceckiler","name":"İçkilər",               "cats":["cay","qehve","sire","su","kola","energetik"]},
-    {"id":"yag_sous", "name":"Yağ, sous, ədviyyat",   "cats":["zeytun_yagi","bitki_yagi","mayonez","ketcup","duz","sekerqum","istiot"]},
-    {"id":"ev",       "name":"Ev kimyası",            "cats":["qabyuyan","yuyucu","temizlik"]},
+    {"id":"yag_sous", "name":"Yağ, sous, ədviyyat",   "cats":["zeytun_yagi","bitki_yagi","mayonez","ketcup","duz","sekerqum","istiot","konserv"]},
+    {"id":"ev",       "name":"Ev və məişət",          "cats":["qabyuyan","yuyucu","temizlik","mesis"]},
     {"id":"gigiyena", "name":"Gigiyena",              "cats":["gigiyena"]},
+    {"id":"hazir",    "name":"Qəlyanaltı və hazır yemək","cats":["hazir_yemek","cips","qoz"]},
+    {"id":"usaq",     "name":"Uşaq qidası",           "cats":["usaq_qida"]},
+    {"id":"heyvan",   "name":"Heyvan yemi",           "cats":["heyvan_yemi"]},
+    {"id":"diger",    "name":"Digər məhsullar",       "cats":["diger"]},
 ]
 _missing = {c for g in GROUPS for c in g["cats"]} ^ set(CATEGORIES)
 assert not _missing, _missing
@@ -182,7 +196,7 @@ def _kw_re(words):
 
 _CAT_RE = {
     cid: (_kw_re(info["kw"]), _kw_re(info["excl"]) if info.get("excl") else None)
-    for cid, info in CATEGORIES.items()
+    for cid, info in CATEGORIES.items() if info["kw"]
 }
 
 _ADJ = re.compile(r"l[ıiuü]$")   # "limonlu", "pendirli" -> dad bildirən sifət, məhsulun özü deyil
@@ -217,7 +231,7 @@ def assign_cat(name):
         if len(word) > len(m.group()) and _ADJ.search(word):
             continue
         return cid
-    return None
+    return "diger"
 
 def sim(a, b):
     wa = set(re.sub(r"[^\w\s]","",a.lower()).split())

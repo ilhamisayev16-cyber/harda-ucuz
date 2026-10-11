@@ -5,7 +5,8 @@ QiymətMüqayisə Scraper
   OBA    -> oba.az
   Araz   -> arazmarket.az API (+ Wolt)
   Neptun -> Wolt
-  Tamstore -> Wolt
+  Tamstore, Rahat -> Wolt
+  Bazarstore -> bazarstore.az (nopCommerce HTML)
 
 İstifadə:
   python scraper.py
@@ -18,42 +19,52 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
 
+def _low(t):
+    """Kiçik hərf + I/İ/ı eyniləşdirilir (saytlar böyük hərfdə "QIRMIZI"/"QİRMİZİ" qarışıq yazır)."""
+    return t.replace("İ", "i").replace("ı", "i").replace("I", "i").lower()
+
+
 CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     # ev / gigiyena (ən əvvəl: "limon ətirli qabyuyan" meyvə olmasın)
     "qabyuyan":  {"name":"Qabyuyan maye",    "kw":["qabyuyan","qab yuyan","fairy"]},
-    "yuyucu":    {"name":"Yuyucu toz/gel",   "kw":["yuyucu toz","paltaryuyan","kir yuyan","ariel","persil","yumşaldıcı","kondisioner"]},
-    "temizlik":  {"name":"Təmizləyici",      "kw":["təmizləyici","ağardıcı","dezinfeksiya","domestos","cif "]},
+    "yuyucu":    {"name":"Yuyucu toz/gel",   "kw":["yuyucu","paltaryuyan","kir yuyan","ariel","persil","yumşaldıcı","kondisioner"]},
+    "temizlik":  {"name":"Təmizləyici",      "kw":["təmizləyici","ağardıcı","dezinfeksiya","domestos","cif ","təmizlik","təravətləndirici"]},
     "gigiyena":  {"name":"Sabun/Şampun/Kağız","kw":["sabun","şampun","duş geli","dezodorant","diş pastası","diş fırçası",
-                  "tualet kağız","kağız dəsmal","salfet","bədən üçün","üz üçün","uşaq bezi","pambıq","ülgüc","tampon",
-                  "gigiyenik","losyon","parfüm","maska","saç ","vanna"]},
+                  "tualet kağız","kağız dəsmal","salfet","bədən üçün","üz üçün","uşaq bezi","bezi","pambıq","ülgüc","tampon",
+                  "gigiyenik","losyon","parfüm","maska","saç ","vanna","deo","nivea","garnier","colgate","rexona","gillette",
+                  "always","kotex","molped","splat","balzam","təraş","tonik","serum","diş","geli","pad "]},
     "heyvan_yemi":{"name":"Heyvan yemi",     "kw":["pişik","itlər","köpək","nəm yem","quru yem","whiskas","purina","pedigree","felix","kitekat","royal canin","sheba"]},
     "usaq_qida": {"name":"Uşaq qidası",      "kw":["uşaq","sıyıq","bebi","aptamil","nutrilon","kabrita","gerber","hipp","agusha","nanny","fruto"]},
+    "spirtli":   {"name":"Spirtli içkilər",  "kw":["araq","viski","şərab","pivə","konyak","vermut","likör","votka","şampan","brendi","tekila"],
+                  "excl":["spirtsiz","alkoqolsuz"]},
+    "oyuncaq":   {"name":"Oyuncaq",          "kw":["oyuncaq","konstruktor","pazl","kukla"]},
+    "dereterlik":{"name":"Dəftərxana",       "kw":["dəftər","qələm","karandaş","marker","rəngli karandaş","albom","qayçı"]},
     # şirniyyat / içki (emal olunmuş məhsullar meyvə-tərəvəzdən əvvəl)
-    "pecenye":   {"name":"Peçenye/Biskvit",  "kw":["peçenye","biskvit","kraker","vafli"]},
+    "pecenye":   {"name":"Peçenye/Biskvit",  "kw":["peçenye","biskvit","kraker","kreker","vafli","tort","keks","bisküvit"]},
     "sokolad":   {"name":"Şokolad",          "kw":["şokolad"]},
-    "halva":     {"name":"Halva/Konfet",     "kw":["halva","konfet","karamel","marmelad"]},
+    "halva":     {"name":"Halva/Konfet",     "kw":["halva","konfet","karamel","marmelad","lokum","saqqız","jele","zefir","roshen","ülker"]},
     "dondurma":  {"name":"Dondurma",         "kw":["dondurma","plombir"]},
     "bal":       {"name":"Bal",              "kw":["təbii bal","çiçək balı","bal "]},
     "energetik": {"name":"Energetik",        "kw":["red bull","monster","burn ","hell energy"]},
-    "kola":      {"name":"Kola/Limonad",     "kw":["kola","limonad","pepsi","fanta","sprite"]},
+    "kola":      {"name":"Kola/Limonad",     "kw":["kola","limonad","pepsi","fanta","sprite","qazlı","soda","kokteyl"]},
     "cay":       {"name":"Çay",              "kw":["çay","lipton","ahmad"],"excl":["çaydan"]},
-    "qehve":     {"name":"Qəhvə",            "kw":["qəhvə","nescafe","lavazza"]},
+    "qehve":     {"name":"Qəhvə",            "kw":["qəhvə","nescafe","lavazza","kofe","kakao"]},
     "sire":      {"name":"Şirə/Mors/Nektar", "kw":["şirəsi","şirə","mors","nektar",
                                                     "meyvə suyu","alma suyu","portağal suyu"]},
-    "su":        {"name":"Su",               "kw":["mineral su","içməli su","mənbə suyu"]},
+    "su":        {"name":"Su",               "kw":["mineral su","içməli su","mənbə suyu","qazsız","qazlı su"]},
     "mayonez":   {"name":"Mayonez",          "kw":["mayonez"]},
     "ketcup":    {"name":"Ketçup/Sous",      "kw":["ketçup","ketchup","sous"]},
     "zeytun_yagi":{"name":"Zeytun yağı",     "kw":["zeytun yağ"]},
-    "bitki_yagi":{"name":"Bitki yağı",       "kw":["günəbaxan yağ","ayçiçəyi yağ","bitki yağ"]},
+    "bitki_yagi":{"name":"Bitki yağı",       "kw":["günəbaxan","ayçiçəyi yağ","bitki yağ"]},
     "makaron":   {"name":"Makaron/Əriştə",   "kw":["makaron","spagetti","vermişel","əriştə","doşirak","noodle"]},
     "corek":     {"name":"Çörək",            "kw":["çörək","lavaş"]},
     "hazir_yemek":{"name":"Hazır yemək",     "kw":["pelmen","manti","xinkali","vareniki","naget","nuggets","pizza","piroq","lahmacun","hazır yemək"]},
-    "cips":      {"name":"Çips/Qəlyanaltı",  "kw":["çips","chips","suxari","popkorn","lays","pringles","cheetos","qəlyanaltı"]},
+    "cips":      {"name":"Çips/Qəlyanaltı",  "kw":["çips","chips","suxari","popkorn","lays","pringles","cheetos","qəlyanaltı","tum","tumu"]},
     "konserv":   {"name":"Konserv/Turşu/Zeytun","kw":["konserv","turşu","zeytun","maslin","qarğıdalı konserv"]},
     "murebbe":   {"name":"Mürəbbə/Cem",      "kw":["mürəbbə","povidla","cem "]},
     # ət
     "sosis":     {"name":"Sosis",            "kw":["sosis","sosiska"]},
-    "kolbasa":   {"name":"Kolbasa",          "kw":["kolbasa","salam"],"excl":["sosis"]},
+    "kolbasa":   {"name":"Kolbasa",          "kw":["kolbasa","salam","servelat","vetçina","sucuq"],"excl":["sosis"]},
     "baliq":     {"name":"Balıq",            "kw":["balıq","tuna","skumbriya","losos"]},
     "toyuq":     {"name":"Toyuq",            "kw":["toyuq","cücə","broylyer"]},
     "dana_ati":  {"name":"Dana əti",         "kw":["dana"]},
@@ -67,7 +78,7 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
                   "excl":["içki","şirə"]},
     "kefir":     {"name":"Kefir",            "kw":["kefir"]},
     "ayran":     {"name":"Ayran",            "kw":["ayran"]},
-    "sud":       {"name":"Süd",              "kw":["süd"],"excl":["kakao","soya"]},
+    "sud":       {"name":"Süd",              "kw":["süd","kəsmik","qaymaq","sırok","şor"],"excl":["kakao","soya"]},
     "yumurta":   {"name":"Yumurta",          "kw":["yumurta"]},
     "qoz":       {"name":"Qoz-fındıq/Quru meyvə","kw":["fındıq","qoz","badam","fıstıq","kişmiş","qurudulmuş","çərəz","püstə","kaju","xurma","quru ərik","innab"]},
     # tərəvəz
@@ -103,9 +114,8 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     "duz":       {"name":"Duz",              "kw":["duz"]},
     "sekerqum":  {"name":"Şəkər",            "kw":["şəkər"]},
     "istiot":    {"name":"İstiot/Ədviyyat",  "kw":["istiot","ədviyyat","zirə","darçın"]},
-    "mesis":     {"name":"Məişət əşyaları",  "kw":["stəkan","boşqab","qaşıq","çəngəl","tava","qazan","süpürgə","əlcək","zibil","folqa","pergament","batareya","lampa","kibrit","plastik","sellofan","paket"]},
+    "mesis":     {"name":"Məişət əşyaları",  "kw":["stəkan","boşqab","qaşıq","çəngəl","tava","qazan","süpürgə","əlcək","zibil","folqa","pergament","batareya","lampa","kibrit","plastik","sellofan","paket","süngər","fincan","saxlama","dəsmal","mətbəx","qab ","maşın üçün","şüşə qab"]},
     # aşağıdakıların açar sözü yoxdur: yalnız mağazanın öz kateqoriya adına görə təyin olunur (CATEGORY_PATH_RULES)
-    "spirtli":   {"name":"Spirtli içkilər",  "kw":[]},
     "meyve_diger":{"name":"Digər meyvə",     "kw":[]},
     "sebze_diger":{"name":"Digər tərəvəz",   "kw":[]},
     "dondurulmus":{"name":"Dondurulmuş məhsul","kw":[]},
@@ -130,12 +140,13 @@ GROUPS = [
     {"id":"usaq",     "name":"Uşaq qidası",           "cats":["usaq_qida"]},
     {"id":"heyvan",   "name":"Heyvan yemi",           "cats":["heyvan_yemi"]},
     {"id":"spirtli",  "name":"Spirtli içkilər",       "cats":["spirtli"]},
+    {"id":"oyuncaq",  "name":"Oyuncaq və dəftərxana", "cats":["oyuncaq","dereterlik"]},
     {"id":"diger",    "name":"Digər məhsullar",       "cats":["diger"]},
 ]
 _missing = {c for g in GROUPS for c in g["cats"]} ^ set(CATEGORIES)
 assert not _missing, _missing
 
-ALL_STORES = ["Bravo","OBA","Araz","Neptun","Tamstore"]
+ALL_STORES = ["Bravo","OBA","Araz","Neptun","Tamstore","Rahat","Bazarstore"]
 
 # Hər mağaza üçün bir neçə Wolt filialı: ilk işləyən istifadə olunur.
 # Mühit dəyişəni ilə əvəz etmək olar: WOLT_SLUG_NEPTUN=... (vergüllə bir neçə)
@@ -146,6 +157,7 @@ WOLT_SLUGS = {
     "Araz":   ["araz-supermarket-20-yanvarr", "araz-supermarket-narimanov", "araz-supermarket-yasamal",
                "araz-supermarket-28-may"],
     "Tamstore": ["tamstore-narimanov-1", "tamstore-papanin"],
+    "Rahat":  ["rahat-supermarket-yasamal"],
     "Neptun": ["neptun-supermarket-narimanovv", "neptun-supermarket-28", "neptun-supermarket-narimanov",
                "neptun-supermarket-nizami"],
 }
@@ -156,7 +168,7 @@ def wolt_slugs(store):
     return extra + WOLT_SLUGS.get(store, [])
 
 JUICE_WORDS = ["şirəsi","suyu","nektarı","mors","şərbəti","kompot","içkisi","limonadı"]
-_WATER = re.compile(r"mineral su|içməli su|mənbə suyu|qazlı su")
+_WATER = re.compile(_low(r"mineral su|içməli su|mənbə suyu|qazlı su"))
 
 def clean_price(raw):
     if raw is None: return None
@@ -193,13 +205,13 @@ def img_of(item, base=""):
     return None
 
 def has_juice(name):
-    n = name.lower()
-    return any(w in n for w in JUICE_WORDS)
+    n = _low(name)
+    return any(_low(w) in n for w in JUICE_WORDS)
 
 def _kw_re(words):
     # söz əvvəlində uyğunluq: "nar" -> "Nar", amma "Qarnar"/"Narzan" yox
     # qısa açar sözlər (nar, bal, su, un) tam söz kimi axtarılır
-    parts = [re.escape(w.lower()) + (r"(?!\w)" if not w.endswith(" ") and (len(w) <= 3 or w.lower() in ("nar", "bal", "duz")) else "")
+    parts = [re.escape(_low(w)) + (r"(?!\w)" if not w.endswith(" ") and (len(w) <= 3 or _low(w) in ("nar", "bal", "duz")) else "")
              for w in words]
     return re.compile(r"(?<!\w)(?:" + "|".join(parts) + ")")
 
@@ -243,7 +255,7 @@ def assign_cat(name):
     return "diger"
 
 # Mağazanın öz kateqoriya adı (Wolt/Araz/OBA) -> bizim kateqoriya. Sıra vacibdir.
-CATEGORY_PATH_RULES = [(re.compile(r, re.I), cid) for r, cid in [
+CATEGORY_PATH_RULES = [(re.compile(_low(r), re.I), cid) for r, cid in [
     (r"spirtsiz piv", "kola"), (r"piv|araq|viski|şərab|spirtli|likor|tekila|vermut|konyak|şampan", "spirtli"),
     (r"uşaq.*(bez|baxım|sabun|salfet|krem|diş)", "gigiyena"), (r"uşaq", "usaq_qida"),
     (r"ev heyvan|it və pişik|pişiklər|itlər üçün", "heyvan_yemi"),
@@ -271,9 +283,6 @@ CATEGORY_PATH_RULES = [(re.compile(r, re.I), cid) for r, cid in [
     (r"^un$|un məhsul|(^|> )un\b", "un"), (r"çörək|lavaş|un məmulat", "corek"),
     (r"tərəvəz", "sebze_diger"), (r"meyvə", "meyve_diger"),
 ]]
-
-def _low(t):
-    return t.replace("İ", "i").lower()   # "SPİRTLİ".lower() -> "spi̇rtli̇" (birləşən nöqtə) olmasın
 
 def cat_from_path(path):
     p = _low(path)
@@ -407,6 +416,63 @@ def scrape_araz():
                 results[cat].append(e)
     total = len(seen)
     print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)" + (f"; alınmadı: {failed}" if failed else ""), flush=True)
+    return results if total else None
+
+# ── BAZARSTORE — bazarstore.az (nopCommerce, HTML) ───────────────────────
+def _title(name):
+    """"ALISHAAN BASMATI DÜYÜ 2 KQ" -> "Alishaan Basmati Düyü 2 Kq" (İ/I düzgün)."""
+    return " ".join(w[:1].upper() + _low(w[1:]) if w[:1].isalpha() else _low(w) for w in name.split())
+
+def scrape_bazarstore():
+    """"Bütün məhsullar" siyahısı (1 səhifə = 10 məhsul), orderby=5 (ada görə) ilə sabit sıralama."""
+    import html as _html
+    ses = _session()
+    ses.headers.pop("Content-Type", None)
+    ses.headers.update({"User-Agent": "Mozilla/5.0", "Accept-Language": "az"})
+    url = "https://bazarstore.az/b%C3%BCt%C3%BCn-m%C9%99hsullar"
+    item_rx = re.compile(r'class="product-item" data-productid="(\d+)" data-bzdl-item=\'([^\']*)\'(.*?)</div>\s*</div>\s*</div>', re.S)
+    img_rx = re.compile(r'data-lazyloadsrc="([^"]+)"')
+
+    def page(p):
+        for attempt in range(4):
+            try:
+                r = ses.get(url, params={"orderby": 5, "pagenumber": p}, timeout=60)
+                if r.status_code == 200: return r.text
+            except Exception:
+                pass
+            time.sleep(2 * (attempt + 1))
+        return None
+
+    first = page(1)
+    if not first:
+        print("  [Bazarstore] ✗ saytdan cavab yoxdur")
+        return None
+    last = max([int(x) for x in re.findall(r'data-page="(\d+)"', first)] or [1])
+    print(f"  [Bazarstore] {last} səhifə", flush=True)
+    results = {c: [] for c in CATEGORIES}
+    seen, failed = set(), 0
+    def ingest(h):
+        n = 0
+        for pid, j, body in item_rx.findall(h):
+            if pid in seen: continue
+            try: d = json.loads(_html.unescape(j))
+            except Exception: continue
+            name = _html.unescape(d.get("item_name") or "").strip()
+            price = clean_price(d.get("price"))
+            if not name or price is None or name.replace(" ", "").isdigit(): continue   # adı yalnız kod olan məhsullar
+            seen.add(pid); n += 1
+            e = {"name": _title(name), "price": price}
+            m = img_rx.search(body)
+            if m and "default-image" not in m.group(1): e["img"] = m.group(1)
+            results[classify(name, d.get("item_category") or "")].append(e)
+        return n
+    ingest(first)
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        for h in ex.map(page, range(2, last + 1)):
+            if h is None: failed += 1; continue
+            ingest(h)
+    total = len(seen)
+    print(f"  [Bazarstore] ✓ {total} məhsul" + (f"; {failed} səhifə alınmadı" if failed else ""), flush=True)
     return results if total else None
 
 # ── WOLT ─────────────────────────────────────────────────────────────────
@@ -608,7 +674,7 @@ def apply_to_data(own_res, wolt_res, store, data):
     if not any(own_res.values()) and not any(wolt_res.values()):
         print(f"  [{store}] ⚠ nəticə boşdur — köhnə qiymətlər saxlanıldı")
         return False
-    wolt_only = store in ("Bravo", "Neptun", "Tamstore")
+    wolt_only = store in ("Bravo", "Neptun", "Tamstore", "Rahat")
     for cid in CATEGORIES:
         if wolt_only:
             items = [{k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w}
@@ -650,7 +716,7 @@ def recategorize(data):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--recategorize", action="store_true")
-    ap.add_argument("--store", choices=["bravo","oba","araz","neptun","tamstore","all"], default="all")
+    ap.add_argument("--store", choices=["bravo","oba","araz","neptun","tamstore","rahat","bazarstore","all"], default="all")
     ap.add_argument("--wolt-only",  action="store_true")
     ap.add_argument("--own-only",   action="store_true")
     ap.add_argument("--out", default="../data/prices.json")
@@ -676,7 +742,7 @@ def main():
         print("✅  Yenidən təsnif edildi:", out)
         return
 
-    name_map = {"bravo":"Bravo","oba":"OBA","araz":"Araz","neptun":"Neptun","tamstore":"Tamstore"}
+    name_map = {"bravo":"Bravo","oba":"OBA","araz":"Araz","neptun":"Neptun","tamstore":"Tamstore","rahat":"Rahat","bazarstore":"Bazarstore"}
     targets = list(name_map.keys()) if args.store=="all" else [args.store]
 
     for t in targets:
@@ -690,9 +756,11 @@ def main():
                 own_res = scrape_oba()
             elif sname == "Araz":
                 own_res = scrape_araz() or {}
+            elif sname == "Bazarstore":
+                own_res = scrape_bazarstore() or {}
 
         # Wolt
-        if not args.own_only:
+        if not args.own_only and sname != "Bazarstore":   # Bazarstore Wolt-da yoxdur
             wolt_res = scrape_wolt(sname)
 
         apply_to_data(own_res, wolt_res, sname, data)

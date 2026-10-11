@@ -110,6 +110,10 @@ details.more-f summary::-webkit-details-marker{display:none}
 .o.min b{color:var(--good)}
 .o.max b{color:var(--bad)}
 .o.na{opacity:.45}
+.o b,.best b{white-space:nowrap}
+.offers.kg .o{flex-direction:column;align-items:flex-start;gap:0}
+.o b small{font-size:10px;font-weight:600;color:var(--mute)}
+.best b small{display:inline;font-size:11px;opacity:.8}
 .o sup{font-size:9px;color:var(--mute);font-weight:600}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--c,#999);flex:none}
 .more{display:block;margin:16px auto 0;width:100%}
@@ -203,7 +207,9 @@ const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"�
   portaqal:"🍊",nar:"🍎",toyuq:"🍗",dana_ati:"🥩",qoyun_ati:"🍖",hindi:"🦃",kolbasa:"🌭",sosis:"🌭",baliq:"🐟",
   duyu:"🍚",merci:"🫘",noxud:"🟡",fasulya:"🫘",qarabashaq:"🌾",yulaf:"🌾",un:"🌾",makaron:"🍝",corek:"🍞",
   pecenye:"🍪",cay:"🍵",qehve:"☕",sire:"🧃",su:"💧",kola:"🥤",energetik:"⚡",sokolad:"🍫",halva:"🍬",bal:"🍯",
-  dondurma:"🍦",zeytun_yagi:"🫒",bitki_yagi:"🌻",mayonez:"🫙",ketcup:"🍅",duz:"🧂",sekerqum:"🍬",istiot:"🌶️"};
+  dondurma:"🍦",zeytun_yagi:"🫒",bitki_yagi:"🌻",mayonez:"🫙",ketcup:"🍅",duz:"🧂",sekerqum:"🍬",istiot:"🌶️",
+  qabyuyan:"🧽",yuyucu:"🧺",temizlik:"🧹",gigiyena:"🧼",
+  meyve:"🍎",sebze:"🥕",et:"🍗",bakaliya:"🍚",sirniyyat:"🍫",iceckiler:"🥤",yag_sous:"🫒",ev:"🧴"};
 const PAGE=60;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -212,27 +218,16 @@ const fmt=n=>n.toFixed(2)+" ₼";
 /* ─────────── matching / attribute extraction ─────────── */
 const TR={"ç":"c","ə":"e","ğ":"g","ı":"i","ö":"o","ş":"s","ü":"u"};
 function tokens(str){
-  return new Set(str.toLowerCase().replace(/[çəğıöşü]/g,c=>TR[c]).replace(/[^\w\s]/g," ").split(/\s+/).filter(Boolean));
+  let s=str.toLowerCase().replace(/[çəğıöşü]/g,c=>TR[c]).replace(/(\d)\s*,\s*(\d)/g,"$1.$2");
+  s=s.replace(/(\d)\s*(?:kq|kg)(?![a-z])/g,"$1kg").replace(/(\d)\s*(?:qr|gr|g|q)(?![a-z])/g,"$1g")
+     .replace(/(\d)\s*(?:litr|lt|l)(?![a-z])/g,"$1l").replace(/(\d)\s*ml(?![a-z])/g,"$1ml");
+  return new Set(s.replace(/[^\w\s.]/g," ").split(/\s+/).filter(Boolean));
 }
 function jaccard(a,b){
   let i=0; for(const t of a) if(b.has(t)) i++;
   const u=a.size+b.size-i; return u?i/u:1;
 }
-const STOP=new Set(["sabun","şampun","yuyucu","dezodorant","krem","losyon","jel","maye","plastik","şüşə","qabda","qalib",
-  "mini","maxi","vita","nano","bio","eco","premium","classic","original","special","super","ultra","mega","extra",
-  "ve","ilə","üçün","olan","həm","da","də","ki","bu","bir","bütün"]);
-const isAdj=w=>/[lL][ıiuüIİUÜ]$/.test(w);
 const AL="[a-zA-ZğüşıöçĞÜŞIÖÇəƏ]";
-function productType(name){
-  const m=name.match(new RegExp("\\d[\\d.,]*\\s*(?:%|kq|kg|litr|lt(?!"+AL+")|ml(?!"+AL+")|[lL](?!"+AL+")|[qQgG][rR]?(?!"+AL+"))"));
-  const before=name.slice(0,m?m.index:name.length).trim();
-  const w=(before||name).split(/\s+/).filter(x=>/^\p{L}+$/u.test(x));
-  if(!w.length) return "Digər";
-  const up=x=>x[0].toUpperCase()+x.slice(1);
-  if(w.length<2) return up(w[0]);
-  for(let i=1;i<w.length;i++){ if(isAdj(w[i])||STOP.has(w[i].toLowerCase())) continue; return up(w[i]); }
-  return up(w[w.length-1]);
-}
 const WPATS=[[/(\d+[.,]?\d*)\s*kq(?!AL)/i,"kq"],[/(\d+[.,]?\d*)\s*kg(?!AL)/i,"kq"],[/(\d+[.,]?\d*)\s*litr/i,"L"],
   [/(\d+[.,]?\d*)\s*lt(?!AL)/i,"L"],[/(\d+[.,]?\d*)\s*[lL](?!AL)/,"L"],[/(\d+[.,]?\d*)\s*ml(?!AL)/i,"ml"],
   [/(\d+[.,]?\d*)\s*gr(?!AL)/i,"q"],[/(\d+[.,]?\d*)\s*[gG](?!AL)/,"q"],[/(\d+[.,]?\d*)\s*qr?(?!AL)/i,"q"]]
@@ -248,30 +243,41 @@ function attrs(name){
     else if(/30-luq|30\s*[əe]d[əe]d/i.test(name)){wv=30;wu="ədəd";}
     else if(/6-l[ıi]q|6\s*[əe]d[əe]d/i.test(name)){wv=6;wu="ədəd";}
   }
-  return {subtype:productType(name),wv,wu,fat};
+  // ölçüsü yazılmayan "kq" = çəkiyə görə satılır, qiymət 1 kq üçündür
+  const kg=wv==null&&/(^|[\s,(])kq\.?(?=$|[\s,)\d])/i.test(name);
+  return {wv,wu,fat,kg};
 }
 const norm=(v,u)=>v==null||!u?null:(u==="kq"||u==="L")?v*1000:v;
+const fam=u=>u==="kq"||u==="q"?"w":u==="L"||u==="ml"?"v":"n";
+/* eyni məhsul: eyni satış növü (kq ilə / qablaşdırılmış), eyni ölçü, eyni yağlılıq */
+function compat(a,b){
+  if(a.kg!==b.kg) return false;
+  if(a.fat!=null&&b.fat!=null&&a.fat!==b.fat) return false;
+  if(!a.kg&&a.wv&&b.wv) return fam(a.wu)===fam(b.wu)&&Math.abs(norm(a.wv,a.wu)-norm(b.wv,b.wu))<.5;
+  return true;
+}
 
 /* group products across stores (inverted index: only compare names that share a token) */
 function group(cat){
   const out=[], idx=new Map(); let n=1;
   for(const store of Object.keys(cat.stores||{})){
     for(const it of cat.stores[store]||[]){
-      const tk=tokens(it.name); let best=null,bs=0; const seen=new Set();
+      const tk=tokens(it.name), a=attrs(it.name); let best=null,bs=0; const seen=new Set();
       for(const t of tk){
         const l=idx.get(t); if(!l) continue;
         for(const e of l){ if(seen.has(e)) continue; seen.add(e);
+          if(!compat(e.g.a,a)) continue;
           const s=jaccard(e.tk,tk); if(s>bs){bs=s;best=e.g;} }
       }
       if(best&&bs>=.5){ if(!best.offers[store]) best.offers[store]=mk(it); continue; }
-      const g={id:"p"+n++,name:it.name,a:attrs(it.name),offers:{[store]:mk(it)},lc:it.name.toLowerCase()};
+      const g={id:"p"+n++,name:it.name,a,c:it._c,offers:{[store]:mk(it)},lc:it.name.toLowerCase()};
       out.push(g); const e={g,tk};
       for(const t of tk){ (idx.get(t)||idx.set(t,[]).get(t)).push(e); }
     }
   }
   for(const g of out){ // precompute price stats once
-    const v=Object.values(g.offers).map(o=>o.p);
-    g.img=(Object.values(g.offers).find(o=>o.i&&!o.w)||Object.values(g.offers).find(o=>o.i)||{}).i||null;
+    const o=Object.values(g.offers), v=o.map(x=>x.p);
+    g.img=(o.find(x=>x.i&&!x.w)||o.find(x=>x.i)||{}).i||null;
     g.n=v.length; g.min=Math.min(...v); g.max=Math.max(...v); g.save=g.n>1?g.max-g.min:0;
   }
   return out;
@@ -279,10 +285,21 @@ function group(cat){
 function mk(it){ const own=it.price!=null; return {p:own?it.price:(it.wolt_price||0), w:!own, i:it.img||null}; }
 
 /* ─────────── state ─────────── */
-let DB=null; const GROUPS={}; let stores=[];
+let DB=null; const GROUPS={}; let stores=[], GL=[], GM={};
 let cur=null, filtered=[], shown=PAGE, hl=null;
 const F={sub:null,mode:"Hamısı",min:"",max:"",fat:null,q:"",sort:"savings_desc"};
-const groups=id=>GROUPS[id]||(GROUPS[id]=group(DB.categories[id]));
+/* ümumi kateqoriya = bir neçə alt kateqoriyanın birləşməsi */
+function groups(gid){
+  if(GROUPS[gid]) return GROUPS[gid];
+  const stv={};
+  for(const cid of GM[gid].cats){
+    const c=DB.categories[cid]; if(!c) continue;
+    for(const s of Object.keys(c.stores)) (stv[s]=stv[s]||[]).push(...c.stores[s].map(it=>({...it,_c:cid})));
+  }
+  return GROUPS[gid]=group({stores:stv});
+}
+const catName=c=>(DB.categories[c]||{}).name||c;
+const unit=g=>g.a.kg?"<small>/kq</small>":"";
 
 /* ─────────── load ─────────── */
 async function load(){
@@ -290,6 +307,8 @@ async function load(){
   try{
     const r=await fetch("data/prices.json"); if(!r.ok) throw new Error("HTTP "+r.status);
     DB=await r.json(); stores=DB.stores||[];
+    GL=DB.groups||Object.entries(DB.categories).map(([id,c])=>({id,name:c.name,cats:[id]}));
+    GM=Object.fromEntries(GL.map(g=>[g.id,g]));
     renderHome(); route();
   }catch(e){ $("errmsg").textContent=e.message; $("error").hidden=false; }
   finally{ $("loading").hidden=true; }
@@ -297,11 +316,11 @@ async function load(){
 
 /* ─────────── home ─────────── */
 function renderHome(){
-  const raw=id=>Object.values(DB.categories[id].stores).reduce((a,l)=>a+l.length,0);
-  const cats=Object.entries(DB.categories).filter(([id])=>raw(id)>0).sort((a,b)=>raw(b[0])-raw(a[0]));
-  $("catGrid").innerHTML=cats.map(([id,c])=>
-    `<button class="cat" data-id="${id}"><span class="em">${EMOJI[id]||"📦"}</span><span><b>${esc(c.name)}</b>
-     <small>${raw(id)} qiymət</small></span></button>`).join("");
+  const raw=g=>g.cats.reduce((a,c)=>a+Object.values((DB.categories[c]||{stores:{}}).stores).reduce((x,l)=>x+l.length,0),0);
+  const list=GL.map(g=>[g,raw(g)]).filter(x=>x[1]>0);
+  $("catGrid").innerHTML=list.map(([g,n])=>
+    `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span><b>${esc(g.name)}</b>
+     <small>${n} qiymət</small></span></button>`).join("");
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazanın öz saytından alınan qiymətlər dəqiqdir;
     Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
 }
@@ -312,13 +331,15 @@ function openCat(id,focus){
   Object.assign(F,{sub:null,mode:"Hamısı",min:"",max:"",fat:null,q:"",sort:"savings_desc"});
   $("minW").value=$("maxW").value=$("tq").value=""; $("sort").value=F.sort;
   document.querySelector("details.more-f").open=false;
-  $("catEm").textContent=EMOJI[id]||"📦"; $("catName").textContent=DB.categories[id].name;
-  const gs=groups(id), subs=new Map(), fats=new Set();
-  gs.forEach(g=>{subs.set(g.a.subtype,(subs.get(g.a.subtype)||0)+1); if(g.a.fat!=null)fats.add(g.a.fat);});
-  const top=[...subs].sort((a,b)=>b[1]-a[1]).slice(0,40).map(x=>x[0]).sort((a,b)=>a.localeCompare(b,"az"));
-  $("subs").innerHTML=pill("Hamısı",null,"sub")+top.map(s=>pill(s,s,"sub")).join("");
-  $("modes").innerHTML=["Hamısı","⚖ Çəki","💧 Həcm","📦 Digər"].map(m=>pill(m,m,"mode")).join("");
-  const fl=[...fats].sort((a,b)=>a-b); $("fatRow").hidden=fl.length<2;
+  $("catEm").textContent=EMOJI[id]||"📦"; $("catName").textContent=GM[id].name;
+  const gs=groups(id), subs=new Map(), fats=new Map();
+  gs.forEach(g=>{subs.set(g.c,(subs.get(g.c)||0)+1); if(g.a.fat!=null)fats.set(g.a.fat,(fats.get(g.a.fat)||0)+1);});
+  $("subs").hidden=subs.size<2;
+  $("subs").innerHTML=pill("Hamısı",null,"sub")+[...subs].sort((a,b)=>b[1]-a[1]).map(([c])=>pill(catName(c),c,"sub")).join("");
+  const hasKg=gs.some(g=>g.a.kg), hasW=gs.some(g=>!g.a.kg&&["kq","q"].includes(g.a.wu)), hasV=gs.some(g=>["L","ml"].includes(g.a.wu));
+  const modes=[["Hamısı",1],["⚖ Çəki",hasW],["💧 Həcm",hasV],["🛒 Kq ilə satılan",hasKg],["📦 Digər",1]].filter(m=>m[1]).map(m=>m[0]);
+  $("modes").innerHTML=modes.map(m=>pill(m,m,"mode")).join("");
+  const fl=[...fats].filter(x=>x[1]>=3).map(x=>x[0]).sort((a,b)=>a-b); $("fatRow").hidden=fl.length<2;
   $("fats").innerHTML=fl.length<2?"":pill("Hamısı",null,"fat")+fl.map(f=>pill(f+"%",f,"fat")).join("");
   const cnt={}; gs.forEach(g=>{ if(g.n<2)return; for(const[s,o]of Object.entries(g.offers)) if(o.p===g.min) cnt[s]=(cnt[s]||0)+1; });
   const ch=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
@@ -334,14 +355,15 @@ function syncPills(){
 }
 function apply(){
   let l=groups(cur).slice();
-  if(F.sub) l=l.filter(g=>g.a.subtype===F.sub);
+  if(F.sub) l=l.filter(g=>g.c===F.sub);
   if(F.mode!=="Hamısı") l=l.filter(g=>{const u=g.a.wu;
-    return F.mode==="⚖ Çəki"?(u==="kq"||u==="q"):F.mode==="💧 Həcm"?(u==="L"||u==="ml"):(u==="ədəd"||u==null);});
+    return F.mode==="⚖ Çəki"?(!g.a.kg&&(u==="kq"||u==="q")):F.mode==="💧 Həcm"?(u==="L"||u==="ml"):
+      F.mode==="🛒 Kq ilə satılan"?g.a.kg:(!g.a.kg&&(u==="ədəd"||u==null));});
   const mn=parseFloat(F.min), mx=parseFloat(F.max);
   if(!isNaN(mn)) l=l.filter(g=>{const n=norm(g.a.wv,g.a.wu);return n!=null&&n>=mn;});
   if(!isNaN(mx)) l=l.filter(g=>{const n=norm(g.a.wv,g.a.wu);return n!=null&&n<=mx;});
   if(F.fat!=null) l=l.filter(g=>g.a.fat===+F.fat);
-  if(F.q.trim()){const q=F.q.trim().toLowerCase(); l=l.filter(g=>g.lc.includes(q)||g.a.subtype.toLowerCase().includes(q));}
+  if(F.q.trim()){const q=F.q.trim().toLowerCase(); l=l.filter(g=>g.lc.includes(q));}
   if(F.sort==="name") l.sort((a,b)=>a.name.localeCompare(b.name,"az"));
   else if(F.sort==="price_asc") l.sort((a,b)=>a.min-b.min);
   else l.sort((a,b)=>b.save-a.save||b.n-a.n);
@@ -351,21 +373,23 @@ function offer(g,s){
   const o=g.offers[s], c0=`<i class="dot" style="--c:var(--${s})"></i>${s}`;
   if(!o) return `<div class="o na"><span>${c0}</span><b>—</b></div>`;
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
-  return `<div class="o${c}"><span>${c0}</span><b class="mono">${fmt(o.p)}${o.w?"<sup>W</sup>":""}</b></div>`;
+  return `<div class="o${c}"><span>${c0}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}</b></div>`;
 }
 function bestOf(g){
   const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0];
   const sv=g.n>1?`<small>${fmt(g.save)} qənaət (ən bahadan)</small>`:`<small>yalnız bu mağazada</small>`;
-  return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${fmt(e[1].p)}</b></div>`;
+  return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${fmt(e[1].p)}${unit(g)}</b></div>`;
 }
 function render(){
-  const list=filtered.slice(0,shown), em=EMOJI[cur]||"📦";
+  const list=filtered.slice(0,shown);
   $("count").textContent=`${filtered.length} məhsul`;
   $("list").innerHTML=list.length?list.map(g=>{
-    const a=g.a, info=[a.wv?`${a.wv} ${a.wu}`:"",a.fat!=null?a.fat+"%":""].filter(Boolean).join(" · ");
+    const a=g.a, em=EMOJI[g.c]||"📦";
+    const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",a.wv?`${a.wv} ${a.wu}`:"",a.fat!=null?a.fat+"%":""].filter(Boolean).join(" · ");
     return `<article class="item${hl===g.id?" hl":""}" id="r-${g.id}">
-      <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div><div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||a.subtype)}</div></div></div>
-      ${bestOf(g)}<div class="offers">${stores.map(s=>offer(g,s)).join("")}</div></article>`;
+      <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div>
+      <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
+      ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.map(s=>offer(g,s)).join("")}</div></article>`;
   }).join(""):'<div class="empty">Filtrə uyğun məhsul tapılmadı.</div>';
   $("more").hidden=shown>=filtered.length;
   $("more").textContent=`Daha çox göstər (${filtered.length-shown} qalıb)`;
@@ -375,7 +399,7 @@ function render(){
 function route(){
   if(!DB) return;
   const m=location.hash.match(/^#\/c\/([\w-]+)(?:\/(p\d+))?/);
-  if(m&&DB.categories[m[1]]){
+  if(m&&GM[m[1]]){
     $("homeView").hidden=true; $("catView").hidden=false; openCat(m[1],m[2]);
     if(m[2]) setTimeout(()=>{const r=$("r-"+m[2]); r&&r.scrollIntoView({block:"center"});},50);
     else window.scrollTo(0,0);
@@ -407,16 +431,16 @@ $("q").oninput=debounce(e=>{
   const q=e.target.value.trim().toLowerCase(), box=$("results");
   if(q.length<2){box.innerHTML="";return;}
   const res=[];
-  for(const id of Object.keys(DB.categories)){
-    for(const g of groups(id)){
-      if(g.lc.includes(q)) res.push([id,g]);
+  for(const gr of GL){
+    for(const g of groups(gr.id)){
+      if(g.lc.includes(q)) res.push([gr.id,g]);
       if(res.length>=400) break;
     }
   }
   res.sort((a,b)=>b[1].n-a[1].n||a[1].min-b[1].min);
   box.innerHTML=res.slice(0,8).map(([id,g])=>
-    `<button class="res" data-go="#/c/${id}/${g.id}"><small>${EMOJI[id]||"📦"} ${esc(DB.categories[id].name)}</small>
-     <strong>${esc(g.name)}</strong><small class="mono">${Object.entries(g.offers).map(([s,o])=>s+" "+fmt(o.p)).join(" · ")}</small></button>`).join("")
+    `<button class="res" data-go="#/c/${id}/${g.id}"><small>${EMOJI[g.c]||"📦"} ${esc(catName(g.c))}</small>
+     <strong>${esc(g.name)}</strong><small class="mono">${Object.entries(g.offers).map(([s,o])=>s+" "+fmt(o.p)+(g.a.kg?"/kq":"")).join(" · ")}</small></button>`).join("")
      ||'<div class="res"><small>Heç nə tapılmadı</small></div>';
 },150);
 $("results").onclick=e=>{const b=e.target.closest("[data-go]"); if(!b)return; $("results").innerHTML=""; $("q").value=""; go(b.dataset.go);};

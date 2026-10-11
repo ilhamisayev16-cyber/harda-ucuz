@@ -46,6 +46,7 @@ button{cursor:pointer}
 .res:last-child{border:0}
 .res:active{background:var(--soft)}
 .res small{color:var(--mute);display:block}
+.cat-hit{background:var(--brand-soft)}
 .res strong{display:block;font-size:15px}
 
 /* home */
@@ -230,9 +231,49 @@ const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"�
   pecenye:"🍪",cay:"🍵",qehve:"☕",sire:"🧃",su:"💧",kola:"🥤",energetik:"⚡",sokolad:"🍫",halva:"🍬",bal:"🍯",
   dondurma:"🍦",zeytun_yagi:"🫒",bitki_yagi:"🌻",mayonez:"🫙",ketcup:"🍅",duz:"🧂",sekerqum:"🍬",istiot:"🌶️",
   qabyuyan:"🧽",yuyucu:"🧺",temizlik:"🧹",gigiyena:"🧼",
-  heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🍿",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",oyuncaq:"🧸",dereterlik:"✏️",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
+  heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🍿",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",oyuncaq:"🧸",dereterlik:"✏️",kagiz:"🧻",qadin_gig:"🌸",usaq_baxim:"🍼",dis_baximi:"🪥",sac_baximi:"💇",beden_baximi:"🧴",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
   usaq:"👶",hazir:"🍿",heyvan:"🐾",
   meyve:"🍎",sebze:"🥕",et:"🍗",bakaliya:"🍚",sirniyyat:"🍫",iceckiler:"🥤",yag_sous:"🫒",ev:"🧴"};
+/* ingiliscə ad / axtarış: ana kateqoriya adları və söz uyğunluqları */
+const GEN={meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
+  corek:"bread bakery",bakaliya:"grains rice pasta flour cereal",sirniyyat:"sweets chocolate biscuits candy dessert honey",
+  hazir:"snacks chips nuts ready meals frozen",iceckiler:"drinks beverages water juice tea coffee soda",yag_sous:"oil sauce spices sugar salt canned pickles",
+  usaq:"baby kids",gigiyena:"hygiene personal care soap shampoo toothpaste toilet paper",ev:"household cleaning detergent kitchen",
+  heyvan:"pet food cat dog",oyuncaq:"toys stationery",spirtli:"alcohol beer wine vodka",diger:"other misc"};
+const GEN_NAME={meyve:"Fruit",sebze:"Vegetables",sud:"Dairy & eggs",et:"Meat & fish",corek:"Bread",bakaliya:"Grains & pasta",sirniyyat:"Sweets",
+  hazir:"Snacks & ready meals",iceckiler:"Drinks",yag_sous:"Oil, sauces, spices",usaq:"Baby & kids",gigiyena:"Personal care",ev:"Household",
+  heyvan:"Pet food",oyuncaq:"Toys & stationery",spirtli:"Alcohol",diger:"Other"};
+/* ingilis -> azərbaycan (diakritiksiz) */
+const SYN={milk:"sud",cheese:"pendir",butter:"kere_yagi",yogurt:"yoqurt qatiq",yoghurt:"yoqurt qatiq",egg:"yumurta",eggs:"yumurta",cream:"qaymaq xama",
+  "sour cream":"xama",kefir:"kefir",bread:"corek lavas",chicken:"toyuq",beef:"dana",veal:"dana",lamb:"quzu qoyun",mutton:"qoyun",turkey:"hindi",meat:"et",
+  sausage:"sosis kolbasa",sausages:"sosis kolbasa",salami:"salam kolbasa",fish:"baliq",tuna:"tuna",salmon:"losos",rice:"duyu",pasta:"makaron",noodles:"eriste makaron",
+  flour:"un",sugar:"seker",salt:"duz",oil:"yag",olive:"zeytun",sunflower:"gunebaxan",tea:"cay",coffee:"qehve kofe",cocoa:"kakao",water:"su",juice:"sire",
+  cola:"kola",soda:"kola qazli",lemonade:"limonad",energy:"energetik",chocolate:"sokolad",biscuit:"pecenye biskvit",biscuits:"pecenye biskvit",cookie:"pecenye",
+  cookies:"pecenye",cracker:"kreker",crackers:"kreker",candy:"konfet",sweets:"konfet sirniyyat",honey:"bal",jam:"murebbe cem",halva:"halva","ice cream":"dondurma",
+  icecream:"dondurma",cake:"tort keks",potato:"kartof",potatoes:"kartof",tomato:"pomidor",tomatoes:"pomidor",cucumber:"xiyar",onion:"soyan",cabbage:"kelem",
+  carrot:"yerkoyu",beet:"cuqundur",beetroot:"cuqundur",eggplant:"badimcan",pepper:"biber istiot",garlic:"sarimsaq",apple:"alma",pear:"armud",peach:"saftal",
+  cherry:"gilas albali",grape:"uzum",grapes:"uzum",banana:"banan",kiwi:"kivi",lemon:"limon",orange:"portagal portaqal",pomegranate:"nar",fruit:"meyve",vegetable:"terevez",
+  vegetables:"terevez",soap:"sabun",shampoo:"sampun",conditioner:"balzam",toothpaste:"dis_pasta mecunu",toothbrush:"dis_firca",deodorant:"deodorant deo",
+  "toilet paper":"tualet_kagiz",tissue:"salfet",napkin:"salfet",diapers:"bezi",diaper:"bezi",pads:"molped ped",razor:"ulgüc",perfume:"parfum etir",cream_:"krem",
+  dishwashing:"qabyuyan",detergent:"yuyucu",washing:"yuyucu",bleach:"agardici",cleaner:"temizleyici",beer:"pive",wine:"serab",vodka:"araq",whisky:"viski",whiskey:"viski",
+  cognac:"konyak",cigarettes:"siqaret",cigarette:"siqaret",chips:"cips",nuts:"qoz findiq badam",hazelnut:"findiq",almond:"badam",peanut:"yerfistiq fistiq",
+  raisins:"kisimis",dates:"xurma",ketchup:"ketcup",mayonnaise:"mayonez",sauce:"sous",mustard:"xardal",vinegar:"sirke",spice:"edviyyat",spices:"edviyyat",
+  "baby food":"usaq_qidasi",formula:"sud_qarisigi",cat:"pisik",dog:"it",pet:"pisik it",toy:"oyuncaq",toys:"oyuncaq",notebook:"defter",pen:"qelem",pencil:"karandas"};
+SYN.sourcream="xama"; SYN.toiletpaper="tualet_kagiz"; SYN.babyfood="usaq_qidasi";
+const PHR=["ice cream","toilet paper","sour cream","baby food"];
+const fold=s=>String(s).toLowerCase().replace(/[çəğıöşü]/g,c=>TR[c]);
+/* sorğu -> hər söz üçün alternativlər (diakritiksiz, ingilis sinonimləri ilə) */
+function expandQ(q){
+  let t=fold(q).replace(/[^\w\s.%]/g," ").replace(/\s+/g," ").trim();
+  PHR.forEach(p=>{t=t.replace(p,p.replace(" ",""));});
+  return t.split(" ").filter(Boolean).map(w=>{
+    const alts=new Set([w]), base=w.length>3&&w.endsWith("s")&&!SYN[w]?w.slice(0,-1):w;
+    for(const k of [w,base]) if(SYN[k]) SYN[k].split(" ").forEach(a=>alts.add(a.replace(/_/g," ")));
+    return [...alts];
+  });
+}
+const hasAlt=(fd,a)=>a.length<=3?(" "+fd+" ").includes(" "+a+" "):fd.includes(a);
+const matchQ=(fd,ex)=>ex.every(alts=>alts.some(a=>hasAlt(fd,a)));
 const PAGE=60;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -302,7 +343,7 @@ function group(cat){
       }
       const o=mk(it,kgp);
       if(best&&bs>=.5){ const ex=best.offers[store]; if(!ex||o.p<ex.p) best.offers[store]=o; continue; }
-      const g={id:"p"+n++,name:it.name,a,c:it._c,offers:{[store]:o},lc:it.name.toLowerCase()};
+      const g={id:"p"+n++,name:it.name,a,c:it._c,offers:{[store]:o},lc:it.name.toLowerCase(),fd:fold(it.name)};
       out.push(g); const e={g,tk,al};
       for(const t of tk){ (idx.get(t)||idx.set(t,[]).get(t)).push(e); }
     }
@@ -353,10 +394,10 @@ async function load(){
 /* ─────────── home ─────────── */
 function renderHome(){
   const raw=g=>g.cats.reduce((a,c)=>a+Object.values((DB.categories[c]||{stores:{}}).stores).reduce((x,l)=>x+l.length,0),0);
-  const list=GL.map(g=>[g,raw(g)]).filter(x=>x[1]>0).sort((a,b)=>(a[0].id==="diger")-(b[0].id==="diger")); // "Digər" sonda
+  const list=GL.map(g=>[g,raw(g)]).filter(x=>x[1]>0);   // sıra data-dakı qrup sırasıdır ("Digər" sonda)
   $("catGrid").innerHTML=list.map(([g,n])=>
     `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span><b>${esc(g.name)}</b>
-     <small>${n} qiymət</small></span></button>`).join("");
+     <small>${GEN_NAME[g.id]?esc(GEN_NAME[g.id])+" · ":""}${n.toLocaleString("az")}</small></span></button>`).join("");
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazanın öz saytından alınan qiymətlər dəqiqdir;
     Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
 }
@@ -399,7 +440,7 @@ function apply(){
   if(!isNaN(mn)) l=l.filter(g=>{const n=norm(g.a.wv,g.a.wu);return n!=null&&n>=mn;});
   if(!isNaN(mx)) l=l.filter(g=>{const n=norm(g.a.wv,g.a.wu);return n!=null&&n<=mx;});
   if(F.fat!=null) l=l.filter(g=>g.a.fat===+F.fat);
-  if(F.q.trim()){const q=F.q.trim().toLowerCase(); l=l.filter(g=>g.lc.includes(q));}
+  if(F.q.trim()){const ex=expandQ(F.q); if(ex.length) l=l.filter(g=>matchQ(g.fd,ex));}
   if(F.sort==="name") l.sort((a,b)=>a.name.localeCompare(b.name,"az"));
   else if(F.sort==="price_asc") l.sort((a,b)=>a.min-b.min);
   else l.sort((a,b)=>b.save-a.save||b.n-a.n);
@@ -464,17 +505,24 @@ $("sort").onchange=e=>{F.sort=e.target.value;apply();};
 
 /* global search */
 $("q").oninput=debounce(e=>{
-  const q=e.target.value.trim().toLowerCase(), box=$("results");
-  if(q.length<2){box.innerHTML="";return;}
+  const raw=e.target.value.trim(), box=$("results");
+  if(raw.length<2){box.innerHTML="";return;}
+  const ex=expandQ(raw); if(!ex.length){box.innerHTML="";return;}
   const res=[];
   for(const gr of GL){
     for(const g of groups(gr.id)){
-      if(g.lc.includes(q)) res.push([gr.id,g]);
-      if(res.length>=400) break;
+      if(matchQ(g.fd,ex)) res.push([gr.id,g]);
+      if(res.length>=600) break;
     }
   }
-  res.sort((a,b)=>b[1].n-a[1].n||a[1].min-b[1].min);
-  box.innerHTML=res.slice(0,8).map(([id,g])=>
+  const st=g=>ex.some(al=>al.some(a=>g.fd.startsWith(a)))?1:0;   // adı axtarılan sözlə başlayanlar əvvəl
+  res.sort((a,b)=>st(b[1])-st(a[1])||b[1].n-a[1].n||a[1].min-b[1].min);
+  // uyğun kateqoriyalar (ad, ingiliscə ad, alt növlər)
+  const chips=GL.filter(gr=>{
+    const hay=fold(gr.name)+" "+(GEN[gr.id]||"")+" "+gr.cats.map(c=>fold(catName(c))).join(" ");
+    return matchQ(hay,ex);
+  }).slice(0,3).map(gr=>`<button class="res cat-hit" data-go="#/c/${gr.id}"><strong>${EMOJI[gr.id]||"📦"} ${esc(gr.name)}</strong><small>${esc(GEN_NAME[gr.id]||"")} · kateqoriyaya keç</small></button>`).join("");
+  box.innerHTML=chips+res.slice(0,8).map(([id,g])=>
     `<button class="res" data-go="#/c/${id}/${g.id}"><small>${EMOJI[g.c]||"📦"} ${esc(catName(g.c))}</small>
      <strong>${esc(g.name)}</strong><small class="mono">${Object.entries(g.offers).map(([s,o])=>s+" "+fmt(o.p)+(g.a.kg?"/kq":"")).join(" · ")}</small></button>`).join("")
      ||'<div class="res"><small>Heç nə tapılmadı</small></div>';

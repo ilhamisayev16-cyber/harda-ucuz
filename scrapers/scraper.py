@@ -29,10 +29,13 @@ CATEGORIES = {   # sıra vacibdir: ilk uyğun gələn kateqoriya götürülür
     "qabyuyan":  {"name":"Qabyuyan maye",    "kw":["qabyuyan","qab yuyan","fairy"]},
     "yuyucu":    {"name":"Yuyucu toz/gel",   "kw":["yuyucu","paltaryuyan","kir yuyan","ariel","persil","yumşaldıcı","kondisioner"]},
     "temizlik":  {"name":"Təmizləyici",      "kw":["təmizləyici","ağardıcı","dezinfeksiya","domestos","cif ","təmizlik","təravətləndirici"]},
-    "gigiyena":  {"name":"Sabun/Şampun/Kağız","kw":["sabun","şampun","duş geli","dezodorant","diş pastası","diş fırçası",
-                  "tualet kağız","kağız dəsmal","salfet","bədən üçün","üz üçün","uşaq bezi","bezi","pambıq","ülgüc","tampon",
-                  "gigiyenik","losyon","parfüm","maska","saç ","vanna","deo","nivea","garnier","colgate","rexona","gillette",
-                  "always","kotex","molped","splat","balzam","təraş","tonik","serum","diş","geli","pad "]},
+    "kagiz":     {"name":"Kağız məhsulları", "kw":["tualet kağız","kağız dəsmal","salfet","dəsmal","kağız məhsul"]},
+    "qadin_gig": {"name":"Qadın gigiyenası", "kw":["molped","always","kotex","tampon","gigiyenik","gündəlik","bella","ped "]},
+    "usaq_baxim":{"name":"Uşaq baxımı",      "kw":["uşaq bezi","bezi","pampers","huggies","molfix","uşaq şampun","uşaq sabun","uşaq krem"]},
+    "dis_baximi":{"name":"Diş və ağız baxımı","kw":["diş","ağız","colgate","listerine","splat","oral-b","oral b"]},
+    "sac_baximi":{"name":"Saç baxımı",       "kw":["şampun","saç","balzam","pantene","elseve","head & shoulders","h&s","garnier"]},
+    "beden_baximi":{"name":"Bədən və üz baxımı","kw":["sabun","duş gel","duş geli","dezodorant","deo","nivea","dove","əl kremi","üz kremi","bədən kremi","losyon",
+                  "təraş","gillette","parfüm","ətir","kosmetik","maska","tonik","serum","bədən üçün","üz üçün","günəş krem","vazelin","pambıq","ülgüc","vanna","geli","rexona","sprey"]},
     "heyvan_yemi":{"name":"Heyvan yemi",     "kw":["pişik","itlər","köpək","nəm yem","quru yem","whiskas","purina","pedigree","felix","kitekat","royal canin","sheba"]},
     "usaq_qida": {"name":"Uşaq qidası",      "kw":["uşaq","sıyıq","bebi","aptamil","nutrilon","kabrita","gerber","hipp","agusha","nanny","fruto"]},
     "spirtli":   {"name":"Spirtli içkilər",  "kw":["araq","viski","şərab","pivə","konyak","vermut","likör","votka","şampan","brendi","tekila"],
@@ -129,18 +132,18 @@ GROUPS = [
     {"id":"sebze",    "name":"Tərəvəz",               "cats":["kartof","pomidor","xiyar","soyan","kelem","yerkoyu","cuqundur","badimcan","biber","sarimsaq","sebze_diger"]},
     {"id":"sud",      "name":"Süd məhsulları",        "cats":["sud","qatiq","xama","kefir","ayran","kere_yagi","pendir","yumurta"]},
     {"id":"et",       "name":"Ət və balıq",           "cats":["toyuq","dana_ati","qoyun_ati","hindi","kolbasa","sosis","baliq"]},
-    {"id":"bakaliya", "name":"Taxıl və makaron",      "cats":["duyu","merci","noxud","fasulya","qarabashaq","yulaf","un","makaron","bakliyyat"]},
     {"id":"corek",    "name":"Çörək",                 "cats":["corek"]},
+    {"id":"bakaliya", "name":"Taxıl və makaron",      "cats":["duyu","merci","noxud","fasulya","qarabashaq","yulaf","un","makaron","bakliyyat"]},
     {"id":"sirniyyat","name":"Şirniyyat",             "cats":["pecenye","sokolad","halva","dondurma","bal","murebbe"]},
+    {"id":"hazir",    "name":"Qəlyanaltı və hazır yemək","cats":["hazir_yemek","cips","qoz","dondurulmus"]},
     {"id":"iceckiler","name":"İçkilər",               "cats":["cay","qehve","sire","su","kola","energetik"]},
     {"id":"yag_sous", "name":"Yağ, sous, ədviyyat",   "cats":["zeytun_yagi","bitki_yagi","mayonez","ketcup","duz","sekerqum","istiot","konserv"]},
+    {"id":"usaq",     "name":"Uşaq məhsulları",       "cats":["usaq_qida","usaq_baxim"]},
+    {"id":"gigiyena", "name":"Gigiyena və baxım",      "cats":["beden_baximi","sac_baximi","dis_baximi","qadin_gig","kagiz"]},
     {"id":"ev",       "name":"Ev və məişət",          "cats":["qabyuyan","yuyucu","temizlik","mesis"]},
-    {"id":"gigiyena", "name":"Gigiyena",              "cats":["gigiyena"]},
-    {"id":"hazir",    "name":"Qəlyanaltı və hazır yemək","cats":["hazir_yemek","cips","qoz","dondurulmus"]},
-    {"id":"usaq",     "name":"Uşaq qidası",           "cats":["usaq_qida"]},
     {"id":"heyvan",   "name":"Heyvan yemi",           "cats":["heyvan_yemi"]},
-    {"id":"spirtli",  "name":"Spirtli içkilər",       "cats":["spirtli"]},
     {"id":"oyuncaq",  "name":"Oyuncaq və dəftərxana", "cats":["oyuncaq","dereterlik"]},
+    {"id":"spirtli",  "name":"Spirtli içkilər",       "cats":["spirtli"]},
     {"id":"diger",    "name":"Digər məhsullar",       "cats":["diger"]},
 ]
 _missing = {c for g in GROUPS for c in g["cats"]} ^ set(CATEGORIES)
@@ -167,7 +170,7 @@ def wolt_slugs(store):
     extra = [x.strip() for x in env.split(",") if x.strip()]
     return extra + WOLT_SLUGS.get(store, [])
 
-JUICE_WORDS = ["şirəsi","suyu","nektarı","mors","şərbəti","kompot","içkisi","limonadı"]
+JUICE_WORDS = ["şirəsi","suyu","nektarı","mors","şərbəti","kompot","içkisi","limonadı","sandora","cappy","pfanner","tropicana","fruktoviy","fruktovy","zolotoy sad"]
 _WATER = re.compile(_low(r"mineral su|içməli su|mənbə suyu|qazlı su"))
 
 def clean_price(raw):
@@ -257,11 +260,13 @@ def assign_cat(name):
 # Mağazanın öz kateqoriya adı (Wolt/Araz/OBA) -> bizim kateqoriya. Sıra vacibdir.
 CATEGORY_PATH_RULES = [(re.compile(_low(r), re.I), cid) for r, cid in [
     (r"spirtsiz piv", "kola"), (r"piv|araq|viski|şərab|spirtli|likor|tekila|vermut|konyak|şampan", "spirtli"),
-    (r"uşaq.*(bez|baxım|sabun|salfet|krem|diş)", "gigiyena"), (r"uşaq", "usaq_qida"),
+    (r"uşaq.*(bez|baxım|sabun|salfet|krem|diş)", "usaq_baxim"), (r"uşaq", "usaq_qida"),
     (r"ev heyvan|it və pişik|pişiklər|itlər üçün", "heyvan_yemi"),
     (r"qabyuyan", "qabyuyan"), (r"yuyucu|paltaryuyan|yumşaldıcı|ağardıcı|çamaşır", "yuyucu"),
     (r"təmizlik|təmizləyici|həşərat|hava təravət", "temizlik"),
-    (r"saç|şampun|dezodar|dezodor|ətir|kaloniya|sabun|duş gel|gigiyen|diş|dəri|təraş|kosmetik|manikür|qoruyucu|günəş krem|şəxsi baxım|salfet|kağız məhsulları|tualet|ağız təravət", "gigiyena"),
+    (r"saç|şampun", "sac_baximi"), (r"diş|ağız təravət", "dis_baximi"), (r"kağız məhsulları|salfet|tualet", "kagiz"),
+    (r"gigiyenik|qoruyucu|qadınlar üçün gig", "qadin_gig"),
+    (r"dezodar|dezodor|ətir|kaloniya|sabun|duş gel|dəri|təraş|kosmetik|manikür|günəş krem|şəxsi baxım|baxım", "beden_baximi"),
     (r"xırdavat|məişət|bişirmə|folqa|streç|birdəfə|zibil|şamlar|difüzor|batareya|lampa|ləvazimat", "mesis"),
     (r"tütün|siqaret|alışqan|terea|oyuncaq|məktəb|ofis|maşın|avtomobil|tekstil|hədiyyə|sağlam qida|dietik", "diger"),
     (r"energetik|enerji", "energetik"), (r"şirə|nektar|kompot", "sire"),
@@ -291,10 +296,15 @@ def cat_from_path(path):
     return None
 
 def classify(name, path=""):
-    """Əvvəl məhsulun adına, tapılmazsa mağazanın kateqoriya adına görə."""
+    """Əvvəl məhsulun adına, tapılmazsa mağazanın kateqoriya adına görə.
+    Ad üzrə nəticə təbii məhsul (meyvə/tərəvəz/ət) çıxırsa, amma mağaza kateqoriyası başqa şey deyirsə
+    (məs. "Sandora Portağal" -> "Meyvə şirələri"), mağaza kateqoriyasına üstünlük verilir."""
     cid = assign_cat(name)
-    if cid == "diger" and path:
-        return cat_from_path(path) or "diger"
+    if not path: return cid
+    pc = cat_from_path(path)
+    if cid == "diger": return pc or "diger"
+    if pc and cid in _STRICT and pc not in _STRICT and pc not in ("meyve_diger", "sebze_diger", "diger"):
+        return pc
     return cid
 
 def sim(a, b):
@@ -702,12 +712,15 @@ def recategorize(data):
     old = data.get("categories", {})
     new = empty_data()["categories"]
     seen = set()
-    for c in old.values():
+    RENAMED = {"gigiyena": "beden_baximi"}   # silinmiş kateqoriya -> yeni
+    for oid, c in old.items():
         for store, items in c["stores"].items():
             for it in items:
                 cid = assign_cat(it["name"])
+                if cid == "diger":   # mağaza kateqoriyası artıq saxlanmır: köhnə təyinatı itirmə
+                    cid = RENAMED.get(oid, oid) if RENAMED.get(oid, oid) in CATEGORIES else "diger"
                 key = (store, cid, it["name"].lower())
-                if cid and key not in seen:
+                if key not in seen:
                     seen.add(key)
                     new[cid]["stores"].setdefault(store, []).append(it)
     data["categories"] = new
@@ -728,7 +741,8 @@ def main():
             data = json.load(f)
         data["stores"] = ALL_STORES
         # köhnə (artıq istifadə olunmayan) kateqoriyaları at: onlarda köhnəlmiş qiymətlər qalır
-        data["categories"] = {k: v for k, v in data["categories"].items() if k in CATEGORIES}
+        if not args.recategorize:   # recategorize köhnə kateqoriyaları özü yenidən paylayır
+            data["categories"] = {k: v for k, v in data["categories"].items() if k in CATEGORIES}
         for cid, info in CATEGORIES.items():
             if cid not in data["categories"]:
                 data["categories"][cid] = {"name":info["name"],"stores":{s:[] for s in ALL_STORES}}

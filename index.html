@@ -97,7 +97,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 .count{color:var(--mute);font-size:13px;margin:0 0 8px}
 
 /* product cards */
-.list{display:grid;gap:12px}
+.list{display:grid;grid-template-columns:1fr;gap:12px}
 .item{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(60,30,0,.06)}
 .item.hl{background:var(--brand-soft);border-color:var(--brand)}
 .head{display:flex;gap:12px;align-items:center}
@@ -143,7 +143,6 @@ details.more-f summary::-webkit-details-marker{display:none}
   .logo{display:none}
   .top .wrap{gap:18px}
   .search{max-width:480px;margin-left:auto}
-  .list{grid-template-columns:repeat(2,1fr)}
 }
 @media (min-width:900px){ .grid{grid-template-columns:repeat(4,1fr)} }
 

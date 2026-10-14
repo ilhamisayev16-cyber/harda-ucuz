@@ -504,8 +504,11 @@ function stem(w){
 }
 const WL=s=>s.split(" ").map(w=>stem(fold(w)));
 /* qablaşdırma / mağaza səs-küyü: bir mağaza yazır, digəri yazmır */
-const NOISE=new Set(("ve ile ucun with and for the x paket paketde pkt pk qutu qutuda karton kar banka bankada qab qabda pet pl plastik tetra tp tb "+
-  "doypak dypk dpk tnk teneke tenekede aksiya yeni new promo ff eded ed edli ml qr gr kq kg lt l").split(" ").flatMap(w=>{w=fold(w); return [w,stem(w)];}));
+const NOISE=new Set(("ve ile ucun with and for the x banka bankada qab qabda kar tetra tp tb "+
+  "aksiya yeni new promo ff eded ed edli ml qr gr kq kg lt l").split(" ").flatMap(w=>{w=fold(w); return [w,stem(w)];}));
+/* qablaşdırma materialı: yazılmaya da bilər, amma iki adda fərqlidirsə ayrı məhsuldur (tənəkə ≠ paket, plastik ≠ karton) */
+const MAT=new Map(("teneke:metal tenekede:metal tnk:metal demir:metal plastik:plastik plastika:plastik plastikde:plastik pet:plastik pl:plastik "+
+  "karton:karton paket:paket paketde:paket pkt:paket pk:paket doypak:paket dypk:paket dpk:paket qutu:qutu qutuda:qutu").split(" ").map(p=>p.split(":")));
 /* tərcümə / yazılış variantları -> bir söz */
 const TSYN=new Map(("peynir:pendir cikolata:sokolad chocolate:sokolad choco:sokolad tavuk:toyuq chicken:toyuq hinduska:hindi turkey:hindi white:ag black:qara "+
   "red:qirmizi green:yasil yellow:sari pink:cehrayi rose:cehrayi strawberry:ciyelek cilek:ciyelek klubnika:ciyelek raspberry:moruq malina:moruq cherry:albali "+
@@ -513,40 +516,51 @@ const TSYN=new Map(("peynir:pendir cikolata:sokolad chocolate:sokolad choco:soko
   "coconut:kokos hazelnut:findiq cocoa:kakao caramel:karamel mint:nane kurabiye:pecenye biscuit:pecenye biscuits:pecenye pechenye:pecenye sandwich:sendvic "+
   "apricot:erik kayisi:erik mango:manqo pineapple:ananas grape:uzum watermelon:qarpiz melon:yemis blueberry:qaragile honey:bal coffee:qehve kofe:qehve "+
   "mixed:assorti asorti:assorti classic:klassik classico:klassik klasik:klassik original:orijinal orginal:orijinal extra:ekstra gold:qizil silver:gumus "+
-  "woman:qadin women:qadin lady:qadin man:kisi men:kisi pants:tuman sisede:suse susede:suse sise:suse steklo:suse")
+  "woman:qadin women:qadin lady:qadin man:kisi men:kisi pants:tuman sisede:suse susede:suse sise:suse steklo:suse virgin:sizma kompakt:compact slims:slim")
   .split(" ").map(p=>p.split(":").map(w=>stem(fold(w)))));
-/* fərqləndirici sözlər (dad, rəng, növ): yalnız bir adda olsa da ayrı məhsuldur */
+/* fərqləndirici sözlər (dad, rəng, növ, xətt): yalnız bir adda olsa da ayrı məhsuldur */
 const VAR=new Set(WL("alma armud banan ciyelek moruq albali gilas erik saftali nar uzum ananas manqo kivi portagal limon laym mandarin greypfrut qarpiz yemis "+
   "heyva qaragile boyurtken qaragat zogal kokos marakuya findiq badam qoz fistiq araxis puste antep kesyu vanil karamel kakao bal nane mentol darcin qehve "+
   "kapucino latte tiramisu sogan sarimsaq gobelek paprika kabab barbeku toyuq dana quzu hindi ciyer krevet qizilbaliq tomat acili duzsuz light lite zero diet "+
   "dietik laktozasiz laktozsuz qlutensiz glutensiz sekersiz endirim suse rengsiz tuman bonus mini maxi midi tund dark cehrayi qizil gumus platinum yagsiz pehriz "+
-  "quru kemsirin sirin turs spred integral integrale kepekli"));
+  "quru kemsirin sirin turs spred integral integrale kepekli demi slim nano pomace rafine sizma gourmet kubar procomfort"));
 /* zəif fərqləndiricilər: yalnız o biri adda başqa fərqləndirici olduqda ayırır (qara çay = çay, qazsız su = su) */
 const WEAK=new Set(WL("qara ag qirmizi yasil sari mavi goy boz usaq kids baby bebe junior kisi qadin gunebaxan qargidali kunjut zeytun kolza xiyar pomidor "+
   "kelem biber badimcan assorti pisik it kopek ordek dovga kesmik qazli qazsiz teze dondurulmus kolbasa sosis sosiska"));
 for(const w of WEAK) VAR.add(w);
-/* ad -> söz çoxluğu (ölçü, faiz, barkod çıxarılır: onları compat yoxlayır); .lead = ilk söz (marka). f = fold(ad) */
+/* meyvə-tərəvəzdə rəng tək adda olsa da sortdur (qırmızı kələm ≠ kələm) */
+const COL=new Set(WL("qara ag qirmizi yasil sari"));
+/* xətt / sort sözləri: zəif kimi (hər iki adda fərqli söz = ayrı məhsul); birində varsa, o biri mağaza həmin markanı bu sözlə ayrıca satırsa və ya qiymət çox fərqlidirsə ayrıdır */
+const LINE=new Set(WL("orijinal one compact ks kss ksss ss super ekonom premium klassik ekstra bitter pancake bar nabor desti set nabuk nubuk"));
+const OPT={X:.01,LINK:0,W:1,CON:1,LP:1.4,PK:1.3,MAT:1,CX:3};
+/* ad -> söz çoxluğu (ölçü, faiz, barkod çıxarılır: onları compat yoxlayır); .lead = ilk söz (marka), .mat = qablaşdırma materialı. f = fold(ad).
+   Say: 10-lu / 10 əd -> 10pc, 4+1 -> 4p1pc, 3ü 1də / 3-in-1 -> 3in1; ölçü hərfi (S)/(M)/XL -> #s/#m/#xl */
+const NUM="(?:\\d+(?:\\.\\d+)?|\\.\\d+)";   // \d*\.?\d+ əvəzinə: uzun rəqəm sətrində geri qayıtma partlamasın
+const TK_SZ=new RegExp("(\\d+\\s*[x*]\\s*)?"+NUM+"\\s*(?:kq|kg|qr|gr|g|q|ml|ltr|litr|lt|l)(?![a-z])","g");
 function tokens(f){
-  const s=f.replace(/(\d)\s*,\s*(\d)/g,"$1.$2").replace(/\b(\d) (\d) ?%/g,"$1.$2%")
+  const out=new Set(), mat=new Set(); let lead=null;
+  let s=f.replace(/(\d)\s*,\s*(\d)/g,"$1.$2").replace(/\b(\d) (\d) ?%/g,"$1.$2%")
+    .replace(/\(\s*(x{0,3}[sml]|xs|b)\s*\)|(?<![\d.]\s*)\s(x{0,3}[sml]|xs|b)\s*$/g,(m,a,b)=>{out.add("#"+(a||b));return " ";})   // ölçü hərfi
     .replace(/\+\s*\d+\.?\d*\s*(?:ml|qr|gr|g|q|l|lt|kq|kg)(?![a-z])/g," bonus ")            // "2l+500ml" hədiyyəli
     .replace(/\d+(\.\d+)?\s*%/g," ")
-    .replace(/(\d+\s*[x*]\s*)?\d*\.?\d+\s*(?:kq|kg|qr|gr|g|q|ml|ltr|litr|lt|l)(?![a-z])/g," ")
-    .replace(/(\d)\s*(?:sm|cm)(?![a-z])/g,"$1sm")
-    .replace(/\b([23])\s*(?:-?\s*(?:in|si)\s*-?|[*\/])\s*1\b(?:\s*-?\s*de\b)?/g," $1in1 ")   // 2*1, 2-in-1, 2/1 -> 2in1
+    .replace(TK_SZ," ")
+    .replace(/(\d)\s*(sm|cm|mm)(?![a-z])/g,(m,d,u)=>d+(u==="mm"?"mm":"sm"))
+    .replace(/(\d)\s*[x*]\s*(\d)/g,"$1x$2")                                                    // 29*30 sm = 29x30sm
+    .replace(/\b([23])\s*(?:-?\s*(?:in|si|u)\s*-?|[*\/])\s*1(?:\s*-?\s*de)?\b/g," $1in1 ")      // 2*1, 2-in-1, 3ü 1də -> 3in1
+    .replace(/\b(\d+)\s*\+\s*(\d+)\b/g," $1p$2pc ")                                           // 4+1 (hədiyyəli say)
     .replace(/(\d+)\s*[-]?\s*(?:edli|eded|ed|adet|pcs|pc|dene|luk|lik|lu|li|liq|luq)(?![a-z])/g," $1pc ")   // 10-lu, 10 əd -> 10pc
     .replace(/(^|\s)[x*]\s*\d+(?![\d.])/g," ")                                                 // *12: qutu sayı
     .replace(/(^|[^\w.])\d{4,}(?![\w.])/g,"$1 ")                                               // barkod / daxili kod
     .replace(/([a-z])\.(?=[a-z])/g,"$1 ");                                                     // dr.oetker
-  const out=new Set(); let lead=null;
   for(let w of s.replace(/[^a-z0-9.\s]/g," ").split(/\s+/)){
     w=w.replace(/^\.+|\.+$/g,""); if(!w) continue;
-    if(/^[a-z]+$/.test(w)){ if(NOISE.has(w)) continue; w=stem(w); if(lead==null) lead=w;
+    if(/^[a-z]+$/.test(w)){ const m=MAT.get(w); if(m){ mat.add(m); continue; } if(NOISE.has(w)) continue; w=stem(w); if(lead==null) lead=w;
       if(w.length<2||NOISE.has(w)) continue; w=TSYN.get(w)||w; }
     else if(lead==null&&/[a-z]/.test(w)) lead=w;                                               // "Vita1000"
     out.add(w);
   }
   if(!out.size) out.add(f);
-  out.lead=lead; return out;
+  out.lead=lead; out.mat=mat; return out;
 }
 const AC=new Map(), isA=t=>{let v=AC.get(t); if(v===undefined) AC.set(t,v=/^[a-z]+$/.test(t)?t.replace(/[aeiou]/g,""):""); return v!=="";};   // hərfli söz? (+ samit skeleti keşdə)
 function lev1(a,b){ // redaktə məsafəsi <= 1
@@ -554,17 +568,19 @@ function lev1(a,b){ // redaktə məsafəsi <= 1
   let i=0,j=0,d=0; while(i<la&&j<lb){ if(a[i]===b[j]){i++;j++;continue;} if(++d>1) return false; if(la>lb) i++; else if(lb>la) j++; else {i++;j++;} }
   return d+(la-i)+(lb-j)<=1;
 }
-/* yazı səhvi: lev<=1, şəkilçi fərqi (naturalnoe~natural), eyni samitlər (labulab~lebuleb) */
+/* yazı səhvi: lev<=1, şəkilçi fərqi (naturalnoe~natural, yem~yemi), eyni samitlər (labulab~lebuleb) */
 function near(t,u){
+  const [a,b]=t.length<u.length?[t,u]:[u,t];
+  if(a.length>=2&&b.length-a.length<=2&&b.startsWith(a)&&/^(?:s?[iu]|y[iu]|n[iu])$/.test(b.slice(a.length))&&isA(a)) return true;   // yiyəlik şəkilçisi
   if(t.length<5||u.length<5||!isA(t)||!isA(u)) return false;
   if(lev1(t,u)) return true;
-  const [a,b]=t.length<u.length?[t,u]:[u,t]; if(b.length-a.length<=3&&b.startsWith(a)) return true;
+  if(b.length-a.length<=3&&b.startsWith(a)) return true;
   return t.length>=6&&u.length>=6&&AC.get(t)===AC.get(u);
 }
 const AL="[a-zA-ZğüşıöçĞÜŞIÖÇəƏ]";
 /* ölçü oxunuşu: çəki (q/kq), həcm (ml/L), ədəd; çoxlu qablaşdırma (12x1.5kq); yazı səhvləri */
 const UNIT="(?:kq|kg|qr|gr|ml|ltr|litr|lt|q|g|l)", NOLET="(?!"+AL.slice(0,-1)+"])";
-const SIZE_RX=new RegExp("(\\d+\\s*[x×*]\\s*)?(\\d*\\.?\\d+)\\s*("+UNIT+")"+NOLET,"i");
+const SIZE_RX=new RegExp("(\\d+\\s*[x×*]\\s*)?("+NUM+")\\s*("+UNIT+")"+NOLET,"i");
 const PIECE_RX=new RegExp("(\\d+)\\s*-?\\s*(?:əd|ed|ədəd|adet|ad|pcs?|dənə|l[üuıi]k?|l[ıi]q|l[uü]q)"+NOLET,"i");
 const UNITMAP={kq:"kq",kg:"kq",q:"q",g:"q",qr:"q",gr:"q",ml:"ml",l:"L",lt:"L",ltr:"L",litr:"L"};
 function parseSize(name){
@@ -587,7 +603,7 @@ function parseSize(name){
   return null;
 }
 function attrs(name){
-  let fat=null; const f=name.replace(/\b(\d) (\d) ?%/,"$1.$2%").replace(/\d+\s*%\s*endirim/i,"").match(/(\d+[.,]?\d*)\s*%/);   // "3 2%" = 3.2%; "20% endirim" faiz deyil
+  let fat=null; const f=name.replace(/\b(\d) (\d) ?%/,"$1.$2%").replace(/\d+\s*%\s*endirim/i,"").match(/(\d+(?:[.,]\d+)?)\s*%/);   // "3 2%" = 3.2%; "20% endirim" faiz deyil
   if(f){const v=parseFloat(f[1].replace(",","."));if(!isNaN(v)&&v<=100)fat=v;}
   const s=parseSize(name);
   const wv=s?s.wv:null, wu=s?s.wu:null;
@@ -623,78 +639,104 @@ function compat(a,b){
 }
 
 /* mağazalar arası qruplaşdırma. Bal: IDF çəkili ortaq sözlər / bütün sözlər (>= .5).
-   Qadağalar: ölçü/faiz (compat), bir kartda bir mağazadan bir məhsul, fərqli dad/rəng (VAR), fərqli nömrə,
-   marka (ilk söz) heç bir tərəfdə yoxdur, qiymət 3 dəfədən çox fərqli. Namizədlər: nadir sözlərin indeksi (prefix filtr). */
-function group(cat){
-  const it=[], df=new Map();
+   Qadağalar (sim = 0): ölçü/faiz (compat), fərqli dad/rəng/xətt (VAR), hər iki adda fərqli nömrə / say / material,
+   hər iki adda qarşılığı olmayan məlumatlı söz (nadir söz, zəif fərqləndirici, xətt sözü), tək adda xətt / nadir söz və o biri mağaza
+   eyni markanı bu sözlə ayrıca satır, marka (ilk söz) heç bir tərəfdə yoxdur, qiymət 3 dəfədən çox fərqli.
+   Kartlar: ən oxşar cütlərdən başlayaraq birləşdirilir; kartdakı hər üzv digər mağazaların BÜTÜN üzvləri ilə uyğun olmalıdır (zəncir yoxdur),
+   bir kartda bir mağazadan bir məhsul (eyni ad = dublikat). Namizədlər: nadir sözlərin indeksi (prefiks filtri). */
+function group(cat,prod){
+  const it=[], df=new Map(), P=new Map(), SI=new Map();
   for(const store of Object.keys(cat.stores||{})) for(const x of cat.stores[store]||[]){
-    const f=fold(x.name), tk=tokens(f); it.push({x,store,f,a:attrs(x.name),tk,lead:tk.lead,key:[...tk].sort().join(" "),p:x.price??x.wolt_price??0});
-    for(const t of tk) df.set(t,(df.get(t)||0)+1);
+    const f=fold(x.name), tk=tokens(f); let a=attrs(x.name);
+    if(x.wt>0) a={...a,kg:true,wv:null,wu:null,pack:0,unit:0,uu:""};   // Wolt "ədəd" çəki ilə: qiymət 1 kq üçündür
+    const e={x,store,f,a,tk,lead:tk.lead,mat:tk.mat,key:[...tk].sort().join(" "),p:x.price??x.wolt_price??0}; it.push(e);
+    for(const t of tk){ df.set(t,(df.get(t)||0)+1); (P.get(t)||P.set(t,[]).get(t)).push(e); }
   }
-  const N=it.length, W=new Map(), gen=Math.max(5,N*.01);
+  const N=it.length, W=new Map(), gen=Math.max(5,N*.01), rare=Math.max(5,N*OPT.X);
   for(const [t,d] of df) W.set(t,/^\d+$/.test(t)?Math.min(1.5,Math.log(1+N/d)):Math.log(1+N/d));   // çılpaq rəqəm (kod?) az çəki
   for(const e of it){ e.w=0; for(const t of e.tk) e.w+=W.get(t); e.ord=[...e.tk].sort((p,q)=>df.get(p)-df.get(q)); }
+  const strong=t=>VAR.has(t)&&(!WEAK.has(t)||prod&&COL.has(t));
+  const PK=/^\d+(?:p\d+)?(?:pc|in1)$/;
+  const inf=t=>/^[a-z]{3,}$/.test(t)&&df.get(t)<rare;
+  /* o biri mağaza (o) eyni markanı t sözü ilə ayrıca satır: o-nun adında t yoxdursa, bu başqa məhsuldur */
+  const con=(t,o,l2)=>{ for(const c of P.get(t)) if(c.store===o.store&&c!==o&&(c.tk.has(o.lead)||c.tk.has(l2))) return true; return false; };
   const sim=(e,x,need)=>{
     let sh=0; for(const t of x.tk) if(e.tk.has(t)) sh+=W.get(t);
     let ua=x.w-sh, ub=e.w-sh;
     if((sh+Math.min(ua,ub))/(sh+Math.max(ua,ub)||1)<need) return 0;     // yazı səhvləri ilə də çatmaz
-    let vA=0,vB=0,dA=false,dB=false; const used=new Set();
+    const used=new Set(), A=[], B=[];
     for(const t of x.tk){
       if(e.tk.has(t)){used.add(t);continue;}
       let hit=null; for(const u of e.tk) if(!used.has(u)&&!x.tk.has(u)&&near(t,u)){hit=u;break;}
       if(hit){const w=W.get(t);sh+=w;ua-=w;ub-=W.get(hit);used.add(hit);continue;}
-      if(VAR.has(t)){ if(!WEAK.has(t)) return 0; vA++; }
-      if(/\d/.test(t)) dA=true;
+      A.push(t);
     }
-    for(const u of e.tk) if(!used.has(u)){ if(VAR.has(u)){ if(!WEAK.has(u)) return 0; vB++; } if(/\d/.test(u)) dB=true; }
-    if((vA&&vB)||(dA&&dB)) return 0;                                   // hər iki adda fərqli növ / nömrə
+    for(const u of e.tk) if(!used.has(u)&&!x.tk.has(u)) B.push(u);
+    const r=x.p>0&&e.p>0?Math.max(x.p,e.p)/Math.min(x.p,e.p):1;
+    // tərəfin qarşılıqsız sözləri: d nömrə, k say, v zəif, l xətt, u nadir söz
+    const cls=(L,o,me)=>{ const c={d:0,k:0,v:0,l:0,u:0,one:0};
+      for(const t of L){
+        if(strong(t)) return null;
+        if(PK.test(t)){ c.k++; c.d++; }
+        else if(/[\d#]/.test(t)) c.d++;
+        else if(WEAK.has(t)) c.v++;
+        else if(LINE.has(t)){ c.l++; if(OPT.CON&&(r>=OPT.LP||con(t,o,me.lead))) c.one++; }
+        else if(inf(t)){ c.u++; if(OPT.CON&&df.get(t)<=rare*OPT.CX&&con(t,o,me.lead)) c.one++; }
+      }
+      return c; };
+    const ca=cls(A,e,x); if(!ca) return 0; const cb=cls(B,x,e); if(!cb) return 0;
+    if(ca.d&&cb.d) return 0;                                            // hər iki adda fərqli nömrə / say
+    if(OPT.PK&&(ca.k||cb.k)&&r>=OPT.PK) return 0;                        // tək adda say (2li, 4+1) və qiymət fərqli: çoxlu qablaşdırma
+    if(OPT.W?((ca.v||ca.l||ca.u)&&(cb.v||cb.l||cb.u)):((ca.v&&cb.v)||(ca.u&&cb.u))) return 0;   // hər iki adda fərqli növ
+    if(ca.one||cb.one) return 0;                                       // o biri mağaza bu xətti ayrıca satır
+    if(OPT.MAT&&x.mat.size&&e.mat.size&&![...x.mat].some(m=>e.mat.has(m))) return 0;   // fərqli material
     const has=(T,t)=>{ if(t==null) return false; if(T.has(t)) return true; for(const u of T) if(near(t,u)) return true; return false; };
-    const inB=x.lead!=null&&x.lead===e.lead||has(e.tk,x.lead), inA=x.lead!=null&&x.lead===e.lead||has(x.tk,e.lead), rare=t=>t!=null&&(df.get(t)||0)<gen;
-    if(!((inA&&inB)||(inA&&rare(e.lead))||(inB&&rare(x.lead)))) return 0;   // marka uyğun deyil ("Tac Yumurta" ≠ "Yumurta")
+    const inB=x.lead!=null&&x.lead===e.lead||has(e.tk,x.lead), inA=x.lead!=null&&x.lead===e.lead||has(x.tk,e.lead), rr=t=>t!=null&&(df.get(t)||0)<gen;
+    if(!((inA&&inB)||(inA&&rr(e.lead))||(inB&&rr(x.lead)))) return 0;   // marka uyğun deyil ("Tac Yumurta" ≠ "Yumurta")
     return sh/(sh+ua+ub||1);
   };
-  /* indeks: ölçü qutusu -> söz -> üzvlər; compat yalnız eyni və ya qonşu qutuda (±1 q/ml/ədəd) mümkündür */
-  const out=[], IX=new Map(); let n=1;
+  /* cütlər: hər məhsul üçün əvvəlki məhsullardan namizədlər (eyni / qonşu ölçü qutusu, ən nadir sözlər) */
+  const IX=new Map(), E=[]; let st=0;
   const bk=a=>isKg(a)?"k":a.wv==null?"-":fam(a.wu)+Math.round(norm(a.wv,a.wu));
-  for(const x of it){ const b=bk(x.a); x.bl=b.length<2?[b]:[-1,0,1].map(d=>b[0]+(+b.slice(1)+d)); }
-  const put=(g,x)=>{ const e={g,tk:x.tk,lead:x.lead,w:x.w,s:0}, b=bk(g.a), m=IX.get(b)||IX.set(b,new Map()).get(b); x.e=e;
-    for(const t of x.tk) (m.get(t)||m.set(t,[]).get(t)).push(e); };
-  let st=0;
-  const place=(x,skip)=>{
-    let best=null,bs=0,be=null,pw=0; st++; const ms=x.bl.map(b=>IX.get(b)).filter(Boolean);
+  for(const x of it){
+    const b=bk(x.a), ms=(b.length<2?[b]:[-1,0,1].map(d=>b[0]+(+b.slice(1)+d))).map(b=>IX.get(b)).filter(Boolean); let pw=0; st++;
     for(const t of x.ord){
       if(pw>.5*x.w) break; pw+=W.get(t);                                // qalan sözlər .5 həddinə çatdıra bilməz
-      for(const m of ms) for(const e of m.get(t)||[]){ if(e.s===st) continue; e.s=st;
-        const g=e.g; if(e.w<.5*x.w||x.w<.5*e.w||Math.min(e.w,x.w)<bs*Math.max(e.w,x.w)) continue;
-        if(g===skip||e.dead) continue;
-        const ex=g.by[x.store], dup=ex&&ex.key===x.key;               // bir kartda bir mağazadan bir məhsul (eyni ad = dublikat)
-        if(ex&&!dup&&(ex.s>=1||e===ex.e)) continue;                      // əvəz edəcəyi üzv vasitəsilə qoşula bilməz
-        if(x.p>0&&(x.p>g.lo*3||x.p*3<g.hi)) continue;                    // qiymət 3 dəfədən çox fərqli
-        if(!compat(g.a,x.a)) continue;
-        const s=dup?1:sim(e,x,Math.max(.5,bs)); if(ex&&!dup&&s<=ex.s) continue;   // yer tutulub: yalnız daha oxşar olan əvəz edir
-        if(s>bs){bs=s;best=g;be=e;} }
+      for(const m of ms) for(const e of m.get(t)||[]){ if(e.st===st) continue; e.st=st;
+        if(e.w<.5*x.w||x.w<.5*e.w) continue;
+        if(e.store===x.store){ if(e.key===x.key) E.push([1,e,x]); continue; }   // eyni mağaza: yalnız eyni ad (dublikat)
+        if(x.p>0&&e.p>0&&(x.p>e.p*3||e.p>x.p*3)||!compat(e.a,x.a)) continue;   // qiymət 3 dəfədən çox fərqli
+        const s=sim(e,x,.5); if(s>=.5) E.push([s,e,x]); }
     }
-    if(best&&bs>=.5){
-      const ex=best.by[x.store]; x.s=bs; x.via=be;
-      if(best.a.fat==null&&x.a.fat!=null) best.a={...best.a,fat:x.a.fat};
-      if(ex&&ex.key!==x.key){ // köhnəni çıxar (eyni adlı dublikatları ilə), yenidən yerləşdir
-        const gone=best.m.filter(m=>m.store===x.store);
-        for(let k=0;k<gone.length;k++) for(const m of best.m) if(m.via===gone[k].e&&!gone.includes(m)) gone.push(m);   // onun vasitəsilə qoşulanlar da
-        best.m=best.m.filter(m=>!gone.includes(m)); for(const m of gone){ m.e.dead=true; if(best.by[m.store]===m) best.by[m.store]=best.m.find(o=>o.store===m.store); }
-        best.by[x.store]=x; best.m.push(x); best.lo=Math.min(...best.m.map(m=>m.p)); best.hi=Math.max(...best.m.map(m=>m.p)); put(best,x);
-        for(const m of gone) place(m,best); return; }
-      if(!best.by[x.store]) best.by[x.store]=x; best.m.push(x); best.lo=Math.min(best.lo,x.p); best.hi=Math.max(best.hi,x.p); put(best,x); return; }
-    x.s=1; const g={id:"p"+n++,name:x.x.name,fd:x.f,a:x.a,c:x.x._c,by:{[x.store]:x},m:[x],lo:x.p,hi:x.p};
-    out.push(g); put(g,x);
-  };
-  for(const x of it) place(x,null);
+    const m=IX.get(b)||IX.set(b,new Map()).get(b); for(const t of x.tk) (m.get(t)||m.set(t,[]).get(t)).push(x);
+  }
+  /* birləşdirmə: ən oxşar cütdən başlayaraq; iki kart yalnız bütün üzvləri bir-birinə uyğundursa birləşir */
+  E.sort((p,q)=>q[0]-p[0]);
+  for(const x of it) x.C={m:[x],lo:x.p>0?x.p:Infinity,hi:x.p};
+  for(const [s,a,b] of E){
+    const A=a.C, B=b.C; if(A===B||Math.max(A.hi,B.hi)>3*Math.min(A.lo,B.lo)) continue;
+    let ok=true;
+    for(const y of A.m){ for(const z of B.m){
+        if(y.store===z.store){ if(y.key!==z.key){ok=false;break;} continue; }
+        if(y===a&&z===b||y===b&&z===a) continue;
+        if(!compat(y.a,z.a)||sim(y,z,0)<=OPT.LINK){ok=false;break;} }
+      if(!ok) break; }
+    if(!ok) continue;
+    const [K,Q]=A.m.length>=B.m.length?[A,B]:[B,A];
+    for(const z of Q.m){ z.C=K; K.m.push(z); } K.lo=Math.min(K.lo,Q.lo); K.hi=Math.max(K.hi,Q.hi);
+  }
+  const out=[]; let n=1;
+  for(const x of it){ const C=x.C; if(C.g) continue;                   // kartın adı: ilk üzv (mağaza sırası ilə)
+    const g=C.g={id:"p"+n++,name:x.x.name,fd:x.f,a:x.a,c:x.x._c,m:C.m};
+    for(const y of C.m) if(g.a.fat==null&&y.a.fat!=null) g.a={...g.a,fat:y.a.fat};
+    out.push(g); }
   for(const g of out){ // qiymət statistikası bir dəfə
     g.offers={}; for(const x of g.m){ const o=mk(x.x), ex=g.offers[x.store]; if(!ex||o.p<ex.p) g.offers[x.store]=o; }
     g.sk=g.a.kg?"kg":(g.a.wv!=null?fam(g.a.wu)+":"+Math.round(norm(g.a.wv,g.a.wu)*100)/100:"");
     const o=Object.values(g.offers), v=o.map(x=>x.p);
     g.img=(o.find(x=>x.i&&!x.w)||o.find(x=>x.i)||{}).i||null;
     g.n=v.length; g.min=Math.min(...v); g.max=Math.max(...v); g.save=g.n>1?g.max-g.min:0;
-    delete g.by; delete g.m;
+    delete g.m;
   }
   return out;
 }
@@ -716,7 +758,7 @@ function groups(gid){
     const c=DB.categories[cid]; if(!c) continue;
     for(const s of Object.keys(c.stores)) (stv[s]=stv[s]||[]).push(...c.stores[s].map(it=>({...it,_c:cid})));
   }
-  return GROUPS[gid]=group({stores:stv});
+  return GROUPS[gid]=group({stores:stv},gid==="meyve"||gid==="sebze");
 }
 const catName=c=>(DB.categories[c]||{}).name||c;
 const unit=g=>g.a.kg?"<small>/kq</small>":"";

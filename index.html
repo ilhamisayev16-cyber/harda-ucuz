@@ -540,7 +540,7 @@ const COL=new Set(WL("qara ag qirmizi yasil sari"));
 const LINE=new Set(WL("orijinal one compact ks kss ksss ss super ekonom premium klassik ekstra bitter pancake bar nabor desti set nabuk nubuk bismis dalgavari"));
 /* uyğunlaşdırma həddləri: X nadir söz (qrupun 1%-dən az adında), XB məzmun sözü (5%-dən az), LP/PK/R2 qiymət nisbəti, CX "ayrıca satılır" yoxlaması,
    WO zəif söz + o biri adda başqa söz, PR meyvə-tərəvəzdə tək adda məzmun sözü, KD kod = nömrə, UL markasız ad, TW eyni adlı əkiz */
-const OPT={X:.01,XB:.05,LINK:0,CON:1,LP:1.4,PK:1.3,R2:2,MAT:1,CX:3,WO:1,PR:1,KD:1,UL:1,TW:1,SP:1,SPC:.6,ID:0,ND:1.4,AN:1,RN:1};
+const OPT={X:.01,XB:.05,LINK:0,CON:1,LP:1.4,PK:1.3,R2:2,MAT:1,CX:3,WO:1,PR:1,KD:1,UL:1,TW:1,SP:1,SPC:.6,ID:0,ND:1.4,AN:1,RN:1,R9:1};
 /* ad -> söz çoxluğu (ölçü, faiz, barkod çıxarılır: onları compat yoxlayır); .lead = ilk söz (marka), .mat = qablaşdırma materialı. f = fold(ad).
    Say: 10-lu / 10 əd -> 10pc, 4+1 -> 4p1pc, 3ü 1də / 3-in-1 -> 3in1; ölçü hərfi (S)/(M)/XL -> #s/#m/#xl; .code = 4-7 rəqəmli kod (I-2170) */
 const NUM="(?:\\d+(?:\\.\\d+)?|\\.\\d+)";   // \d*\.?\d+ əvəzinə: uzun rəqəm sətrində geri qayıtma partlamasın
@@ -706,15 +706,15 @@ function group(cat,prod){
   const has=(T,t)=>{ if(t==null) return false; if(T.has(t)) return true; for(const u of T) if(nr(t,u)) return true; return false; };
   /* tərəfin qarşılıqsız sözləri (L): c[0] nömrə/say, c[1] say, c[2] məlumatlı söz (4-7), c[3] zəif/xətt (4-5), c[4] ümumi söz; null = güclü fərqləndirici.
      Q: "ayrıca satılır" yoxlanacaq sözlər (söz, qiymət fərqi kifayətdirmi) */
-  const cls=(L,r,Q)=>{ let d=0,k=0,v=0,w=0,o=0;
+  const cls=(L,r,Q)=>{ let d=0,k=0,v=0,w=0,o=0,n=0;
     for(const t of L){ const c=K.get(t);
       if(c===1) return null;
-      if(c===2){k++;d++;} else if(c===3){ d++; if(OPT.AN&&/[a-z].*[a-z].*[a-z]/.test(t)) v++; }   // 7zlak: həm nömrə, həm söz
-      else if(c===4||c===5){ v++; w++; if(c===5&&OPT.CON) Q.push(t,r>=OPT.LP); }
-      else if(c===6){ v++; if(OPT.CON&&df.get(t)<=rare*OPT.CX) Q.push(t,!!(prod&&OPT.PR)); }
+      if(c===2){k++;d++;} else if(c===3){ d++; if(OPT.AN&&/[a-z].*[a-z].*[a-z]/.test(t)){v++;n++;} }   // 7zlak: həm nömrə, həm söz
+      else if(c===4||c===5){ v++; w++; n++; if(c===5&&OPT.CON) Q.push(t,r>=OPT.LP); }
+      else if(c===6){ v++; n++; if(OPT.CON&&df.get(t)<=rare*OPT.CX) Q.push(t,!!(prod&&OPT.PR)); }
       else if(c===7){ v++; if(prod&&OPT.PR) Q.push(t,true); }
       else if(/^[a-z]{3,}$/.test(t)) o++; }
-    return [d,k,v,w,o]; };
+    return [d,k,v,w,o,n]; };
   const A=[], B=[], QA=[], QB=[];
   const sim=(e,x,need)=>{
     A.length=B.length=QA.length=QB.length=0;                           // massivlər təkrar istifadə olunur
@@ -733,7 +733,7 @@ function group(cat,prod){
     if(OPT.ND&&r>=OPT.ND&&(kA||kB||A.some(t=>/^\d+$/.test(t))||B.some(t=>/^\d+$/.test(t)))) return 0;             // tək adda nömrə / kod və qiymət fərqli (CR2032 ≠ C, 3 qat)
     if(OPT.SP&&SPL.size&&(spl(A,x,e)||spl(B,e,x))) return 0;   // tək adda sort sözü (mağaza ayrıca satır)
     if(OPT.PK&&(ca[1]||cb[1])&&r>=OPT.PK) return 0;                      // tək adda say (2li, 4+1) və qiymət fərqli: çoxlu qablaşdırma
-    if(ca[2]&&cb[2]) return 0;                                          // hər iki adda qarşılıqsız məlumatlı söz (növ, xətt, nadir söz)
+    if(ca[2]&&cb[2]&&(r>=OPT.R9||ca[5]||cb[5])) return 0;                                          // hər iki adda qarşılıqsız məlumatlı söz (növ, xətt, nadir söz)
     if(OPT.WO&&(ca[3]&&cb[4]||cb[3]&&ca[4])) return 0;                  // bir adda zəif/xətt sözü, o birində başqa söz (Ağ ≠ Rəngli)
     if(r>=OPT.R2&&(ca[3]||cb[3])) return 0;                             // tək adda zəif söz (kolbasa, ağ) və qiymət 2 dəfə fərqli
     if(OPT.MAT&&x.mat.size&&e.mat.size&&![...x.mat].some(m=>e.mat.has(m))) return 0;   // fərqli material

@@ -145,6 +145,10 @@ details.more-f summary::-webkit-details-marker{display:none}
   .search{max-width:480px;margin-left:auto}
 }
 @media (min-width:900px){ .grid{grid-template-columns:repeat(4,1fr)} }
+/* kompüterdə hər şey kiçik görünməsin: geniş ekranda miqyas böyüyür (150% yaxınlaşdırmağa ehtiyac qalmır) */
+@media (min-width:1000px){ body{zoom:1.25} .wrap{max-width:780px} .grid{grid-template-columns:repeat(3,1fr)} }
+@media (min-width:1300px){ body{zoom:1.45} }
+@media (min-width:1700px){ body{zoom:1.7} }
 
 </style>
 </head>

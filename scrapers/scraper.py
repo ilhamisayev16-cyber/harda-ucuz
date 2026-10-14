@@ -76,7 +76,7 @@ CATEGORIES = {
     "pisik_yemi":_c("Pişik yemi",        ["pişik","whiskas","felix","kitekat","sheba"], ["qumu","qum "]),
     "it_yemi":   _c("İt yemi",           ["itlər","köpək","pedigree","chappi","it üçün","it yemi","it quru","it nəm"]),
     "heyvan_diger":_c("Heyvan baxımı, aksesuar", ["nəm yem","quru yem","royal canin","pişik qumu"]),
-    "qabyuyan":  _c("Qabyuyan vasitə",   ["qabyuyan","qab yuyan","maşın duzu","fairy"]),
+    "qabyuyan":  _c("Qabyuyan vasitə",   ["qabyuyan","qab yuyan","maşın duzu","fairy","qab yuyucu"]),
     "yuyucu":    _c("Paltar yuyucu",     ["yuyucu","ləkə aparan","ləkə təmizləyən","paltaryuyan","kir yuyan","paltar suyu","ariel","persil","yumşaldıcı","kondisioner","perwoll","yuma gel","yuma toz","yumuşaldıcı","vanish","bingo","avtomat","automat","ləkə təmizləy","softener","vernel","pods","geyim şampun"]),
     "temizlik":  _c("Təmizlik vasitəsi", ["təmizlə","ağardıcı","dezinfeksiya","domestos","cif ","təmizlik","təravətləndirici","həşərat","hava trvt","hava təravətləndirici","ağcaqanad","ovma tozu","glade","air-wick","wc","bulasik","bulaşıq","sökücü"], ["makiyaj","üz üçün","təmizlənmiş","təmizlənmə"]),
     "zibil":     _c("Zibil torbası",     ["zibil"]),
@@ -99,7 +99,7 @@ CATEGORIES = {
     "pive":      _c("Pivə",              ["pivə"], ["spirtsiz","alkoqolsuz"]),
     "araq":      _c("Araq və votka",     ["araq","votka","vodka","kazatskaya"]),
     "viski":     _c("Viski",             ["viski","burbon","whisky","whiskey"]),
-    "serab":     _c("Şərab və şampan",   ["şərab","şampan","vermut","martini","sidr"], ["abşeron şərab"]),
+    "serab":     _c("Şərab və şampan",   ["şərab","şampan","vermut","martini","sidr"], ["konyak","likör","brendi","araq","vodka","balzam"]),
     "likor":     _c("Konyak, likör, digər",["konyak","brendi","likör","tekila","rakı","spirtli","alkoqollu","gin ","beefeater"], ["spirtsiz","alkoqolsuz"]),
     "siqaret":   _c("Siqaret və tütün",  ["siqaret","tütün","terea","heets","ploom","rothmans","sobranie","marlboro","winston","parliament","davidoff","dunhill","compact","pall mall","alışqan","nano ","viceroy","ld club","kent beat","argo","black style","want line","winchester"], ["dəsmal","makyaj","hava","qab","oyun","çöpü","qulaq","baby","bag"]),
     # şirniyyat / içki (emal olunmuş məhsullar meyvə-tərəvəzdən əvvəl)
@@ -117,13 +117,13 @@ CATEGORIES = {
     "energetik": _c("Enerji içkisi",     ["red bull","monster","burn ","hell energy","hell","predator","full nitro","full energy","energy drink","xl energy",
                                          "adrenalin","bizon","gorilla","enerji"], ["coffee","kofe","qəhvə","latte","kapuçino","cappuccino","vitamin","pivə"]),
     "kola":      _c("Kola və qazlı içki",["kola","pepsi","fanta","sprite","qazlı içki","soda","qazlı","cola","mountain dew","mirinda","7up","gazoz","qazoz","schweppes","alkoqolsuz pivə","spirtsiz pivə"]),
-    "limonad":   _c("Limonad",           ["limonad","içki","icki","mountain dew","kvas","moxito","mojito","mohito"]),
+    "limonad":   _c("Limonad",           ["limonad","içki","icki","mountain dew","kvas","moxito","mojito","mohito","chernogolovka","milkis","vips"]),
     "cay":       _c("Çay",               ["çay","lipton","ahmad","azərçay","pekoe","tamashaee","akbar","greenfield","buket"], ["çaydan"]),
     "qehve":     _c("Qəhvə və kakao",    ["qəhvə","isti şokolad","hot chocolate","nescafe","lavazza","kofe","coffee","kakao","jacobs","jacob","kürükahveci","kahve","caffito","3-də 1","3ü 1","3in1","3 in 1","monarch","mokka","espresso","cappuccino","kapuçino","kappuçino","capuccino","latte","mocha","starbucks"], ["qəhvəyi"]),
     "sire":      _c("Şirə və nektar",    ["şirəsi","şirə","mors","nektar","meyvə suyu","alma suyu","portağal suyu","kompot","sandora","cappy"]),
     "qazli_su":  _c("Qazlı su, mineral",  ["mineral su","qazlı su","borjomi","narzan"]),
     "su":        _c("Su",                ["içməli su","mənbə suyu","qazsız","essentuki","yessentuki","sirab","bonaqua","badamlı","dübrar","kəhriz","sarıkız","damla su"]),
-    "cips":      _c("Çips",              ["çips","chips","popkorn","popcorn","pretzel","qrenki","grenki","xrusteam","lays","pringles","cheetos","çubuq","crisp","potato","xlebsi","xlebci","xlebtsi","suxari","snack","sticks","poof","joyzz","doritos"], ["qulaq","bambuk"]),
+    "cips":      _c("Çips",              ["çips","chips","popkorn","popcorn","pretzel","qrenki","grenki","xrusteam","lays","pringles","cheetos","çubuq","crisp","potato","xlebsi","xlebci","xlebtsi","suxari","snack","sticks","poof","joyzz","doritos","qarğıdalı çubuq"], ["qulaq","bambuk"]),
     "tum":       _c("Tum və ləpə",       ["tum","tumu","tumlar","günəbaxan ləpə","balqabaq ləpə","mister tum","ləpə","suxari"]),
     "mayonez":   _c("Mayonez",           ["mayonez"]),
     "ketcup":    _c("Ketçup və sous",    ["ketçup","ketchup","sous"], ["sousunda","sousda"]),
@@ -132,7 +132,7 @@ CATEGORIES = {
     "zeytun_yagi":_c("Zeytun yağı",      ["zeytun yağ"], ["yağında","yağda","krem","sabun","şampun","balzam","losyon"]),
     "bitki_yagi":_c("Bitki yağı",        ["günəbaxan yağ","ayçiçəyi yağ","bitki yağ","qarğıdalı yağ"], ["yağında","yağda"]),
     "makaron":   _c("Makaron",           ["makaron","spagetti","vermişel","penne","fusilli","farfalle","lazanya","tagliatelle","fettuccine","spaghetti"]),
-    "eriste":    _c("Əriştə",            ["əriştə","doşirak","noodle","lapşa","lapsha"]),
+    "eriste":    _c("Əriştə",            ["əriştə","doşirak","noodle","lapşa","lapsha","siemsam","ramen","düyü vermişel","düyü vermeşil"]),
     "corek":     _c("Çörək",             ["çörək","lavaş","çörəyi","coreyi","hot dog","tost","bulka","qoğal","simit","kətə"]),
     "hazir_yemek":_c("Hazır yemək, şorba",["pelmen","manti","xinkali","vareniki","naget","nuggets","naqqet","şnitzel","gyoza","pizza","piroq","börək","borek","lahmacun","qutab","hazır yemək","şorba","xacapuri","hazır sup","sup ","xəngəl","dolma","kabab","xəmir","naggets"], ["qabartma"]),
     "susi":      _c("Suşi",              ["suşi","sushi","nori"]),
@@ -146,7 +146,7 @@ CATEGORIES = {
     "kolbasa":   _c("Kolbasa",           ["kolbasa","salam","servelat","vetçina","sucuq","sucuk","jambon","krakov","doktorskaya","rosko"], ["sosis"]),
     "hise":      _c("Hisə verilmiş ət",  ["hisə verilmiş","hisə","bekon"]),
     "deniz":     _c("Dəniz məhsulları",  ["krevet","midiya","kalamar","kürü","xərçəng"], ["kuru maya"]),
-    "baliq":     _c("Balıq",             ["balıq","qaxac","tuna","ton ","skumbriya","losos","siyənək"]),
+    "baliq":     _c("Balıq",             ["balıq","qaxac","tuna","ton ","skumbriya","losos","siyənək","seld ","seledka","forel","kilkə","kilka","sprot"]),
     "toyuq":     _c("Toyuq",             ["toyuq","cücə","broylyer","bud","qanad","tabaka"]),
     "dana_ati":  _c("Dana əti",          ["dana"]),
     "qoyun_ati": _c("Qoyun, quzu əti",   ["qoyun","quzu"]),
@@ -655,7 +655,7 @@ _NF_ONLY = {g: frozenset(c for c in _NFC if (CAT2GROUP[c] == "heyvan") == (g == 
 _NF_GRP = {g: frozenset(c for c in _NFC if g in _grps(c)) for g in _NONFOOD}   # əvvəl rəfin öz qrupu: "Yumşaldıcı Misellyar Suyu" > Dəri baxımı
 _FOODC = frozenset(c for c, g in CAT2GROUP.items() if g not in _NONFOOD and g != "diger") - {"usaq_baxim"}
 _SWC = frozenset(c for c, g in CAT2GROUP.items() if g == "sirniyyat")
-_CHIPS = {_f(w) for w in "çips chips popkorn popcorn pretzel qrenki grenki xrusteam lays pringles cheetos doritos xlebsi xlebci xlebtsi suxari".split()}
+_CHIPS = {_f("qarğıdalı çubuq")} | {_f(w) for w in "çips chips popkorn popcorn pretzel qrenki grenki xrusteam lays pringles cheetos doritos xlebsi xlebci xlebtsi suxari".split()}
 _CEREAL = {_f(w) for w in ["lopa", "sıyıq", "müsli", "corn flakes", "səhər yeməyi", "səhər yemək"]}
 _BAR = re.compile(r"(?<!\w)(bar|baton\w*)(?!\w)")
 _DOUGH = {_f(w) for w in "börək borek xəngəl qutab xəmir lahmacun xacapuri manti pelmen vareniki xinkali pizza".split()}

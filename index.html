@@ -420,6 +420,7 @@ function wmatch(ws,fd,x,S,QA){
 }
 /* uyğunluq balı (0 = uyğun deyil); bütün sözlər tapılmalıdır (Q.relax: biri əskik ola bilər).
    Ad sözü tapılmasa da, sorğu alt növün adıdırsa (süd -> "Süd" alt növü) zəif bal alır */
+const CWS=new Map();
 function score(g,Q,gid){
   const ws=words(g), QA=Q.QA||(Q.QA=Q.w.flatMap(q=>q.A.map(x=>x.a))); let sum=0,st=0,miss=0;
   for(const q of Q.w){
@@ -436,7 +437,10 @@ function score(g,Q,gid){
   if(Q.sz&&g.sk!==Q.sz&&!(isKg(a)&&Q.sz==="w:1000")) return 0;   // "1 kq" = kq ilə satılan da
   for(const x of Q.num){ const v=a.wv==null?null:norm(a.wv,a.wu);
     if(!(a.fat===x||a.wv===x||v===x||v===x*1000||a.pack===x)) return 0; }
-  return (Q.w.length?sum/Q.w.length:1)*(miss?.6:1)+.15*st+.04*(g.n-1)-(Q.sz&&g.sk!==Q.sz?.05:0);   // ad axtarılan sözlə başlayır: əsas məhsuldur
+  const fl=Q.FL||(Q.FL=new Set(Q.w.flatMap(q=>q.A.map(x=>stem(x.a)))));   // dad sözü sorğuda yoxdursa ("süd" -> əvvəl sadə süd, sonra çiyələkli)
+  const cw=CWS.get(g.c)||(CWS.set(g.c,new Set(WL(catName(g.c).replace(/[^\p{L}\s]/gu," ")))),CWS.get(g.c));   // "Toyuq" alt növündə toyuq dad deyil
+  const vr=ws.some(w=>{const t=stem(w); return VAR.has(t)&&!fl.has(t)&&!cw.has(t);})?.12:0;
+  return (Q.w.length?sum/Q.w.length:1)*(miss?.6:1)+.15*st+.04*(g.n-1)-(Q.sz&&g.sk!==Q.sz?.05:0)-vr;   // ad axtarılan sözlə başlayır: əsas məhsuldur
 }
 /* namizədlər: hər sorğu sözü üçün lüğətdə uyğun gələ bilən sözlərin qrupları (+ niyyət alt növü); sözlər üzrə kəsişmə */
 function cands(Q){

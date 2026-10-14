@@ -52,15 +52,17 @@ button{cursor:pointer}
 /* home */
 h1.hero{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;line-height:1.15}
 .sub-h{margin:0 0 16px;color:var(--mute);font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.cat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;text-align:left;
-  display:flex;align-items:center;gap:10px;min-height:64px;min-width:0}
+.grid{display:grid;grid-template-columns:1fr;gap:8px}
+.cat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;text-align:left;
+  display:flex;align-items:center;gap:12px;min-height:64px;min-width:0;box-shadow:0 1px 2px rgba(60,30,0,.05)}
 .cat:active{border-color:var(--brand);background:var(--brand-soft)}
-.cat .em{font-size:28px;line-height:1;flex:none}
-.cat span:last-child{min-width:0}
+.cat .em{font-size:26px;line-height:1;flex:none;width:48px;height:48px;border-radius:14px;background:var(--soft);display:grid;place-items:center}
+.cat .tx{min-width:0;flex:1}
+.cat .go{flex:none;color:var(--mute);font-size:22px;line-height:1;opacity:.6}
+.cat .n{display:block;font-size:12px;color:var(--mute);margin-top:2px}
 .cat b{display:block;font-size:15px;line-height:1.2}
-.cat small{display:block;color:var(--mute);font-size:12px;line-height:1.35;margin-top:3px}
-.cat small i{font-style:normal;color:var(--text);font-weight:600}
+.cat small{display:block;color:var(--mute);font-size:13px;line-height:1.35;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cat .n i{font-style:normal;color:var(--ink);font-weight:600}
 .note{margin-top:20px;color:var(--mute);font-size:12.5px;line-height:1.6}
 
 /* category view */
@@ -96,7 +98,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 
 /* product cards */
 .list{display:grid;gap:12px}
-.item{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(60,30,0,.06)}
 .item.hl{background:var(--brand-soft);border-color:var(--brand)}
 .head{display:flex;gap:12px;align-items:center}
 .logo-p{flex:none;width:60px;height:60px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:28px}
@@ -110,18 +112,19 @@ details.more-f summary::-webkit-details-marker{display:none}
 .best>span{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
 .best b{font-size:20px;font-weight:800;white-space:nowrap}
 .best small{display:block;font-size:11px;font-weight:600;opacity:.85}
-.offers{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.o{display:flex;align-items:center;justify-content:space-between;gap:6px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
-.o span{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mute)}
+.offers{display:grid;grid-template-columns:1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.o{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;min-width:0;border-top:1px solid var(--line)}
+.o:first-child{border-top:0}
+.o span{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
 .o b{font-size:15px}
-.o.min{border-color:var(--good)}
+.o.min{background:var(--good-soft)}
 .o.min b{color:var(--good)}
 .o.max b{color:var(--bad)}
 .o.na{opacity:.45}
 .o b,.best b{white-space:nowrap}
-.offers.kg .o{flex-direction:column;align-items:flex-start;gap:0}
+.o b{text-align:right}
 .o b small{font-size:10px;font-weight:600;color:var(--mute)}
-.o b small.kgp{display:block;font-weight:600}
+.o b small.kgp{display:block;font-weight:600;text-align:right}
 .best b small{display:inline;font-size:11px;opacity:.8}
 .o sup{font-size:9px;color:var(--mute);font-weight:600}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--c,#999);flex:none}
@@ -144,24 +147,6 @@ details.more-f summary::-webkit-details-marker{display:none}
 }
 @media (min-width:900px){ .grid{grid-template-columns:repeat(4,1fr)} }
 
-.tools .view{padding:0;width:44px;font-size:18px}
-@media (min-width:600px){.tools .view{display:none}}
-@media (max-width:599px){
-  .list.two{grid-template-columns:1fr 1fr;gap:8px}
-  .list.two .item{padding:10px;display:flex;flex-direction:column;min-width:0}
-  .list.two .head{flex-direction:column;align-items:stretch;gap:8px}
-  .list.two .logo-p{width:100%;height:92px;font-size:38px}
-  .list.two .item h3{font-size:13px;-webkit-line-clamp:3}
-  .list.two .meta{font-size:11px;margin-top:3px}
-  .list.two .best{flex-direction:column;align-items:flex-start;gap:2px;padding:8px;margin:8px 0 6px}
-  .list.two .best b{font-size:18px}
-  .list.two .best small{font-size:10px}
-  .list.two .offers{grid-template-columns:1fr;gap:4px;margin-top:auto}
-  .list.two .o,.list.two .offers.kg .o{flex-direction:row;flex-wrap:wrap;align-items:center;padding:5px 8px}
-  .list.two .o span{font-size:12px}
-  .list.two .o b{font-size:13px}
-  .list.two .o b small.kgp{display:inline;margin-left:4px}
-}
 </style>
 </head>
 <body>
@@ -208,7 +193,6 @@ details.more-f summary::-webkit-details-marker{display:none}
         <option value="price_asc">Ucuz</option>
         <option value="name">A → Z</option>
       </select>
-      <button class="btn view" id="view" type="button" aria-label="Görünüş: 1 və ya 2 sütun">▦</button>
     </div>
     <details class="more-f">
       <summary>⚙ Ölçü və faiz filtri</summary>
@@ -436,6 +420,7 @@ function wmatch(ws,fd,x,S,QA){
 }
 /* uyğunluq balı (0 = uyğun deyil); bütün sözlər tapılmalıdır (Q.relax: biri əskik ola bilər).
    Ad sözü tapılmasa da, sorğu alt növün adıdırsa (süd -> "Süd" alt növü) zəif bal alır */
+const CWS=new Map();
 function score(g,Q,gid){
   const ws=words(g), QA=Q.QA||(Q.QA=Q.w.flatMap(q=>q.A.map(x=>x.a))); let sum=0,st=0,miss=0;
   for(const q of Q.w){
@@ -452,7 +437,10 @@ function score(g,Q,gid){
   if(Q.sz&&g.sk!==Q.sz&&!(isKg(a)&&Q.sz==="w:1000")) return 0;   // "1 kq" = kq ilə satılan da
   for(const x of Q.num){ const v=a.wv==null?null:norm(a.wv,a.wu);
     if(!(a.fat===x||a.wv===x||v===x||v===x*1000||a.pack===x)) return 0; }
-  return (Q.w.length?sum/Q.w.length:1)*(miss?.6:1)+.15*st+.04*(g.n-1)-(Q.sz&&g.sk!==Q.sz?.05:0);   // ad axtarılan sözlə başlayır: əsas məhsuldur
+  const fl=Q.FL||(Q.FL=new Set(Q.w.flatMap(q=>q.A.map(x=>stem(x.a)))));   // dad sözü sorğuda yoxdursa ("süd" -> əvvəl sadə süd, sonra çiyələkli)
+  const cw=CWS.get(g.c)||(CWS.set(g.c,new Set(WL(catName(g.c).replace(/[^\p{L}\s]/gu," ")))),CWS.get(g.c));   // "Toyuq" alt növündə toyuq dad deyil
+  const vr=ws.some(w=>{const t=stem(w); return VAR.has(t)&&!fl.has(t)&&!cw.has(t);})?.12:0;
+  return (Q.w.length?sum/Q.w.length:1)*(miss?.6:1)+.15*st+.04*(g.n-1)-(Q.sz&&g.sk!==Q.sz?.05:0)-vr;   // ad axtarılan sözlə başlayır: əsas məhsuldur
 }
 /* namizədlər: hər sorğu sözü üçün lüğətdə uyğun gələ bilən sözlərin qrupları (+ niyyət alt növü); sözlər üzrə kəsişmə */
 function cands(Q){
@@ -865,10 +853,10 @@ function renderHome(){
   const raw=g=>g.cats.reduce((a,c)=>a+Object.values((DB.categories[c]||{stores:{}}).stores).reduce((x,l)=>x+l.length,0),0);
   const list=GL.map(g=>[g,raw(g)]).filter(x=>x[1]>0);   // sıra data-dakı qrup sırasıdır ("Digər" sonda)
   const tops=g=>g.cats.map(c=>[c,Math.max(0,...Object.values((DB.categories[c]||{stores:{}}).stores).map(l=>l.length))])
-    .filter(x=>x[1]>0&&!/_diger$|^diger$/.test(x[0])).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>catName(x[0]).split(/[,(]/)[0].trim());
+    .filter(x=>x[1]>0&&!/_diger$|^diger$/.test(x[0])).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>catName(x[0]).split(/[,(\/]/)[0].trim());
   $("catGrid").innerHTML=list.map(([g,n])=>
-    `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span><b>${esc(g.name)}</b>
-     <small>${esc(tops(g).join(" · "))}</small><small><i>${n.toLocaleString("az")}</i> məhsul</small></span></button>`).join("");
+    `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span class="tx"><b>${esc(g.name)}</b>
+     <small>${esc(tops(g).join(" · "))}</small><span class="n"><i>${n.toLocaleString("az")}</i> məhsul</span></span><span class="go">›</span></button>`).join("");
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazanın öz saytından alınan qiymətlər dəqiqdir;
     Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
 }
@@ -956,7 +944,7 @@ function render(){
     return `<article class="item${hl===g.id?" hl":""}" id="r-${g.id}">
       <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div>
       <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
-      ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.map(s=>offer(g,s)).join("")}</div></article>`;
+      ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div></article>`;
   }).join(""):'<div class="empty">Filtrə uyğun məhsul tapılmadı.</div>';
   $("more").hidden=shown>=filtered.length;
   $("more").textContent=`Daha çox göstər (${filtered.length-shown} qalıb)`;
@@ -1011,11 +999,6 @@ $("results").onclick=e=>{const b=e.target.closest("[data-go]"); if(!b)return; $(
 addEventListener("keydown",e=>{ if(e.key==="Escape"){$("results").innerHTML="";$("q").blur();} });
 addEventListener("click",e=>{ if(!e.target.closest(".search")) $("results").innerHTML=""; });
 
-/* telefonda 1 / 2 sütun seçimi */
-let TWO=false; try{TWO=localStorage.getItem("cols")==="2";}catch(e){}
-function setCols(){ $("list").classList.toggle("two",TWO); $("view").textContent=TWO?"☰":"▦"; $("view").setAttribute("aria-pressed",TWO); }
-$("view").onclick=()=>{ TWO=!TWO; try{localStorage.setItem("cols",TWO?"2":"1");}catch(e){} setCols(); };
-setCols();
 
 $("skelgrid").innerHTML=Array(8).fill('<div class="skel" style="height:64px"></div>').join("");
 load();

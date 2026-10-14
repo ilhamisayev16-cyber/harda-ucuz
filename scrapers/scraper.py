@@ -77,29 +77,29 @@ CATEGORIES = {
     "it_yemi":   _c("İt yemi",           ["itlər","köpək","pedigree","chappi","it üçün","it yemi","it quru","it nəm"]),
     "heyvan_diger":_c("Heyvan baxımı, aksesuar", ["nəm yem","quru yem","royal canin","pişik qumu"]),
     "qabyuyan":  _c("Qabyuyan vasitə",   ["qabyuyan","qab yuyan","maşın duzu","fairy"]),
-    "yuyucu":    _c("Paltar yuyucu",     ["yuyucu","ləkə aparan","ləkə təmizləyən","paltaryuyan","kir yuyan","paltar suyu","ariel","persil","yumşaldıcı","kondisioner","perwoll","yuma gel","yuma toz","yumuşaldıcı","vanish","bingo","avtomat","automat","ləkə təmizləy","softener","vernel","pods"]),
+    "yuyucu":    _c("Paltar yuyucu",     ["yuyucu","ləkə aparan","ləkə təmizləyən","paltaryuyan","kir yuyan","paltar suyu","ariel","persil","yumşaldıcı","kondisioner","perwoll","yuma gel","yuma toz","yumuşaldıcı","vanish","bingo","avtomat","automat","ləkə təmizləy","softener","vernel","pods","geyim şampun"]),
     "temizlik":  _c("Təmizlik vasitəsi", ["təmizlə","ağardıcı","dezinfeksiya","domestos","cif ","təmizlik","təravətləndirici","həşərat","hava trvt","hava təravətləndirici","ağcaqanad","ovma tozu","glade","air-wick","wc","bulasik","bulaşıq","sökücü"], ["makiyaj","üz üçün","təmizlənmiş","təmizlənmə"]),
     "zibil":     _c("Zibil torbası",     ["zibil"]),
     "bisirme":   _c("Folqa, streç, bişirmə", ["folqa","streç","pergament","bişirmə kağız","sellofan"]),
     "kagiz":     _c("Kağız məhsulları",  ["tualet kağız","kağız dəsmal","mətbəx kağız","salfet","dəsmal","kağız məhsul"]),
-    "qadin_gig": _c("Qadın gigiyenası",  ["qadın bez","gündəlik bez","panty","carefree","libresse","discreet","molped","always","kotex","tampon","gigiyenik","gündəlik","bella","ped "]),
+    "qadin_gig": _c("Qadın gigiyenası",  ["qadın bez","gündəlik bez","panty","carefree","libresse","discreet","molped","always","kotex","tampon","gigiyenik","gündəlik","bella","ped ","bella bez"]),
     "usaq_baxim":_c("Uşaq baxımı",       ["uşaq bezi","uşaq yağı","johnson","önlem","dory baby","sleepy","lody","evy baby","bezi","pampers","huggies","molfix","uşaq şampun","uşaq sabun","uşaq krem","tuman","pants","baby ","junior"]),
     "dis_baximi":_c("Diş və ağız baxımı",["diş","ağız","colgate","listerine","splat","oral-b","oral b"]),
     "tras":      _c("Təraş",             ["təraş","tıraş","gillette","ülgüc","arko"]),
-    "sac_boya":  _c("Saç boyası",        ["saç boyası","palette","boyası"], ["dırnaq"]),
-    "sac_baximi":_c("Saç baxımı",        ["şampun","saç","balzam","pantene","elseve","head & shoulders","h&s","garnier"], ["dodaq"]),
+    "sac_boya":  _c("Saç boyası",        ["saç boyası","palette","boyası","miss magic"], ["dırnaq"]),
+    "sac_baximi":_c("Saç baxımı",        ["şampun","saç","balzam","pantene","elseve","head & shoulders","h&s","garnier"], ["dodaq","balzamik","balsamic"]),
     "deo":       _c("Dezodorant",        ["dezodorant","deodorant","dezodrant","dezodarant","roll-on","roll on","deo","antiperspirant","rexona","old spice","speed stick"]),
     "etir":      _c("Parfüm və ətir",    ["parfüm","ətir","tualet suyu","kolon"]),
-    "kosmetika": _c("Makiyaj və kosmetika",["makiyaj","dırnaq boyası","kirpik","dodaq","pudra","maskara","lak ","kosmetik","manikür","miselyar","misellyar","micellar","makyaj","kontur"]),
+    "kosmetika": _c("Makiyaj və kosmetika",["makiyaj","dırnaq boyası","kirpik","dodaq","pudra","maskara","lak ","kosmetik","manikür","miselyar","misellyar","micellar","makyaj","kontur"], ["duş gel"]),
     "beden_baximi":_c("Bədən və üz baxımı",["sabun","duş gel","duş geli","əl kremi","üz kremi","bədən kremi","losyon","nivea","dove","maska","tonik","serum",
-                  "bədən üçün","üz üçün","günəş krem","vazelin","pambıq","vanna","geli","sprey","vaseline","prezervativ","əl krem","krem yağı","qulaq çöpü","qulaq çubu","pambıqlı çubu","kulak"]),
+                  "bədən üçün","üz üçün","günəş krem","vazelin","pambıq","vanna","geli","sprey","vaseline","prezervativ","əl krem","krem yağı","qulaq çöpü","qulaq çubu","pambıqlı çubu","kulak"], ["schweppes","şırnaq"]),
     # uşaq
     "usaq_qida": _c("Uşaq qidası",       ["uşaq sıyıq","uşaq qida","uşaq pürə","uşaq süd","süd qarışığ","uşaq","bebi","aptamil","nutrilon","kabrita","gerber","hipp","agusha","nanny","fruto","nestogen","similac","bellakt"]),
     # spirtli / tütün
     "pive":      _c("Pivə",              ["pivə"], ["spirtsiz","alkoqolsuz"]),
     "araq":      _c("Araq və votka",     ["araq","votka","vodka","kazatskaya"]),
-    "viski":     _c("Viski",             ["viski","burbon"]),
-    "serab":     _c("Şərab və şampan",   ["şərab","şampan","vermut","martini","sidr"]),
+    "viski":     _c("Viski",             ["viski","burbon","whisky","whiskey"]),
+    "serab":     _c("Şərab və şampan",   ["şərab","şampan","vermut","martini","sidr"], ["abşeron şərab"]),
     "likor":     _c("Konyak, likör, digər",["konyak","brendi","likör","tekila","rakı","spirtli","alkoqollu","gin ","beefeater"], ["spirtsiz","alkoqolsuz"]),
     "siqaret":   _c("Siqaret və tütün",  ["siqaret","tütün","terea","heets","ploom","rothmans","sobranie","marlboro","winston","parliament","davidoff","dunhill","compact","pall mall","alışqan","nano ","viceroy","ld club","kent beat","argo","black style","want line","winchester"], ["dəsmal","makyaj","hava","qab","oyun","çöpü","qulaq","baby","bag"]),
     # şirniyyat / içki (emal olunmuş məhsullar meyvə-tərəvəzdən əvvəl)
@@ -108,18 +108,18 @@ CATEGORIES = {
     "pecenye":   _c("Peçenye və biskvit",["biskrem","peçenye","biskvit","kraker","kreker","bisküvit","kurabiye","kurabiyə","pryanik","biskuvi","biskivit","pirojnı","biskuvi","pryannik","pryanko","peçenya","qurabiye","cookie","cookies","biscuit","pechenye","pechenie","digestive","otrubi","etimek"]),
     "vafli":     _c("Vafli",             ["vafli","gofret","waflim","wafer"]),
     "keks":      _c("Keks və kruasan",   ["keks","donut","pirojnoye","pirojnoe","krouassan","kruasan","rulet","pirojna","kruassan","kruasan","muffin","brauni","browni","cake","popkek","kek","künəfə","topkek","macarons","puf "]),
-    "tort":      _c("Tort",              ["tort","paxlava","ptifur","kadayif"], ["tortimilka"]),
+    "tort":      _c("Tort",              ["tort","paxlava","ptifur","kadayif"], ["tortimilka","tortiglioni"]),
     "sokolad":   _c("Şokolad",           ["şokolad","shokolad","sokalad","çikolata","baton","choco","pudinq","kitkat","snickers","twix","bounty","pralin","mars ","biskolata","biscolata","today goldies","konfirom","plitka","tweels","alpengold"], ["isti şokolad","hot chocolate"]),
     "konfet":    _c("Konfet, jele, saqqız",["konfet","sürpriz","surprise","oyuncaq yumurta","oyuncaqlı yumurta","toffee","iris","meller","süd damla","mentos","skittles","dirol","orbit","eclipse","fruittella","fruit-tella","karamel","jele","zefir","draje","saqqız","jelibon","marmelad","pastila","roshen","ülker","tic tac","sour","qummi","haribo","kinder","ferrero","raffaello","lolipop","candy","bonbon","medvejata","toybox","bükmə","lollipop","ozmo","kakoslu","gummi","marshmallow","marşmelou","marsmelou","sufle","bebeto","chupa chups"], ["soyuq kofe"]),
-    "halva":     _c("Halva və lokum",    ["halva","lokum","kozinak","pişmaniyə","pismaniye"]),
+    "halva":     _c("Halva və lokum",    ["halva","lokum","kozinak","pişmaniyə","pismaniye","xalva"]),
     "bal":       _c("Bal",               ["təbii bal","çiçək balı","bal ","dağ balı","çiçək balı","cökə balı","ağac balı","süzmə bal"]),
     "soyuq_cay": _c("Soyuq çay",         ["soyuq çay","ice tea","fuse tea","bubble tea","buzz tea"]),
     "energetik": _c("Enerji içkisi",     ["red bull","monster","burn ","hell energy","hell","predator","full nitro","full energy","energy drink","xl energy",
                                          "adrenalin","bizon","gorilla","enerji"], ["coffee","kofe","qəhvə","latte","kapuçino","cappuccino","vitamin","pivə"]),
-    "kola":      _c("Kola və qazlı içki",["kola","pepsi","fanta","sprite","qazlı içki","soda","qazlı","cola","mountain dew","mirinda","7up","gazoz","qazoz"]),
+    "kola":      _c("Kola və qazlı içki",["kola","pepsi","fanta","sprite","qazlı içki","soda","qazlı","cola","mountain dew","mirinda","7up","gazoz","qazoz","schweppes","alkoqolsuz pivə","spirtsiz pivə"]),
     "limonad":   _c("Limonad",           ["limonad","içki","icki","mountain dew","kvas","moxito","mojito","mohito"]),
     "cay":       _c("Çay",               ["çay","lipton","ahmad","azərçay","pekoe","tamashaee","akbar","greenfield","buket"], ["çaydan"]),
-    "qehve":     _c("Qəhvə və kakao",    ["qəhvə","isti şokolad","hot chocolate","nescafe","lavazza","kofe","coffee","kakao","jacobs","jacob","kürükahveci","kahve","caffito","3-də 1","3ü 1","3in1","3 in 1","monarch","mokka","espresso","cappuccino","kapuçino","kappuçino","capuccino","latte"], ["qəhvəyi"]),
+    "qehve":     _c("Qəhvə və kakao",    ["qəhvə","isti şokolad","hot chocolate","nescafe","lavazza","kofe","coffee","kakao","jacobs","jacob","kürükahveci","kahve","caffito","3-də 1","3ü 1","3in1","3 in 1","monarch","mokka","espresso","cappuccino","kapuçino","kappuçino","capuccino","latte","mocha","starbucks"], ["qəhvəyi"]),
     "sire":      _c("Şirə və nektar",    ["şirəsi","şirə","mors","nektar","meyvə suyu","alma suyu","portağal suyu","kompot","sandora","cappy"]),
     "qazli_su":  _c("Qazlı su, mineral",  ["mineral su","qazlı su","borjomi","narzan"]),
     "su":        _c("Su",                ["içməli su","mənbə suyu","qazsız","essentuki","yessentuki","sirab","bonaqua","badamlı","dübrar","kəhriz","sarıkız","damla su"]),
@@ -131,12 +131,12 @@ CATEGORIES = {
     "sirke":     _c("Sirkə",             ["sirkə","uksus"]),
     "zeytun_yagi":_c("Zeytun yağı",      ["zeytun yağ"], ["yağında","yağda","krem","sabun","şampun","balzam","losyon"]),
     "bitki_yagi":_c("Bitki yağı",        ["günəbaxan yağ","ayçiçəyi yağ","bitki yağ","qarğıdalı yağ"], ["yağında","yağda"]),
-    "makaron":   _c("Makaron",           ["makaron","spagetti","vermişel","penne","fusilli","farfalle","lazanya","tagliatelle","fettuccine"]),
+    "makaron":   _c("Makaron",           ["makaron","spagetti","vermişel","penne","fusilli","farfalle","lazanya","tagliatelle","fettuccine","spaghetti"]),
     "eriste":    _c("Əriştə",            ["əriştə","doşirak","noodle","lapşa","lapsha"]),
-    "corek":     _c("Çörək",             ["çörək","lavaş","çörəyi","coreyi","hot dog","tost","bulka"]),
-    "hazir_yemek":_c("Hazır yemək, şorba",["pelmen","manti","xinkali","vareniki","naget","nuggets","naqqet","şnitzel","gyoza","pizza","piroq","börək","borek","lahmacun","qutab","hazır yemək","şorba","xacapuri","hazır sup","sup ","xəngəl","dolma","kabab","xəmir"]),
+    "corek":     _c("Çörək",             ["çörək","lavaş","çörəyi","coreyi","hot dog","tost","bulka","qoğal","simit","kətə"]),
+    "hazir_yemek":_c("Hazır yemək, şorba",["pelmen","manti","xinkali","vareniki","naget","nuggets","naqqet","şnitzel","gyoza","pizza","piroq","börək","borek","lahmacun","qutab","hazır yemək","şorba","xacapuri","hazır sup","sup ","xəngəl","dolma","kabab","xəmir","naggets"], ["qabartma"]),
     "susi":      _c("Suşi",              ["suşi","sushi","nori"]),
-    "konserv":   _c("Konserv",           ["konserv","tomatda","sousunda","ton balığ","ton balıq","şprot","sprot","sardina","kilka","ajvar","salatı","leco","lecho"]),
+    "konserv":   _c("Konserv",           ["konserv","tomatda","sousunda","ton balığ","ton balıq","şprot","sprot","sardina","kilka","ajvar","salatı","leco","lecho","tuna"]),
     "zeytun":    _c("Zeytun",            ["zeytun","maslin"]),
     "tursu":     _c("Turşu",             ["turşu","turshu"]),
     "pomidor_pasta":_c("Pomidor pastası", ["pomidor pasta","tomat pasta"]),
@@ -145,7 +145,7 @@ CATEGORIES = {
     "sosis":     _c("Sosis",             ["sosis","sosiska","sardelka"]),
     "kolbasa":   _c("Kolbasa",           ["kolbasa","salam","servelat","vetçina","sucuq","sucuk","jambon","krakov","doktorskaya","rosko"], ["sosis"]),
     "hise":      _c("Hisə verilmiş ət",  ["hisə verilmiş","hisə","bekon"]),
-    "deniz":     _c("Dəniz məhsulları",  ["krevet","midiya","kalamar","kürü","xərçəng"]),
+    "deniz":     _c("Dəniz məhsulları",  ["krevet","midiya","kalamar","kürü","xərçəng"], ["kuru maya"]),
     "baliq":     _c("Balıq",             ["balıq","qaxac","tuna","ton ","skumbriya","losos","siyənək"]),
     "toyuq":     _c("Toyuq",             ["toyuq","cücə","broylyer","bud","qanad","tabaka"]),
     "dana_ati":  _c("Dana əti",          ["dana"]),
@@ -206,12 +206,12 @@ CATEGORIES = {
     "un":        _c("Un",                ["buğda unu","ali növ un","birinci növ un","çovdar unu","qarğıdalı unu","unu","un"]),
     "seher":     _c("Səhər yeməyi, müsli",["müsli","sıyıq","qranola","granola","qronola","corn flakes","səhər yemək","lopa","səhər yeməyi","nesquik"]),
     "duz":       _c("Duz",               ["duz","duzu","xörək duzu"]),
-    "sekerqum":  _c("Şəkər",             ["şəkər","qənd"]),
+    "sekerqum":  _c("Şəkər",             ["şəkər","qənd"], ["şəkərbura","şəkərçörə","şəkər çörə"]),
     "istiot":    _c("İstiot və ədviyyat",["istiot","ədviyyat","zirə","darçın","mixək","kəkik","sarıkök","zəfəran","paprika","pul bibər","acı biber","aci biber","kara biber","qarabibər","keşniş","qabartma tozu","vanilin","kraxmal","nişasta","maya"]),
     "bulyon":    _c("Bulyon",            ["bulyon"]),
     # digər
     "saglam":    _c("Sağlam və diyet qida",["dietik","diyet","diabetik","podslastitel","şirinləşdirici","protein","qlütensiz","glutensiz","vitadiet","fitnes","fitness"]),
-    "mesis":     _c("Mətbəx və məişət əşyaları",["stəkan","boşqab","qaşıq","çəngəl","tava","qazan","süpürgə","əlcək","kibrit","batareya","lampa","lamp","plastik","paket","süngər","fincan","saxlama","mətbəx","qab ","şüşə qab","ləyən","organayzer","asılqan","piknik","bıçaq","süzgəc","kley","mop","fırça","daraq","tərlik","bəzək","stol","ütü","çanta","qabı","dəsti","şüşə ","bez ","torbası","ventilyator","çamadan","tük toplayıcı","örtüyü","doğrama","blender","dograyici","filter","butulkası","matara","şam ","keramika","termos","portatif","dibçək","buz qəlibi","qəlib","sıxan","limonsıxan","duzluq","üzmə halqa","skoç","yeni il","işığı","torpaq","üzmə","torpağ","sürahi","masa","mikser","sürtgəc","dilimləyici","qıfıl","bakal"], ["şam fıstı"]),
+    "mesis":     _c("Mətbəx və məişət əşyaları",["stəkan","boşqab","qaşıq","çəngəl","tava","qazan","süpürgə","əlcək","kibrit","batareya","lampa","lamp","plastik","paket","süngər","fincan","saxlama","mətbəx","qab ","şüşə qab","ləyən","organayzer","asılqan","piknik","bıçaq","süzgəc","kley","mop","fırça","daraq","tərlik","bəzək","stol","ütü","çanta","qabı","dəsti","şüşə ","bez ","torbası","ventilyator","çamadan","tük toplayıcı","örtüyü","doğrama","blender","dograyici","filter","butulkası","matara","şam ","keramika","termos","portatif","dibçək","buz qəlibi","qəlib","sıxan","limonsıxan","duzluq","üzmə halqa","skoç","yeni il","işığı","torpaq","üzmə","torpağ","sürahi","masa","mikser","sürtgəc","dilimləyici","qıfıl","bakal"], ["şam fıstı","stəkanda"]),
     "oyuncaq":   _c("Oyuncaq",           ["oyuncaq","konstruktor","pazl","kukla","oyuncağ","şar ","oyun ","puzzle","fiqur","stadion"]),
     "dereterlik":_c("Dəftərxana",        ["dəftər","qələm","karandaş","marker","albom","qayçı"]),
     "avto":      _c("Avtomobil məhsulları",["maşın üçün","avtomobil","avto "]),
@@ -274,9 +274,9 @@ def wolt_slugs(store):
 
 JUICE_WORDS = ["şirəsi","suyu","nektarı","mors","şərbəti","kompot","içkisi","sandora","cappy","pfanner","tropicana","fruktoviy","fruktovy","zolotoy sad"]
 # su: "qazlı/mineral" -> qazli_su, qalanı -> su
-_WATER = re.compile(_f(r"(?<!\w)su mineral|(?<!\w)(mineral|minerallı|içməli|mənbə|bulaq|mədən|maden|qazlı|qazsız|təbii) su(yu)?(?!\w)|(?<!\w)su(?!\w).*(?<!\w)(qazlı|qazsız)|"
+_WATER = re.compile(_f(r"(?<!\w)su mineral|(?<!\w)(mineral|minerallı|içməli|mənbə|bulaq|kaynak|mədən|maden|qazlı|qazsız|təbii) su(yu)?(?!\w)|(?<!\w)su(?!\w).*(?<!\w)(qazlı|qazsız)|"
                        r"(?<!\w)su (\d|pet|şüşə)|sirab|bonaqua|borjomi|narzan|essentuki|yessentuki|dübrar|kəhriz|sarıkız|istisu|kızılay"))
-_NOT_WATER = re.compile(_f(r"limonad|içki|(?<!\w)çay|misel|micel|mitsel|qab(?!\w)|qabı|oyunca|tapança|filtr|pompa|vedrə|bakal|gödəkçə|yumşal|yumuşal|(?<!\w)gel(?!\w)|sabun|tonik|pəri|şampun|balzam|krem|losyon|termal|sprey|maska|kondisioner|şirə"))
+_NOT_WATER = re.compile(_f(r"limonad|içki|(?<!\w)çay|misel|micel|mitsel|(?<!plastik )(?<!şüşə )qab(?!\w)|qabı|oyunca|tapança|filtr|pompa|vedrə|bakal|gödəkçə|yumşal|yumuşal|(?<!\w)gel(?!\w)|sabun|tonik|pəri|şampun|balzam|krem|losyon|termal|sprey|maska|kondisioner|şirə"))
 _FIZZ = re.compile(_f(r"(?<!\w)(qazlı|mineral|minerallı|mədən|maden)|borjomi|narzan|essentuki|istisu|sarıkız|kızılay"))
 _NOT_JUICE = re.compile(_f(r"çamaşır|paltar suyu|tualet suyu|gül suyu|ağız suyu|şüşə suyu|suyunda"))
 
@@ -314,7 +314,7 @@ def img_of(item, base=""):
         if u.startswith("https://"): return u
     return None
 
-_JUICE = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(_f(w)) for w in JUICE_WORDS) + r")(?![kd])")   # "Morskoy", "Şüyüdlü" deyil
+_JUICE = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(_f(w)) for w in JUICE_WORDS) + r")(?![kdh])")   # "Morskoy", "Şüyüdlü", "Morshynska" deyil
 def has_juice(name):
     n = _f(name)
     return bool(_JUICE.search(n)) and not re.search(r"dondurulmus|donmus", n)
@@ -326,7 +326,7 @@ def _kw_re(words):
     # uzun açar söz əvvəl: "pambıqlı çubuq" "pambıq"-dan, "uşaq sıyığı" "uşaq"-dan əvvəl yoxlanılsın
     # qısa açar söz defisdən sonra da axtarılmır: "Rexona Men-titan-un-lime" -> "un" deyil
     stem = lambda w: re.sub(r"(?<=\w\w\w)q$", "[qg]", re.sub(r"(?<=\w\w\w)k$", "[ky]", re.escape(w)))
-    parts = [("(?<!-)" if len(w.strip()) <= 3 else "") + stem(_f(w)) + (r"(?!\w)" if not w.endswith(" ") and (len(w) <= 3 or _f(w) in ("nar", "bal", "duz", "serf", "masa", "fanta", "pepsi", "dove", "hipp", "fruto", "bella", "buket", "arko", "sour", "ozmo", "lays", "hell", "iris", "pods", "hindi")) else "")
+    parts = [("(?<!-)" if len(w.strip()) <= 3 else "") + stem(_f(w)) + (r"(?!\w)" if not w.endswith(" ") and (len(w) <= 3 or _f(w) in ("nar", "bal", "duz", "serf", "masa", "fanta", "pepsi", "dove", "hipp", "fruto", "bella", "buket", "arko", "sour", "ozmo", "lays", "hell", "iris", "pods", "hindi", "cola")) else "")
              for w in sorted(words, key=lambda w: -len(w.strip()))]
     return re.compile(r"(?<!\w)(?:" + "|".join(parts) + ")")
 
@@ -335,10 +335,13 @@ def _kw_re(words):
 #         və tez-tez dad/tərkib kimi işlənən sözlər ("kakao", "ləpə", "puf"): adda daha aydın növ sözü axtarılır
 # _AMBIG: çoxmənalı sözlər ("baton" çörək/şokolad, "paket") — ümumi kateqoriyanı başqa qrupa da aparmır
 _BRAND = {_f(w) for w in """fairy bingo vanish bella garnier gillette arko nivea dove kabrita agusha nutella kitkat snickers
-twix bounty konfirom biskolata biscolata roshen ülker kinder ozmo lipton tamashaee rosko nesquik maska ağardıcı sirab badamlı bonaqua dübrar sarıkız
+twix bounty fruto konfirom biskolata biscolata roshen ülker kinder ozmo lipton tamashaee rosko nesquik maska ağardıcı sirab badamlı bonaqua dübrar sarıkız
 kakao otrubi ləpə puf marshmallow""".split()} | {"mister tum", "old spice", "royal canin"}
 _AMBIG = {_f(w) for w in """baton plitka choco kakoslu sour candy mətbəx paket plastik qab şüşə soda içki icki qazlı gündəlik avtomat
-kondisioner pudinq biskvit moxito pizza kabab sprey geli bezi tuman junior baby çubuq sürpriz surprise desert sticks uşaq""".split()} | {"qazli icki", "quru yem", "nem yem", "sise qab", "~"}
+kondisioner pudinq biskvit qazsız moxito pizza kabab sprey geli bezi tuman junior baby çubuq sürpriz surprise desert sticks uşaq""".split()} | {"qazli icki", "quru yem", "nem yem", "suse qab", "~"}
+# _kw_re-dəki q/k -> ğ/y kökü ilə tapılan forma da zəifdir: "Pudinq" -> "puding", "çubuğu" -> "cubug"
+_BRAND |= {w[:-1] + {"q": "g", "k": "y"}[w[-1]] for w in _BRAND if len(w) > 3 and w[-1] in "qk"}
+_AMBIG |= {w[:-1] + {"q": "g", "k": "y"}[w[-1]] for w in _AMBIG if len(w) > 3 and w[-1] in "qk"}
 _FLAVOR_KW = {"sokolad", "karamel", "kakao"}   # dad sözü: eyni qrupun dəqiq kateqoriyasını dəyişmir ("Dondurma > Karamel", "Krem pasta > Şokolad")
 _WEAK_KW = _BRAND | _AMBIG
 
@@ -362,8 +365,11 @@ _DRINK = re.compile(r"(?<!\w)su(?!\w)|moxito|mohito|mojito|qazli|qazoz|gazoz|(?<
 _PET = _kw_re(["yem","pişik","itlər","bulyon","əriştə","kub"])
 _MEAT_PROC = _kw_re(["burger","naqqet","naget","nugget","naggets","şnitzel","snitzel","gyoza","pelmen","kotlet","küftə"])   # "Toyuq Burger" xam ət deyil
 _LIQUID = re.compile(r"\d\s*(?:ml|l|lt|litr)(?!\w)")
+_FOR = re.compile(r"\s+ucun(?!\w)")   # "Balıq üçün ədviyyat", "Qanad üçün marinad": ət/meyvə-tərəvəz təyinatdır
+# açar sözdən sonra bu sözlər gəlirsə söz yalnız daddır ("Pendir ilə kraker"), mağaza rəfi üstündür
+_FLAV_STRONG = re.compile(_f(r"\s+(dadlı|ətirli|aromalı|içlikli|dolğulu|ilə|qatqılı|sousunda|sousda|ləzzətli|əlavəli|flavou?red)(?!\w)"))
 
-_EN = {"dish", "fish", "wash", "brush", "shine", "shar"}   # transliterasiya edilməyən sözlər: "dish" -> "dis" = "diş" olmasın
+_EN = {"dish", "fish", "wash", "brush", "shine", "shar", "irish"}   # transliterasiya edilməyən sözlər: "dish" -> "dis" = "diş" olmasın
 
 def assign_cat(name):
     return _name_cat(name)[0]
@@ -385,6 +391,7 @@ def _norm(name):
     n, low = _f(name), _low(name)
     if "maşa" in low and not _MASA.search(low): n = _MASA.sub("masha", n)
     if _SAC.search(low) and "saç" not in low and _DIAW.search(low): n = _SAC.sub("sac_", n)
+    if "həll" in low: n = re.sub(r"(?<!\w)hell(?!\w)", "hall", n)   # "Həll olunan" ≠ "Hell"
     return n
 
 def _name_cat(name, only=None):
@@ -400,8 +407,12 @@ def _name_cat(name, only=None):
 
 # uşaq sıyığı: körpə brendi, yaş ("6 ay", "6+", "1-ci") və ya Nestle (Bistrov böyüklər üçündür), "Şaqayka"
 _PORRIDGE = re.compile(r"(?<!\w)(siyi[qgy]|kasha|kasa(?!\w))")
-_BABY = re.compile(r"saqayka|shaqayka|kabrita|gerber|(?<!\w)hipp(?!\w)|(?<!\w)beb[ei](?!\w)|fruto|nyanya|nanny|fleur alpine|gipopo|agusha|agusa|aqusa|"
+_BABY = re.compile(r"saqayka|shaqayka|kabrita|gerber|virastu|(?<!\w)hipp(?!\w)|(?<!\w)beb[ei](?!\w)|fruto|nyanya|nanny|fleur alpine|gipopo|agusha|agusa|aqusa|"
                    r"(?<!\w)(usaq|korpe)|\d\s*\+(?!\d)|\d\s*-?\s*(ay|m)(?!\w)|\d\s*aydan|hipoal|1-(ci|ya)(?!\w)")
+
+def _ncat(name, only):
+    c, k = _name_cat(name, only)
+    return c, k.lstrip("@")
 
 def _name_cat_n(n, up, only=None):
     if not only or "usaq_qida" in only:
@@ -436,8 +447,11 @@ def _name_cat_n(n, up, only=None):
                 if cid in _MEAT and _MEAT_PROC.search(n):
                     fb = fb or (cid, "~")   # zəif təxmin: mağaza kateqoriyası (dondurulmuş, konserv) üstündür
                     break
-            if _FLAVOR_NEXT.match(n, m.start() + len(re.match(r"\w+", n[m.start():]).group())):
-                fb = fb or (cid, m.group().strip())   # başqa növ tapılmasa: "Kurabiye dadlı"
+            we = m.start() + len(re.match(r"\w+", n[m.start():]).group())
+            if _FLAVOR_NEXT.match(n, we) or (cid in _STRICT and _FOR.match(n, we)):
+                # başqa növ tapılmasa: "Kurabiye dadlı"; "@" = yalnız dad/təyinat sözüdür ("Pendir ilə", "Balıq üçün"), mağaza rəfi üstündür
+                fl = _FLAV_STRONG.match(n, we) or (cid in _STRICT and (_FOR.match(n, we) or _FLAVOR_NEXT.match(n, we)))
+                fb = fb or (cid, ("@" if fl else "") + m.group().strip())
                 continue
             kws = [x.group().strip() for x in kw.finditer(n, m.start()) if x.start() <= tail and not _adj(n, x)]
             k = next((x for x in kws if x not in _WEAK_KW), kws[0])
@@ -458,7 +472,7 @@ _PATH_SPEC = [
     # şəxsi baxım (qida sözləri ilə toqquşmasın: "Saç jelesi", "Uşaq şampunu")
     ("usaq_baxim", r"uşaq.{0,12}(bez|şampun|yağ|sabun|duş|baxım|gigiyen|ləvazimat|krem|salfet)|(şampun|sabun|krem|yağ)\w* uşaq|körpə bez"),
     ("usaq_qida", r"(uşaq|körpə) (qida|yemək|süd|püre|sıyı[qğ])"),
-    ("sac_boya", r"saç boya"), ("sac_baximi", r"(?<!\w)saç|şampun|balzam"), ("dis_baximi", r"(?<!\w)(diş|ağız)(?![kp])"),
+    ("sac_boya", r"saç boya"), ("sac_baximi", r"(?<!\w)saç(?! lavaş| çörə)|şampun|balzam"), ("dis_baximi", r"(?<!\w)(diş|ağız)(?![kp])"),
     ("deo", r"dezodor|dezodar|deodor|tər əleyhinə"), ("tras", r"təraş"),
     # içkilər
     ("kola", r"spirtsiz piv|alkoqolsuz piv"),
@@ -468,12 +482,12 @@ _PATH_SPEC = [
     ("sire", r"şirə|nektar|kompot|meyvə su(?!d)"), ("soyuq_cay", r"soyuq çay|ice.?tea|fuse.?tea"),
     ("qazli_su", r"qazlı su|mineral"), ("su", r"qazsız su(?!\w)|içməli su(?!\w)|sağlam su(?!\w)|xxl su(?!\w)|^su$|(?<!\w)sular|sadə su(?!\w)"),
     ("limonad", r"limonad"), ("kola", r"cola|soda|qazlı .*içki|^kola|qazlı .*kokteyl"),
-    ("cay", r"(?<!\w)çay|dəmləmə"), ("qehve", r"qəhvə|kofe|kakao|süd tozu|kapsul"),
+    ("cay", r"(?<!\w)çay|dəmləmə"), ("qehve", r"qəhvə|kofe|kakao|süd tozu|kapsul|isti şokolad"),
     # dondurulmuş (məhsul növünə görə)
     ("dondurulmus", r"dondurulmuş (meyvə|tərəvəz|kartof|börək|mantı|milföy|yarımfabrikat|xəmir|qida)|donmuş (meyvə|tərəvəz|qida)|yarımfabrikat"),
     ("dondurma", r"dondurma|donmuş desert"),
     # emal olunmuş: sous, turşu, konserv, çips, tum, şirniyyat yağları
-    ("mayonez", r"mayonez"), ("ketcup", r"ketçup|ketchup|(?<!\w)sous"), ("xardal", r"xardal|xrən|acika"), ("sirke", r"sirkə"),
+    ("mayonez", r"mayonez"), ("ketcup", r"ketçup|ketchup|(?<!\w)sous(?!lu)"), ("xardal", r"xardal|xrən|acika"), ("sirke", r"sirkə"),
     ("zeytun", r"zeytun(?! yağ)"), ("tursu", r"turşu"), ("pomidor_pasta", r"pomidor pasta|tomat pasta|^pastalar$"), ("konserv", r"konserv"),
     ("cips", r"çips|chips|ekstruder|xıtır|suxari|popkorn"), ("tum", r"^tum|tumlar|(?<!\w)tumu|ləpə(?!li)|araxis(?!li)|püstə(?!li)"),
     ("krem_pasta", r"krem şokolad|əzmə|krem pasta|şokolad yağ|şanti"),
@@ -490,7 +504,7 @@ _PATH_SPEC = [
     # şirniyyat
     ("murebbe", r"mürəbbə|(?<!\w)cem|povidla"), ("bal", r"^bal$|^bal,|(?<!\w)bal və"),
     ("halva", r"halva|lokum|kozinak"), ("pecenye", r"peçenye|biskvit|kraker|kreker|bisküvit|kurabiy|pryanik"), ("vafli", r"vafli|gofret"),
-    ("keks", r"keks|kruass?an|rulet|(?<!\w)kek(?!\w)"), ("tort", r"tort|pirojna|paxlava|şərbətli"), ("sokolad", r"şokolad"),
+    ("keks", r"keks|kruass?an|rulet|(?<!\w)kek(?!\w)"), ("tort", r"tort|pirojna|paxlava|şərbətli"), ("sokolad", r"şokolad|shokolad"),
     ("konfet", r"konfet|jele|draje|jelibon|şəkərləmə|marmelad|karamel|fərəhləndirici|meyvəli bar|nanəli"),
     # qəlyanaltı, bakaliya
     ("qoz", r"(?<!\w)qoz|fındıq|fıstıq|quru meyvə"),
@@ -498,7 +512,7 @@ _PATH_SPEC = [
     ("makaron", r"makaron|spagetti|vermişel|vermeşel|vermesel|vermeşil"), ("eriste", r"əriştə"), ("duyu", r"düyü"), ("merci", r"mərci"), ("noxud", r"noxud"),
     ("fasulya", r"lobya|fasulya"), ("qarabashaq", r"qarabaşaq"), ("yulaf", r"yulaf"), ("bulgur", r"bulğur|manna"),
     ("seher", r"müsli|sıyı[qğ]|qranola|taxıl məhsul"), ("bakliyyat", r"dənli|paxlalı|bakliy?yat|yarma"),
-    ("un", r"buğda un|ali növ|^un$|^un və|^un məhsul|un və un|ağ un|quru un"), ("corek", r"çörə[ky]|lavaş|mayalı|bişinti|təndir"),
+    ("un", r"buğda un|ali növ|^un$|^un və|^un məhsul|un və un|ağ un|quru un"), ("corek", r"çörə[ky]|lavaş|mayalı|bişinti|təndir|(?<!\w)kətə"),
     ("bulyon", r"bulyon"), ("duz", r"^duz$|duz və|(?<!\w)duzu?$"), ("sekerqum", r"şəkər|qənd|noğul"), ("istiot", r"ədviyyat|nişasta"),
     # meyvə / tərəvəz (xammal: emal olunmuşlardan sonra)
     ("goyerti", r"göyərti"), ("gobelek", r"göbələk"), ("balqabaq", r"balqabaq|kabak"), ("cuqundur", r"çuğundur"),
@@ -529,7 +543,7 @@ _PATH_GEN = [
     ("sud", r"süd məhsul|süd və süd|yoqurt və kəsmik|süd və emal"), ("meyve_diger", r"meyvə(?!li)"), ("sebze_diger", r"tərəvəz(?!li)"),
     ("et_diger", r"(?<!\w)ət məhsul|təzə ət|ağ ət|^ət$"),
     ("konfet", r"şirniyyat|qənnadı|(?<!\w)çəki"), ("corek", r"un məmulat|unlu|bişmə|xəmir"),
-    ("qoz", r"çərəz|atışdırmalıq"), ("cips", r"snack|snek|qəlyanaltı"), ("seher", r"səhər yemə"),
+    ("qoz", r"çərəz(?!li)|atışdırmalıq"), ("cips", r"snack|snek|qəlyanaltı"), ("seher", r"səhər yemə"),
     ("cay", r"(?<!\w)çay"), ("hazir_yemek", r"hazır"), ("konserv", r"konserv"), ("dondurulmus", r"dondurulmuş|donmuş"),
     ("bitki_yagi", r"(?<!\w)yağ"), ("istiot", r"(?<!\w)duz"), ("sekerqum", r"şəkər"),
     ("saglam", r"sağlam qida|sağlam yaşam|dietik|diabetik|qlütensiz|glutensiz|protein"), ("bakliyyat", r"quru qida"),
@@ -590,16 +604,17 @@ def _state(pc, segs):
 def _path_info(path):
     """(alt növ, ümumi?, alternativlər) və ya (None, False, ())."""
     segs = [x.strip() for x in _f(path).split(">") if x.strip()]
+    oth = bool(segs) and bool(_PATH_OTHER.match(segs[-1]))   # "Souslar > Other": rəfin qarışıq hissəsi, ad dəqiqləşdirir
     segs = [s for s in segs if not _PATH_SKIP.search(s)]
     for k in range(len(segs) - 1, -1, -1):   # ən dərin məlumatlı seqment: əvvəl dəqiq, sonra ümumi qaydalar
         spec, gen = _seg_hits(segs[k])
         if spec:
             pc = _state(spec[0], segs)
-            if pc != spec[0]: return pc, False, frozenset(spec)
-            return pc, bool(gen) or bool(_PATH_OTHER.search(segs[k])), frozenset(spec) | frozenset(gen)
+            if pc != spec[0]: return pc, oth, frozenset(spec)
+            return pc, oth or bool(gen) or bool(_PATH_OTHER.search(segs[k])), frozenset(spec) | frozenset(gen)
         if gen:
             pc = _state(gen[0], segs)
-            if pc != gen[0]: return pc, False, frozenset(gen)
+            if pc != gen[0]: return pc, oth, frozenset(gen)
             # üst seqmentdə eyni qrupdan dəqiq növ varsa standart odur: "Çips, Çərəz və Qəlyanaltılar > Qəlyanaltılar" -> çips
             # ("Şokolad və Şirniyyat > Digər Şirniyyatlar" isə ümumi hissəyə aiddir: şokolad deyil)
             up = [h for h, g in (_seg_hits(u) for u in segs[:k]) if len(h) == 1 and CAT2GROUP[h[0]] == CAT2GROUP[pc] and pc not in g]
@@ -641,12 +656,29 @@ _NF_GRP = {g: frozenset(c for c in _NFC if g in _grps(c)) for g in _NONFOOD}   #
 _FOODC = frozenset(c for c, g in CAT2GROUP.items() if g not in _NONFOOD and g != "diger") - {"usaq_baxim"}
 _SWC = frozenset(c for c, g in CAT2GROUP.items() if g == "sirniyyat")
 _CHIPS = {_f(w) for w in "çips chips popkorn popcorn pretzel qrenki grenki xrusteam lays pringles cheetos doritos xlebsi xlebci xlebtsi suxari".split()}
-_DOUGH = {_f(w) for w in "börək borek xəngəl qutab xəmir lahmacun xacapuri manti pelmen vareniki xinkali".split()}
+_CEREAL = {_f(w) for w in ["lopa", "sıyıq", "müsli", "corn flakes", "səhər yeməyi", "səhər yemək"]}
+_BAR = re.compile(r"(?<!\w)(bar|baton\w*)(?!\w)")
+_DOUGH = {_f(w) for w in "börək borek xəngəl qutab xəmir lahmacun xacapuri manti pelmen vareniki xinkali pizza".split()}
 _WEIGHT = re.compile(r"\d\s*(?:q|qr|gr|g|kq|kg)(?!\w)|(?<![a-z])k[qg](?!\w)")
 _NOJUICE = {"soyuq_cay", "kola", "limonad", "energetik", "qehve"}
 # ümumi "Şirniyyat" rəfində (OBA, Neptun: çörək, çərəz, süd də var) qida sözü yalnız şirniyyat əlaməti olduqda dad sayılır
 _SWEET_CUE = re.compile(r"sokolad|sokalad|shok|(?<!\w)sok(?:\.|(?!\w))|choco|(?<!\w)bar(?!\w)|baton|krem|qlazur|karamel|(?<!\w)kar\.|(?<!\w)konf|desert|"
                         r"(?<!\w)pec|(?<!\w)ile(?!\w)|dadli|(?<!\w)balli|kakao|tund|formal|vafli|sweet")
+
+_SNACK = frozenset(["cips", "tum", "qoz"])
+
+def _kwpos(n, kw):
+    i = n.find(kw)
+    return len(re.findall(r"[\w-]+", n[:i])) if i >= 0 else 99
+
+def _snack_flavor(nc, kw, n):
+    """Çərəz rəfində dad sözü: ət, meyvə-tərəvəz, konserv, sous, süd/içki (həcmsiz), hazır yemək (xəmir deyilsə).
+    Ədviyyat (çəki ilə ədviyyat satılır), adın əvvəlindəki pendir, çörək, makaron, şirniyyat, qeyri-qida çıxa bilər."""
+    g = CAT2GROUP[nc]
+    if g in ("et", "meyve", "sebze", "konserv") or (nc == "hazir_yemek" and kw not in _DOUGH): return True
+    if g in ("sud", "spirtli", "iceckiler", "yag_sous") and not _LIQUID.search(n):
+        return not (nc in ("istiot", "duz", "cay", "qehve") or (nc == "pendir" and _kwpos(n, kw) <= 1))
+    return False
 
 def _sweet_out(nc, kw, name, n):
     """Şirniyyat rəfindən çıxa bilən real məhsul növü: çörək, sağlam qida, tum, çips/popkorn, börək/xəngəl/qutab, içki (həcmi ilə),
@@ -654,6 +686,8 @@ def _sweet_out(nc, kw, name, n):
     g = CAT2GROUP[nc]
     if g in ("corek", "saglam") or nc == "tum" or (g in ("iceckiler", "sud") and _LIQUID.search(n)): return True
     if nc == "cips": return kw in _CHIPS
+    if nc == "seher": return kw in _CEREAL and not _BAR.search(n)   # "Bistrov taxıl lopaları", amma "Granola bar" şirniyyatdır
+    if nc == "usaq_qida": return kw not in _AMBIG and bool(_BABY.search(n))   # "Kabrita puding 6+ ay"
     if nc == "hazir_yemek": return kw in _DOUGH
     return nc in _NFC and not _WEIGHT.search(n) and _name_cat(name, _SWC)[0] == "diger"
 
@@ -664,6 +698,9 @@ def classify(name, path=""):
     if not path: return nc
     pc, gen, alts = _path_info(path)
     if pc is None or pc == "diger": return nc   # mağaza kateqoriyası məlumat vermirsə ("Sağlam qida" və s.) ada görə
+    flav, kw = kw[:1] == "@", kw.lstrip("@")
+    # yalnız dad/təyinat sözü ("Pendir ilə kraker", "Qanad üçün marinad"): mağaza rəfi
+    if flav and nc != "diger" and CAT2GROUP[nc] not in (CAT2GROUP[pc], "sirniyyat", "gigiyena", "ev"): return pc
     coarse = _f(path).strip() in _COARSE
     gen = gen or coarse
     # "Rich Albalı 1l" kimi təxmin dəqiq mağaza kateqoriyasını, soyuq çay/kola qarışıq rəfini dəyişmir ("Bergtea Şaftalı 1l")
@@ -674,22 +711,35 @@ def classify(name, path=""):
     # qeyri-qida rəfi (gigiyena, ev, heyvan, oyuncaq) addakı qida sözünə uymur: "Rexona Men-titan-un", "Arko Krem Zeytun Yağı",
     # "Keks qəlibi", "Sprey boya qəhvəyi" — adda qeyri-qida növü axtarılır, yoxdursa mağaza kateqoriyası
     if gp in _NONFOOD and nc in _FOODC:
-        nc, kw = _name_cat(name, _NF_GRP[gp])
-        if nc == "diger": nc, kw = _name_cat(name, _NF_ONLY[gp])
+        nc, kw = _ncat(name, _NF_GRP[gp])
+        if nc == "diger": nc, kw = _ncat(name, _NF_ONLY[gp])
         if nc == "diger" or kw in _AMBIG: return pc
     if gp == "sirniyyat" and gen and kw == "piroq": return "keks"   # şirniyyat rəfində şirin piroq
     # geniş şirniyyat rəfində ("Çəki şirniyyatları", "Şirniyyat ədədli") başqa qrupun qida sözü dad/içlikdir: "Fındıqlı şokolad", "Süd dadlı"
     if (gp == "sirniyyat" and gen and CAT2GROUP[nc] != "sirniyyat" and not _sweet_out(nc, kw, name, n)
             and (not coarse or _SWEET_CUE.search(n) or _name_cat(name, _SWC)[0] != "diger")):
-        nc, kw = _name_cat(name, _SWC)
+        nc, kw = _ncat(name, _SWC)
         if nc == "diger": return pc
+    # dondurma rəfində şirniyyat sözü növ/dad təsviridir ("Vafli stəkan", "Cookie"); şirniyyat/çörək rəfində "plombir" daddır
+    if pc == "dondurma" and not gen and CAT2GROUP[nc] == "sirniyyat": return pc
+    if nc == "dondurma" and gp in ("sirniyyat", "corek"):
+        alt = _ncat(name, _SWC - {"dondurma"})
+        if alt[0] != "diger" and alt[1] not in _WEAK_KW: nc, kw = alt   # "Rulet Darenka Plombir", "Dirol Dondurma Nanə"
+    # çərəz/çips rəfində başqa qrupun sözü çox vaxt daddır ("Soğan Xama Halqaları", "Kolbasa dadlı suxari"): əvvəl adda çərəz növü axtarılır
+    if pc in _SNACK and nc not in _SNACK:
+        alt = _ncat(name, _SNACK)
+        if alt[0] != "diger" and alt[1] not in _AMBIG: nc, kw = alt
+        elif _snack_flavor(nc, kw, n): return pc
     # qida yolunda meyvə/ət sözü dad və ya içlikdir: "Tofita Çiyələk" > Şirniyyat, "Hinduşka Sendviç" > Un məmulatları
-    if (nc in _PRODUCE and CAT2GROUP[pc] in ("sirniyyat", "hazir", "sud", "bakaliya", "corek")) or (nc in _MEAT and CAT2GROUP[pc] == "corek"): return pc
+    if (nc in _PRODUCE and CAT2GROUP[pc] in ("sirniyyat", "hazir", "sud", "bakaliya", "corek")) or (CAT2GROUP[nc] == "et" and CAT2GROUP[pc] == "corek"): return pc
     # "Balıq Konservi" + "Ton balıq" -> konserv; qarışıq "Konserva və dəniz məhsulları" + "Hisə verilmiş skumbriya" -> balıq
-    if pc in _PROCESSED and nc in _PROCESSED[pc] and not (gen and any(CAT2GROUP[a] == CAT2GROUP[nc] for a in alts - {pc})): return pc
+    if (pc in _PROCESSED and nc in _PROCESSED[pc] and not (gen and any(CAT2GROUP[a] == CAT2GROUP[nc] for a in alts - {pc}))
+            and not (CAT2GROUP[nc] == "yag_sous" and _LIQUID.search(n))): return pc   # "Günəbaxan yağı 1 l" konserv deyil
     if gp == "usaq" and CAT2GROUP[nc] == "gigiyena" and (pc == "usaq_baxim" or _KID.search(n)): return "usaq_baxim"   # "Uşaq şampunu"
     # uşaq rəfi özü uşaq əlamətidir: sıyıq, körpə brendi, yaş ("6 ay", "6+") olan qida uşaq qidası qalır ("Kabrita Sıyıq Yulaf 6+")
-    if pc == "usaq_qida" and CAT2GROUP[nc] in ("sirniyyat", "bakaliya", "sud", "meyve", "sebze", "hazir") and (_KID.search(n) or _BABY.search(n) or _PORRIDGE.search(n)): return pc
+    if pc == "usaq_qida" and (_KID.search(n) or _BABY.search(n) or _PORRIDGE.search(n)) and (
+            CAT2GROUP[nc] in ("sirniyyat", "bakaliya", "sud", "meyve", "sebze", "hazir") or (CAT2GROUP[nc] == "iceckiler" and nc not in ("su", "qazli_su"))): return pc
+    if kw in _FLAVOR_KW and pc not in ("sokolad", "konfet") and _has_kw(pc, n): return pc   # "Milla Karamel Sırok" > Sıroklar
     if nc in alts and kw not in _AMBIG: return nc   # "Çay və Kofe" + "Qara Çay" -> çay
     if kw == "kakao" and CAT2GROUP[pc] in ("sirniyyat", "sud"): return pc   # "Eti Tutku Kakao", "Sirok Kakao" — dad sözüdür
     grp = CAT2GROUP[nc] == CAT2GROUP[pc]

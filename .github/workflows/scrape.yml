@@ -36,7 +36,13 @@ jobs:
         timeout-minutes: 38   # aşarsa da hazır olan mağazalar aşağıda commit olunur
         env:
           PYTHONUNBUFFERED: "1"
-        run: python scrapers/scraper.py --store "${{ github.event.inputs.store || 'all' }}"
+          STORE: ${{ github.event.inputs.store || 'all' }}   # input birbaşa shell-ə qoyulmur (injection-a qarşı)
+        run: |
+          case "$STORE" in
+            all|araz|oba|bravo|neptun|tamstore|rahat|bazarstore) ;;
+            *) echo "Naməlum mağaza: $STORE"; exit 1 ;;
+          esac
+          python scrapers/scraper.py --store "$STORE"
 
       - name: Nəticəni GitHub-a yüklə
         if: always()

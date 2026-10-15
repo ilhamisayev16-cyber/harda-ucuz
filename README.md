@@ -7,6 +7,7 @@ Azərbaycan supermarketlərindəki ərzaq qiymətlərini müqayisə edən sayt.
 ```
 qiymet-project/
 ├── index.html              ← Saytın özü
+├── haqqinda.html           ← Haqqında, şərtlər, məxfilik, düzəliş sorğuları
 ├── data/
 │   └── prices.json         ← Qiymətlər (scraper tərəfindən yenilənir)
 ├── scrapers/

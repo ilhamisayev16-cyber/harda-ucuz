@@ -899,7 +899,8 @@ function group(cat,prod){
     g.offers={}; for(const x of g.m){ const o=mk(x.x), ex=g.offers[x.store]; if(!ex||o.p<ex.p) g.offers[x.store]=o; }
     g.sk=g.a.kg?"kg":(g.a.wv!=null?fam(g.a.wu)+":"+Math.round(norm(g.a.wv,g.a.wu)*100)/100:"");
     const o=Object.values(g.offers), v=o.map(x=>x.p);
-    g.n=v.length; g.min=Math.min(...v); g.max=Math.max(...v); g.save=g.n>1?g.max-g.min:0;
+    const fr=o.filter(x=>!x.st).map(x=>x.p), vv=fr.length?fr:v;   // arxiv (yenidən yoxlanmayan) qiymətlər ən ucuz/qənaət hesabına girmir
+    g.n=vv.length; g.min=Math.min(...vv); g.max=Math.max(...vv); g.save=g.n>1?g.max-g.min:0;
     delete g.m;
   }
   return out;
@@ -907,7 +908,7 @@ function group(cat,prod){
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
-  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||""};
+  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0};
 }
 
 /* ─────────── state ─────────── */
@@ -1063,7 +1064,7 @@ function offer(g,s){
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
-  return `<div class="o${c}" data-s="${s}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}</b></div>`;
+  return `<div class="o${c}" data-s="${s}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
 function bestOf(g){
   const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0];

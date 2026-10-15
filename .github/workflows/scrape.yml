@@ -19,7 +19,7 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
 
@@ -33,7 +33,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Scraper işlət
-        timeout-minutes: 38   # aşarsa da hazır olan mağazalar aşağıda commit olunur
+        timeout-minutes: 85   # aşarsa da hazır olan mağazalar aşağıda commit olunur
         env:
           PYTHONUNBUFFERED: "1"
         run: python scrapers/scraper.py --store "${{ github.event.inputs.store || 'all' }}"

@@ -161,3 +161,103 @@ for(const old of [true,false]){{
 }}"""
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=120)
     assert r.returncode == 0 and r.stdout.count("ok") == 2, r.stderr[-500:]
+
+
+# ── ad təmizliyi, dublikatlar, şəkil linkləri ──
+def test_clean_name():
+    assert S.clean_name("FAIRY LIMON MAYE QABYUYAN , 750 ml") == "FAIRY LIMON MAYE QABYUYAN, 750 ml"
+    assert S.clean_name("Princessa Nuri Zavtrak V Benqali ,") == "Princessa Nuri Zavtrak V Benqali"
+    assert S.clean_name("Crystalex  Maye ( Limon )  750 ml") == "Crystalex Maye (Limon) 750 ml"
+    assert S.clean_name("Coca-Cola 1 L") == "Coca-Cola 1 L"
+
+
+def test_dedupe_keeps_own_then_cheaper_and_distinct_sizes():
+    items = [{"name": "Vernel 1.44 L Lale", "price": 8.99}, {"name": "Vernel 1,44 L Lalə", "price": 5.99},
+             {"name": "Su 1.5 L", "price": 1.0}, {"name": "Su 15 L", "price": 5.0},
+             {"name": "Klar Maye 500ml", "wolt_price": 2.49}, {"name": "KLAR MAYE, 500 ml", "price": 3.99}]
+    out = S.dedupe(items)
+    assert [i["name"] for i in out] == ["Vernel 1,44 L Lalə", "Su 1.5 L", "Su 15 L", "KLAR MAYE, 500 ml"]
+
+
+def test_tidy_cleans_old_data_and_drops_images():
+    d = mini("OBA", 2, 1.0, wolt=False)
+    d["categories"]["sud"]["stores"]["OBA"] = [{"name": "Süd , 1 l", "price": 1.2, "img": "https://x/y.png"},
+                                               {"name": "Süd, 1 l", "price": 1.1}]
+    S.tidy(d)
+    assert d["categories"]["sud"]["stores"]["OBA"] == [{"name": "Süd, 1 l", "price": 1.1}]
+
+
+def test_apply_to_data_cleans_names_and_keeps_change_tracking():
+    d = S.empty_data()
+    d["categories"]["sud"]["stores"]["Neptun"] = [{"name": "Süd Atena , 1 l", "wolt_price": 2.0}]
+    new = {"sud": [{"name": "Süd Atena , 1 l", "wolt_price": 1.5}, {"name": "Süd  Atena, 1 l", "wolt_price": 1.6}]}
+    assert S.apply_to_data({}, new, "Neptun", d, {})
+    items = d["categories"]["sud"]["stores"]["Neptun"]
+    assert len(items) == 1 and items[0]["name"] == "Süd Atena, 1 l" and items[0]["wolt_price"] == 1.5
+    assert items[0]["pp"] == 2.0                               # köhnə (təmizlənməmiş) adla da qiymət dəyişikliyi tapılır
+
+
+def test_no_image_links_written():
+    _, e = S._wolt_entry({"name": "Süd 1 L", "price": 199, "image": {"url": "https://img/x.png"}})
+    assert e == {"name": "Süd 1 L", "wolt_price": 1.99}
+
+
+# ── öz sayt ↔ Wolt birləşdirmə: ölçü, diakritika, dad/rəng ──
+def test_merge_own_wolt_needs_same_size():
+    own = [{"name": "Süd Atena 1 L", "price": 2.6}]
+    wolt = [{"name": "Atena Süd 0.5 L", "wolt_price": 1.5}, {"name": "Atena Süd 1000 ml", "wolt_price": 2.7}]
+    out = S.merge_own_wolt(own, wolt)
+    assert out[0] == {"name": "Süd Atena 1 L", "price": 2.6, "wolt_price": 2.7}
+    assert {"name": "Atena Süd 0.5 L", "wolt_price": 1.5} in out and len(out) == 2   # 0.5 L itmir
+
+
+def test_merge_own_wolt_folds_diacritics_and_rejects_variants():
+    own = [{"name": "GUNEBAXAN YAGI ATENA, 1 l", "price": 4.0}, {"name": "Crystalex Qabyuyan Maye Limon 450ml", "price": 2.49},
+           {"name": "Chivas Regal Viski 18 Yaş 700ml", "price": 163.0}]
+    wolt = [{"name": "Atena Günəbaxan yağı 1 L", "wolt_price": 4.3}, {"name": "Crystalex Qabyuyan Maye Alma 450ml", "wolt_price": 2.25},
+            {"name": "Chivas Regal Viski 12 Yaş 700 ml", "wolt_price": 160.0}]
+    out = {i["name"]: i for i in S.merge_own_wolt(own, wolt)}
+    assert out["GUNEBAXAN YAGI ATENA, 1 l"].get("wolt_price") == 4.3
+    assert "wolt_price" not in out["Crystalex Qabyuyan Maye Limon 450ml"]     # Limon ≠ Alma
+    assert "wolt_price" not in out["Chivas Regal Viski 18 Yaş 700ml"]          # 18 ≠ 12
+    assert len(out) == 5
+
+
+def test_merge_own_wolt_rejects_far_prices():
+    out = S.merge_own_wolt([{"name": "Prezident Kərə Yağı 82% 1kq", "price": 38.1}], [{"name": "Prezident Kərə Yağı 82% 1 kg", "wolt_price": 7.65}])
+    assert "wolt_price" not in out[0] and len(out) == 2
+
+
+# ── vaxt: Bakı vaxtı ──
+def test_times_are_baku_time():
+    from datetime import timedelta
+    assert SRC.now().utcoffset() == timedelta(hours=4)
+    d = S.empty_data()
+    assert S.apply_to_data({}, {"sud": [{"name": "Məhsul 0", "wolt_price": 1.0}]}, "Neptun", d, {})
+    from datetime import datetime
+    upd = datetime.strptime(d["meta"]["Neptun"]["updated"], "%d.%m.%Y %H:%M")
+    assert abs(upd - SRC.now().replace(tzinfo=None)) < timedelta(minutes=2)
+
+
+# ── sayt qurma: hazır kartlar, statik səhifələr, sitemap (node varsa) ──
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_build_site(tmp_path):
+    d = copy.deepcopy(PRICES)
+    for c in d["categories"].values():                         # yüngül nüsxə
+        for s in c["stores"]:
+            c["stores"][s] = c["stores"][s][:40]
+    src = tmp_path / "prices.json"; src.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
+    r = subprocess.run(["node", str(ROOT / "scripts" / "build_site.js"), "--prices", str(src), "--out", str(tmp_path / "site"),
+                        "--site", "https://example.org/q/"], capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, r.stderr[-800:]
+    assert "⚠" not in r.stdout + r.stderr                      # hazır kartlar brauzerin hesabladığı ilə eynidir
+    g = json.load(open(tmp_path / "site" / "data" / "groups.json", encoding="utf-8"))
+    assert g["v"] == d["last_updated"] and len(g["s"]) == 16
+    assert set(g["g"]) == {x["id"] for x in d["groups"] if any(d["categories"].get(c, {}).get("stores", {}).get(s) for c in x["cats"] for s in d["stores"])}
+    for p in g["g"].values():
+        ix = [i for m in p["m"] for i in m]
+        assert len(ix) == len(set(ix)) and all(0 <= i < p["n"] for i in ix)
+    sm = (tmp_path / "site" / "sitemap.xml").read_text(encoding="utf-8")
+    assert "<loc>https://example.org/q/qiymetler/</loc>" in sm and sm.count("<url>") > 20
+    page = (tmp_path / "site" / "qiymetler" / "sud" / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="canonical" href="https://example.org/q/qiymetler/sud/">' in page and "#/c/sud" in page and "<script" not in page

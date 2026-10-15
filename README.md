@@ -9,9 +9,14 @@ qiymet-project/
 ├── index.html              ← Saytın özü
 ├── haqqinda.html           ← Haqqında, şərtlər, məxfilik, düzəliş sorğuları
 ├── data/
-│   └── prices.json         ← Qiymətlər (scraper tərəfindən yenilənir)
+│   ├── prices.json         ← Qiymətlər (scraper tərəfindən yenilənir)
+│   └── groups.json         ← Hazır "eyni məhsul" kartları (build_site.js)
+├── qiymetler/              ← Statik kateqoriya səhifələri, Google üçün (build_site.js)
+├── sitemap.xml             ← Google Search Console üçün (build_site.js)
 ├── scrapers/
 │   └── scraper.py          ← Python scraper
+├── scripts/
+│   └── build_site.js       ← scrape-dən sonra saytı qurur (Node)
 ├── requirements.txt        ← Python asılılıqları
 └── .github/workflows/
     └── scrape.yml          ← Avtomatik gündəlik scrape
@@ -21,8 +26,12 @@ qiymet-project/
 
 1. GitHub Actions hər gün saat 06:00-da (Bakı vaxtı) `scraper.py`-ı işlədir
 2. Scraper mağazaların öz saytından/API-sindən, olmayanda Wolt-dan qiymətləri toplayır
-3. `data/prices.json` faylını yeniləyir
-4. `index.html` bu JSON-dan oxuyaraq cədvəli göstərir
+3. `data/prices.json` faylını yeniləyir (vaxtlar Bakı vaxtı ilə)
+4. `scripts/build_site.js` hazır kartları (`data/groups.json`), statik səhifələri (`qiymetler/`) və `sitemap.xml`-i qurur
+5. `index.html` bu JSON-dan oxuyaraq cədvəli göstərir
+
+### Google-da görünmək üçün (bir dəfə)
+Google Search Console → mülkiyyət əlavə et (URL prefix: `https://ilhamisayev16-cyber.github.io/qiymet-muqayise/`) → Sitemaps → `sitemap.xml` göndər.
 
 ## Quraşdırma addımları
 

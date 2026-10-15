@@ -45,12 +45,18 @@ jobs:
           esac
           python scrapers/scraper.py --store "$STORE"
 
+      - name: Saytı qur (hazır kartlar, statik səhifələr, sitemap)
+        if: always()   # scrape vaxtı bitsə də yazılmış data üçün
+        timeout-minutes: 10
+        run: node scripts/build_site.js
+
       - name: Nəticəni GitHub-a yüklə
         if: always()
         run: |
           git config user.name "Price Bot"
           git config user.email "bot@qiymet.az"
           git add data/prices.json data/history.json
+          for f in data/groups.json sitemap.xml qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
           git diff --staged --quiet || git commit -m "Qiymətlər yeniləndi"
           git pull --rebase origin "$GITHUB_REF_NAME"
           git push

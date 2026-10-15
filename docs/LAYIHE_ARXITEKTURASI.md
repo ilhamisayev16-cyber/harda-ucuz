@@ -23,8 +23,13 @@ qiymet-muqayise/
 ├── index.html                  ← bütün sayt (HTML + CSS + JS, ~100 KB)
 ├── data/
 │   ├── prices.json             ← əsas data (scraper yazır, sayt oxuyur)
-│   └── history.json            ← qiymət tarixçəsi (yalnız dəyişənlər, 90 gün)
+│   ├── history.json            ← qiymət tarixçəsi (yalnız dəyişənlər, 90 gün)
+│   └── groups.json             ← serverdə hazırlanmış "eyni məhsul" kartları (build_site.js yazır)
+├── qiymetler/                  ← hər qrup / alt növ üçün statik səhifə (Google üçün; build_site.js yazır)
+├── sitemap.xml                 ← Google Search Console üçün səhifə siyahısı (build_site.js yazır)
+├── og.png                      ← link paylaşılanda görünən şəkil (WhatsApp, Telegram, Facebook)
 ├── scrapers/scraper.py         ← bütün scrape + təsnifat məntiqi (~1500 sətir)
+├── scripts/build_site.js       ← scrape-dən sonra: groups.json, qiymetler/, sitemap.xml
 ├── requirements.txt            ← requests, beautifulsoup4, lxml
 ├── .github/workflows/scrape.yml← gündəlik avtomatik scrape
 ├── .github/dependabot.yml      ← asılılıq təhlükəsizlik yeniləmələri
@@ -41,7 +46,7 @@ qiymet-muqayise/
 Mənbələr│  Wolt API ─┐                                                 │
         │  Araz API ─┤                                                 │
         │  oba.az ───┼─►  scraper.py                                   │
-        │  bazarstore┘    1. məhsulları çək (ad, qiymət, çəki, şəkil)   │
+        │  bazarstore┘    1. məhsulları çək (ad, qiymət, çəki)          │
         │                 2. mağaza kateqoriyasına + ada görə təsnif et   │
         │                 3. öz sayt qiyməti + Wolt qiymətini birləşdir   │
         │                 4. əvvəlki qiymətlə müqayisə (pp/pd, history)  │
@@ -95,7 +100,19 @@ Mənbələr│  Wolt API ─┐                                                 
 - Adlar 40 simvolda kəsilir və BÖYÜK hərflə yazılır → `_title()` ilə düzəldilir; sayt tərəfində kəsilmiş son söz üçün xüsusi qayda var.
 
 ### 3.5 Öz saytı + Wolt birləşdirmə (`merge_own_wolt`)
-Araz/OBA üçün öz siyahı əsasdır; adı ≥0.5 oxşar olan Wolt məhsulu varsa onun qiyməti `wolt_price` kimi əlavə olunur (yalnız fərqlidirsə). Öz kataloqda olmayan Wolt məhsulları ayrıca əlavə olunur.
+Araz/OBA üçün öz siyahı əsasdır; eyni məhsulun Wolt qiyməti `wolt_price` kimi əlavə olunur (yalnız fərqlidirsə), öz kataloqda olmayan Wolt məhsulları ayrıca əlavə olunur.
+"Eyni məhsul" qaydaları (2026-10, əvvəl yalnız söz üst-üstə düşməsi idi və Araz-da yüzlərlə yanlış cüt verirdi — "Hochland Pendir 400qr" ↔ "Azersüd Pendir 400qr", eşləşən Wolt məhsulu isə siyahıdan düşürdü):
+- ad diakritikasız müqayisə olunur (`_f`: "GUNEBAXAN YAGI" = "Günəbaxan yağı"), sadə şəkilçi atılır (yağı = yağ);
+- ölçü hər iki adda varsa eyni olmalıdır (0.5 L = 500 ml ≠ 1 L); hər iki adda rəqəm varsa eyni olmalıdır (18 yaş ≠ 12 yaş);
+- hər iki adda o birində olmayan söz varsa — fərqli dad/rəng/növ (Limon ≠ Alma), birləşmir;
+- qiymət 1.6 dəfədən çox fərqlənmir; oxşarlıq IDF çəkili (nadir söz ağır), hədd 0.6 / 0.7 / 0.8 (ölçü hər ikisində / heç birində / birində);
+- hər Wolt məhsulu ən çox bir öz məhsula bağlanır (ən oxşar cütlər əvvəl).
+
+### 3.6 Ad təmizliyi və dublikatlar
+`clean_name`: artıq boşluq, vergüldən əvvəlki boşluq, sonda qalan vergül atılır ("FAIRY MAYE , 750 ml" → "FAIRY MAYE, 750 ml").
+`dedupe`: eyni mağaza + kateqoriyada yazılışı fərqli təkrarlar (`name_key`: diakritikasız, yalnız hərf/rəqəm, "1.5" ≠ "15") bir qeyd olur:
+yoxlanmış > mağazanın öz qiyməti > ucuz. Wolt filiallarının birləşdirilməsi də `name_key` ilə edilir. `tidy` köhnə datanı da yükləyəndə təmizləyir
+(OBA saytı eyni məhsulu iki dəfə göstərirdi: ~500 təkrar).
 
 ---
 
@@ -110,8 +127,8 @@ Araz/OBA üçün öz siyahı əsasdır; adı ≥0.5 oxşar olan Wolt məhsulu va
     "sud": {
       "name": "Süd",
       "stores": {
-        "Bravo": [ {"name":"Süd Atena 1l", "wolt_price":2.60, "img":"https://...", "wt":250, "pp":2.90, "pd":"2026-10-15"} ],
-        "Araz":  [ {"name":"Eker Sutlac 150qr", "price":1.85, "wolt_price":1.99, "img":"https://..."} ]
+        "Bravo": [ {"name":"Süd Atena 1l", "wolt_price":2.60, "wt":250, "pp":2.90, "pd":"2026-10-15"} ],
+        "Araz":  [ {"name":"Eker Sutlac 150qr", "price":1.85, "wolt_price":1.99} ]
       }
     }
   },
@@ -119,7 +136,10 @@ Araz/OBA üçün öz siyahı əsasdır; adı ≥0.5 oxşar olan Wolt məhsulu va
 }
 ```
 
-Sahələr: `price` = mağazanın öz qiyməti, `wolt_price` = Wolt qiyməti, `img` = şəkil linki, `wt` = Wolt-un təxmini parça çəkisi (qram) yalnız çəkiyə görə satılanlarda, `pp`/`pd` = əvvəlki qiymət və dəyişmə tarixi. **Məhsul id-si yoxdur**: məhsul = mağaza + ad. Kateqoriya "yarpaq" səviyyəsindədir (`categories[cid]`), `groups` isə saytdakı ana qrupları sadalayır.
+Sahələr: `price` = mağazanın öz qiyməti, `wolt_price` = Wolt qiyməti, `wt` = Wolt-un təxmini parça çəkisi (qram) yalnız çəkiyə görə satılanlarda, `pp`/`pd` = əvvəlki qiymət və dəyişmə tarixi. **Məhsul id-si yoxdur**: məhsul = mağaza + ad. Kateqoriya "yarpaq" səviyyəsindədir (`categories[cid]`), `groups` isə saytdakı ana qrupları sadalayır.
+
+Vaxtlar (`last_updated`, `meta.updated`, `pd`) **Bakı vaxtı** ilə yazılır (`sources.now()`, UTC+4): GitHub serveri UTC-dədir.
+Şəkil linkləri (`img`) 2026-10-dan toplanmır: sayt şəkil göstərmir, onlar isə datanın ~60%-i idi (gzip 2.1 MB → 0.8 MB).
 
 **Təhlükəsizlik qaydası:** scrape boş nəticə qaytararsa köhnə qiymətlər silinmir; hər mağaza ayrıca yadda saxlanır (timeout olsa belə əvvəlki mağazalar itmir).
 
@@ -182,7 +202,18 @@ Kartda ♡; siyahı `localStorage`-da saxlanır (hər element: qrup + adın norm
 
 ### 7.5 Görünüş və təhlükəsizlik
 - Telefon-first: tək sütun, böyük toxunma sahələri; kompüterdə (≥1000 px) CSS `zoom` ilə 1.25–1.7× böyüdülür, məzmun ortada dar sütundadır.
-- Məhsul **şəkilləri saytda göstərilmir** (müəllif hüququ riski): əvəzində kateqoriya ikonları (emoji). Datada `img` sahəsi hələ var.
+- Məhsul **şəkilləri saytda göstərilmir** (müəllif hüququ riski): əvəzində kateqoriya ikonları (emoji). Şəkil linkləri datada da yoxdur.
+
+### 7.6 Hazır kartlar (`data/groups.json`) və statik səhifələr
+- `scripts/build_site.js` scrape-dən sonra `index.html`-in **öz** `group()` funksiyasını Node-da işlədir və hər qrup üçün 2+ üzvlü kartların
+  üzv nömrələrini yazır: `{"v": last_updated, "s": skript xeşi, "g": {qrup: {"n": məhsul sayı, "m": [[nömrələr], ...]}}}` (~70 KB gzip).
+- Sayt onu yalnız `v` = `prices.json`-un `last_updated`-i və `s` = öz skriptinin xeşi (`siteHash()`) olduqda götürür; əks halda (köhnə fayl,
+  `index.html` dəyişib, fayl yoxdur) kartları əvvəlki kimi özü hesablayır. Skript yazmazdan əvvəl hazır kartların brauzer nəticəsi ilə eyni olduğunu yoxlayır.
+- Ölçü (orta telefon, 4G, 4× CPU): ilk axtarış 6–9 san → ~2 san; kartlar ana səhifədən sonra arxa planda hazırlanır, istifadəçi bir neçə saniyə sonra yazırsa ~0.6 san.
+- `qiymetler/`: hər ana qrup və alt növ (5+ kart) üçün JavaScript-siz HTML (ən çox 150 kart; bir neçə mağazada olanlar əvvəl), `qiymetler/index.html` — hamısının siyahısı.
+  `sitemap.xml` bunları sadalayır. Sayt ünvanı skriptdə (`SITE_URL` / `--site`) və `index.html`-in `canonical` / `og:` teqlərindədir — domen dəyişsə ikisini də dəyişin.
+- GitHub Pages "project site" olduğu üçün `robots.txt` domen kökündə deyil; sitemap-i **Google Search Console**-da əl ilə verin: URL-prefix mülkiyyəti
+  `https://ilhamisayev16-cyber.github.io/qiymet-muqayise/` → Sitemaps → `sitemap.xml`.
 - Content-Security-Policy `<meta>` ilə (`img-src 'self' data:`, `connect-src 'self'`, xarici skript yoxdur); bütün mətn `esc()` ilə təmizlənir.
 
 ---
@@ -193,10 +224,13 @@ Kartda ♡; siyahı `localStorage`-da saxlanır (hər element: qrup + adın norm
 - `schedule`: `0 2 * * *` (UTC) = 06:00 Bakı; əl ilə: `workflow_dispatch` (parametr `store`: `all`, `bravo`, `oba`, ...).
 - Python 3.11, `pip install -r requirements.txt`, `python scrapers/scraper.py --store "$STORE"` (giriş whitelist ilə yoxlanır, injection yoxdur).
 - Scrape addımı `timeout-minutes: 85`, job 100; commit addımı `if: always()` — vaxt bitsə də hazır olan mağazalar commit olunur. `concurrency: scrape` eyni anda iki scrape qoymur.
-- Commit "Price Bot" adından: `git add data/prices.json data/history.json`, `git pull --rebase`, `git push`.
+- Scrape-dən sonra (`if: always()`) `node scripts/build_site.js`: `data/groups.json`, `qiymetler/`, `sitemap.xml`.
+- Commit "Price Bot" adından: `git add data/prices.json data/history.json` + qurulan fayllar, `git pull --rebase`, `git push`.
+
+`.github/workflows/build-site.yml`: `main`-də `index.html` və ya `scripts/` dəyişəndə (merge-dən sonra) eyni qurma addımı; `concurrency: scrape`.
 - Tam scrape ~15 dəq (tək filial) və çoxfilialli rejimdə təxminən 30–45 dəq.
 
-Yerli işlətmək: `pip install -r requirements.txt && python scrapers/scraper.py --store bravo --out /tmp/test.json` (`--out` ilə real datanı pozmadan). Sayt üçün: repo kökündə `python3 -m http.server 8765` və `http://localhost:8765/index.html`.
+Yerli işlətmək: `pip install -r requirements.txt && python scrapers/scraper.py --store bravo --out /tmp/test.json` (`--out` ilə real datanı pozmadan). Sayt üçün: repo kökündə `node scripts/build_site.js` (istəyə bağlı), `python3 -m http.server 8765` və `http://localhost:8765/index.html`.
 
 ---
 
@@ -220,7 +254,7 @@ Yerli işlətmək: `pip install -r requirements.txt && python scrapers/scraper.p
 2. **Yanlış birləşmə/ayrı qalma** hələ mümkündür (təxminən 2% yanlış, ~20% qaçırılmış uyğunluq). Eyni məhsulun fərqli adlandırılması (xüsusilə Bazarstore qısaldılmış adlar) əsas səbəbdir.
 3. **Təsnifat** ~2–3% səhv ola bilər (qeyri-adi dad adları, nadir markalar).
 4. **Wolt limiti** (429): Actions-da bəzi sorğular alınmaya bilər; log-da `sorğu alınmadı` sayı görünür.
-5. **Performans**: ~67 min məhsul ilə ana səhifə ~2 san, ilk axtarış ~3 san (mobildə daha yavaş ola bilər). Gələcək: datanı qruplara bölmək.
+5. **Performans**: orta telefonda (4G) ana səhifə ~1.6–2 san, ilk axtarış ~0.6–2 san (hazır kartlarla, §7.6). Gələcək: datanı qruplara bölmək.
 6. Məhsul id-si yoxdur; məhsulun adı dəyişsə sevimlilərdən "tapılmadı" olur.
 7. OBA-nın öz kateqoriya bölgüsü cəmi 17 iri kateqoriyadır (alt növ adla təyin olunur).
 

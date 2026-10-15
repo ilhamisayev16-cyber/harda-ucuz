@@ -146,6 +146,40 @@ details.more-f summary::-webkit-details-marker{display:none}
 }
 @media (min-width:900px){ .grid{grid-template-columns:repeat(4,1fr)} }
 /* kompüterdə hər şey kiçik görünməsin: geniş ekranda miqyas böyüyür (150% yaxınlaşdırmağa ehtiyac qalmır) */
+/* sevimlilər, qiymət dəyişikliyi, vahid qiymət */
+.item{position:relative}
+.fav{position:absolute;top:6px;right:6px;width:40px;height:40px;border:0;background:none;font-size:24px;line-height:1;color:var(--mute);border-radius:50%}
+.fav.on{color:#e0245e}
+.fav:active{background:var(--soft)}
+.head>div:last-child{padding-right:30px}
+.favbtn{flex:none;position:relative;width:44px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:20px;color:#e0245e;padding:0}
+.favbtn i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--brand);color:#fff;font:700 11px/18px system-ui;font-style:normal;text-align:center}
+.favbtn i:empty{display:none}
+.chg{font-style:normal;font-size:11px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:6px;white-space:nowrap}
+.chg.dn{background:var(--good-soft);color:var(--good)}
+.chg.up{background:rgba(217,48,37,.12);color:var(--bad)}
+.o{cursor:pointer}
+.o-h{padding:8px 12px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--mute);background:var(--soft);line-height:1.6}
+.qty{display:flex;align-items:center;gap:10px;margin-top:10px}
+.qty button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:20px;font-weight:700}
+.qty b{min-width:26px;text-align:center}
+.qty span{color:var(--mute);font-size:13px}
+.sum{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,30,0,.06)}
+.sum h2{margin:0 0 8px;font-size:16px}
+.sum .r{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:10px;font-size:14px}
+.sum .r span{display:flex;align-items:center;gap:8px}
+.sum .r.best1{background:var(--good-soft);color:var(--good);font-weight:700}
+.sum .r small{color:var(--mute);font-weight:500}
+.sum .ideal{margin-top:8px;padding-top:10px;border-top:1px dashed var(--line);font-size:14px}
+.sum .btns{display:flex;gap:8px;margin-top:10px}
+.drops{margin:0 0 16px}
+.drops h2{margin:0 0 8px;font-size:17px}
+.drop{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:6px}
+.drop .t{min-width:0;flex:1}
+.drop .t b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drop .t small{color:var(--mute);font-size:12px}
+.drop .pr{text-align:right;white-space:nowrap}
+.drop .pr s{color:var(--mute);font-size:12px;margin-right:6px}
 @media (min-width:1000px){ body{zoom:1.25} .wrap{max-width:780px} .grid{grid-template-columns:repeat(3,1fr)} }
 @media (min-width:1300px){ body{zoom:1.45} }
 @media (min-width:1700px){ body{zoom:1.7} }
@@ -161,6 +195,7 @@ details.more-f summary::-webkit-details-marker{display:none}
     <input id="q" type="search" maxlength="100" placeholder="Məhsul axtar: süd, banan…" autocomplete="off" aria-label="Axtarış">
     <div class="results" id="results" role="listbox"></div>
   </div>
+  <button class="favbtn" id="favBtn" type="button" aria-label="Alış-veriş siyahım">♥<i id="favN"></i></button>
 </div></header>
 
 <main class="wrap">
@@ -178,8 +213,18 @@ details.more-f summary::-webkit-details-marker{display:none}
   <section id="homeView" hidden>
     <h1 class="hero">Hansı market daha ucuzdur?</h1>
     <p class="sub-h">Bravo, OBA, Araz, Neptun, Tamstore, Rahat və Bazarstore qiymətləri bir yerdə. Kateqoriya seç:</p>
+    <div class="drops" id="drops" hidden></div>
     <div class="grid" id="catGrid"></div>
     <p class="note" id="srcNote"></p>
+  </section>
+
+  <section id="listView" hidden>
+    <div class="bar">
+      <button class="btn" id="back2" aria-label="Geri">←</button>
+      <h1 class="title">♥ Alış-veriş siyahım</h1>
+    </div>
+    <div id="favSum"></div>
+    <div class="list" id="favList"></div>
   </section>
 
   <section id="catView" hidden>
@@ -194,6 +239,7 @@ details.more-f summary::-webkit-details-marker{display:none}
       <select id="sort" aria-label="Sıralama">
         <option value="savings_desc">Qənaət</option>
         <option value="price_asc">Ucuz</option>
+        <option value="unit_asc">Vahid qiymət (1 kq / 1 L)</option>
         <option value="name">A → Z</option>
       </select>
     </div>
@@ -443,7 +489,7 @@ function score(g,Q,gid){
   const fl=Q.FL||(Q.FL=new Set(Q.w.flatMap(q=>q.A.map(x=>stem(x.a)))));   // dad sözü sorğuda yoxdursa ("süd" -> əvvəl sadə süd, sonra çiyələkli)
   const cw=CWS.get(g.c)||(CWS.set(g.c,new Set(WL(catName(g.c).replace(/[^\p{L}\s]/gu," ")))),CWS.get(g.c));   // "Toyuq" alt növündə toyuq dad deyil
   const vr=ws.some(w=>{const t=stem(w); return VAR.has(t)&&!fl.has(t)&&!cw.has(t);})?.12:0;
-  return (Q.w.length?sum/Q.w.length:1)*(miss?.6:1)+.15*st+.04*(g.n-1)-(Q.sz&&g.sk!==Q.sz?.05:0)-vr;   // ad axtarılan sözlə başlayır: əsas məhsuldur
+  return (Q.w.length?sum/Q.w.length:1)*(miss?.6:1)+.15*st+.04*(g.n-1)-(Q.sz&&g.sk!==Q.sz?.05:0)-vr-.006*Math.min(ws.length,8);   // qısa ad (sadə məhsul) uzun addan ("Eti Süd Burger Çiyələk") əvvəl   // ad axtarılan sözlə başlayır: əsas məhsuldur
 }
 /* namizədlər: hər sorğu sözü üçün lüğətdə uyğun gələ bilən sözlərin qrupları (+ niyyət alt növü); sözlər üzrə kəsişmə */
 function cands(Q){
@@ -818,7 +864,7 @@ function group(cat,prod){
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
-  return {p:own?it.price:(it.wolt_price||0),w:!own,i:it.img||null,n:it.name,wt:it.wt||0};
+  return {p:own?it.price:(it.wolt_price||0),w:!own,i:it.img||null,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||""};
 }
 
 /* ─────────── state ─────────── */
@@ -833,10 +879,31 @@ function groups(gid){
     const c=DB.categories[cid]; if(!c) continue;
     for(const s of Object.keys(c.stores)){ const l=stv[s]||(stv[s]=[]); for(const it of c.stores[s]) l.push(it); (cv[s]=cv[s]||[]).push([l.length,cid]); }   // alt kateqoriya: [son indeks, id]
   }
-  return GROUPS[gid]=group({stores:stv,cats:cv},gid==="meyve"||gid==="sebze");
+  const r=group({stores:stv,cats:cv},gid==="meyve"||gid==="sebze"); r.forEach(g=>g.t=gid);
+  return GROUPS[gid]=r;
 }
 const catName=c=>(DB.categories[c]||{}).name||c;
 const unit=g=>g.a.kg?"<small>/kq</small>":"";
+/* vahid qiymət: çəkili qablaşdırma 1 kq-a, həcmli 1 L-ə görə (kq ilə satılanın qiyməti onsuz da 1 kq üçündür) */
+function upr(g,p){ const a=g.a; if(a.kg||a.wv==null||a.ap) return null;
+  const x=a.wu==="kq"||a.wu==="q"?"kq":a.wu==="L"||a.wu==="ml"?"L":null; if(!x) return null;
+  const n=norm(a.wv,a.wu)/1000; return n>0&&n<=5?{v:p/n,u:x}:null; }   // >5 kq/L: toptan və ya adda səhv — müqayisə edilmir
+const uk=g=>g.a.kg?{v:g.min,u:"kq"}:upr(g,g.min);
+/* qiymət dəyişikliyi nişanı (son 14 gün, ≥2%) */
+function chg(o){ if(!o.pp||!o.pd||o.pp===o.p) return ""; const d=(o.pp-o.p)/o.pp;
+  if(Math.abs(d)<.02||(Date.now()-new Date(o.pd))/864e5>14) return "";
+  return `<em class="chg ${d>0?"dn":"up"}" title="əvvəl ${fmt(o.pp)} · ${o.pd}">${d>0?"↓":"↑"} ${Math.round(Math.abs(d)*100)}%</em>`; }
+/* sevimlilər (alış-veriş siyahısı): brauzerdə saxlanır; məhsul = qrup + ad (data yenilənəndə kart nömrəsi dəyişir) */
+let FAV=[]; try{FAV=JSON.parse(localStorage.getItem("fav")||"[]");}catch(e){}
+const favKey=g=>g.t+"|"+g.fd;
+const isFav=g=>FAV.some(f=>f.k===favKey(g));
+function saveFav(){ try{localStorage.setItem("fav",JSON.stringify(FAV));}catch(e){} $("favN").textContent=FAV.length||""; }
+function toggleFav(g){ const k=favKey(g), i=FAV.findIndex(f=>f.k===k); if(i>=0) FAV.splice(i,1); else FAV.push({k,t:g.t,n:g.name,q:1}); saveFav(); }
+/* qiymət tarixçəsi (data/history.json, ilk dəfə lazım olanda) */
+let HIST=null;
+async function hist(){ if(HIST) return HIST; try{ const r=await fetch("data/history.json"); HIST=r.ok?((await r.json()).h||{}):{}; }catch(e){ HIST={}; } return HIST; }
+function hk(s,n){ let h1=0x811c9dc5,h2=5381; for(const b of new TextEncoder().encode(s+"|"+n)){ h1=Math.imul(h1^b,0x01000193)>>>0; h2=(Math.imul(h2,33)^b)>>>0; }
+  return h1.toString(16).padStart(8,"0")+h2.toString(16).padStart(8,"0"); }
 
 /* ─────────── load ─────────── */
 async function load(){
@@ -860,8 +927,25 @@ function renderHome(){
   $("catGrid").innerHTML=list.map(([g,n])=>
     `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span class="tx"><b>${esc(g.name)}</b>
      <small>${esc(tops(g).join(" · "))}</small><span class="n"><i>${n.toLocaleString("az")}</i> məhsul</span></span><span class="go">›</span></button>`).join("");
+  renderDrops();
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazanın öz saytından alınan qiymətlər dəqiqdir;
     Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
+}
+
+/* son günlərdə ucuzlayanlar (data-dakı pp/pd-dən; qruplaşdırma tələb olunmur) */
+function renderDrops(){
+  const g2={}; for(const g of GL) for(const c of g.cats) g2[c]=g.id;
+  const seen=new Set(), out=[];
+  for(const [cid,c] of Object.entries(DB.categories)) for(const [s,l] of Object.entries(c.stores)) for(const it of l){
+    if(!it.pp||!it.pd) continue; const p=it.price??it.wolt_price; if(p==null||p<.3) continue;
+    const d=(it.pp-p)/it.pp; if(d<.08||d>.6||(Date.now()-new Date(it.pd))/864e5>7) continue;
+    const k=fold(it.name); if(seen.has(k)) continue; seen.add(k); out.push({s,g:g2[cid],n:it.name,p,pp:it.pp,d});
+  }
+  out.sort((a,b)=>b.d-a.d); const top=out.slice(0,8);
+  $("drops").hidden=top.length<3;
+  $("drops").innerHTML=top.length<3?"":`<h2>🔥 Son günlərdə ucuzlayanlar</h2>`+top.map(x=>
+    `<button class="drop" data-g="${x.g}" data-q="${esc(x.n)}"><span class="t"><b>${esc(x.n)}</b><small><i class="dot" style="--c:var(--${x.s});display:inline-block"></i> ${x.s}</small></span>
+     <span class="pr"><s>${fmt(x.pp)}</s><b class="mono" style="color:var(--good)">${fmt(x.p)}</b><em class="chg dn">↓ ${Math.round(x.d*100)}%</em></span></button>`).join("");
 }
 
 /* ─────────── category view ─────────── */
@@ -922,6 +1006,10 @@ function apply(){
   if(F.fat!=null) l=l.filter(g=>g.a.fat===+F.fat);
   if(F.sort==="name") l.sort((a,b)=>a.name.localeCompare(b.name,"az"));
   else if(F.sort==="price_asc") l.sort((a,b)=>a.min-b.min);
+  else if(F.sort==="unit_asc"){   // vahid qiymət: əsas vahid (kq / L) əvvəl
+    const u=new Map(l.map(g=>[g,uk(g)])), cn={}; u.forEach(x=>{ if(x) cn[x.u]=(cn[x.u]||0)+1; });
+    const main=Object.keys(cn).sort((a,b)=>cn[b]-cn[a])[0], rk=g=>{ const x=u.get(g); return x?(x.u===main?0:1):2; };
+    l.sort((a,b)=>rk(a)-rk(b)||(rk(a)<2?u.get(a).v-u.get(b).v:a.min-b.min)); }
   else l.sort((a,b)=>b.save-a.save||b.n-a.n);
   if(sc) l.sort((a,b)=>sc.get(b)-sc.get(a));   // mətn süzgəci: güclü uyğunluq (süd) zəifdən (südlü) əvvəl
   if(hl){ const i=l.findIndex(g=>g.id===hl); if(i>0) l.unshift(l.splice(i,1)[0]); }   // axtarışdan gələn məhsul başda
@@ -931,34 +1019,64 @@ function offer(g,s){
   const o=g.offers[s], c0=`<i class="dot" style="--c:var(--${s})"></i>${s}`;
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
-  return `<div class="o${c}" title="${esc(o.n)}"><span>${c0}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}</b></div>`;
+  const u=upr(g,o.p);
+  return `<div class="o${c}" data-s="${s}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}</b></div>`;
 }
 function bestOf(g){
   const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0];
   const sv=g.n>1?`<small>${fmt(g.save)} qənaət (ən bahadan)</small>`:`<small>yalnız bu mağazada</small>`;
   return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${fmt(e[1].p)}${unit(g)}</b></div>`;
 }
+function card(g,o={}){
+  const a=g.a, em=EMOJI[g.c]||"📦", on=isFav(g);
+  const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",fmtSize(a),a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
+  return `<article class="item${hl===g.id&&!o.pre?" hl":""}" id="${o.pre||"r"}-${g.id}" data-t="${g.t}" data-id="${g.id}">
+    <button class="fav${on?" on":""}" data-fav="1" aria-label="Siyahıma əlavə et" aria-pressed="${on}">${on?"♥":"♡"}</button>
+    <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div>
+    <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
+    ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div>
+    ${o.qty?`<div class="qty"><button data-q="-1" aria-label="Azalt">−</button><b>${o.qty}</b><button data-q="1" aria-label="Artır">+</button><span>${a.kg?"kq":"ədəd"}</span></div>`:""}</article>`;
+}
 function render(){
   const list=filtered.slice(0,shown);
   $("count").textContent=`${filtered.length} məhsul`;
-  $("list").innerHTML=list.length?list.map(g=>{
-    const a=g.a, em=EMOJI[g.c]||"📦";
-    const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",fmtSize(a),a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
-    return `<article class="item${hl===g.id?" hl":""}" id="r-${g.id}">
-      <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div>
-      <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
-      ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div></article>`;
-  }).join(""):'<div class="empty">Filtrə uyğun məhsul tapılmadı.</div>';
+  $("list").innerHTML=list.length?list.map(g=>card(g)).join(""):'<div class="empty">Filtrə uyğun məhsul tapılmadı.</div>';
   $("more").hidden=shown>=filtered.length;
   $("more").textContent=`Daha çox göstər (${filtered.length-shown} qalıb)`;
+}
+
+/* ─────────── alış-veriş siyahısı ─────────── */
+function renderList(){
+  const rs=FAV.map(f=>({f,g:GM[f.t]?groups(f.t).find(g=>favKey(g)===f.k):null})), ok=rs.filter(x=>x.g);
+  $("favSum").innerHTML=""; 
+  if(!FAV.length){ $("favList").innerHTML='<div class="empty">Siyahı boşdur.<br>Məhsul kartında ♡ düyməsinə basıb əlavə et.</div>'; return; }
+  const tot=[]; for(const s of stores){ let t=0,h=0; for(const {f,g} of ok){ const o=g.offers[s]; if(o){ t+=o.p*f.q; h++; } } if(h) tot.push({s,t,h}); }
+  const n=ok.length, full=x=>x.h===n;
+  tot.sort((a,b)=>full(b)-full(a)||(full(a)?a.t-b.t:b.h-a.h||a.t-b.t));
+  const ideal=ok.reduce((a,{f,g})=>a+g.min*f.q,0), bf=tot.find(full);
+  $("favSum").innerHTML=n?`<div class="sum"><h2>Hansı mağaza daha ucuzdur?</h2>`+tot.map((x,i)=>
+    `<div class="r${i===0&&full(x)?" best1":""}"><span><i class="dot" style="--c:var(--${x.s})"></i>${x.s} <small>${x.h}/${n} məhsul</small></span><b class="mono">${fmt(x.t)}</b></div>`).join("")+
+    `<div class="ideal">Hər məhsulu ən ucuz mağazadan alsan: <b class="mono">${fmt(ideal)}</b>${bf&&bf.t-ideal>.005?` <small style="color:var(--good)">(−${fmt(bf.t-ideal)} qənaət)</small>`:""}</div>
+     <div class="btns"><button class="btn" id="favCopy">📋 Kopyala</button><button class="btn" id="favClear">🗑 Təmizlə</button></div></div>`:"";
+  $("favList").innerHTML=rs.map(({f,g})=>g?card(g,{pre:"f",qty:f.q}):
+    `<article class="item"><h3>${esc(f.n)}</h3><div class="meta">Bu məhsul artıq tapılmadı</div><button class="btn" data-del="${esc(f.k)}" style="margin-top:8px">Sil</button></article>`).join("");
+  $("favSum").dataset.n=n;
+}
+function favText(){
+  return FAV.map(f=>{ const g=GM[f.t]?groups(f.t).find(g=>favKey(g)===f.k):null; if(!g) return "• "+f.n+" × "+f.q;
+    const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0]; return `• ${g.name} × ${f.q} — ${e[0]} ${fmt(e[1].p)}`; }).join("\n");
 }
 
 /* ─────────── routing (hash): #/c/<qrup>[/<pNN məhsul | alt növ>] ─────────── */
 function route(){
   if(!DB) return;
+  if(location.hash==="#/list"){ $("homeView").hidden=true; $("catView").hidden=true; $("listView").hidden=false; renderList(); window.scrollTo(0,0); return; }
+  $("listView").hidden=true;
+  const mq=location.hash.match(/\?q=(.*)$/), qv=mq?decodeURIComponent(mq[1]):"";
   const m=location.hash.match(/^#\/c\/([\w-]+)(?:\/([\w-]+))?/), p=m&&/^p\d+$/.test(m[2]||"")?m[2]:null;
   if(m&&GM[m[1]]){
     $("homeView").hidden=true; $("catView").hidden=false; openCat(m[1],p,p||!GM[m[1]].cats.includes(m[2])?null:m[2]);
+    if(qv){ F.q=qv; $("tq").value=qv; apply(); }
     if(p) setTimeout(()=>{const r=$("r-"+p); r&&r.scrollIntoView({block:"center"});},50);
     else window.scrollTo(0,0);
   }else{ $("catView").hidden=true; $("homeView").hidden=false; }
@@ -969,6 +1087,25 @@ const go=h=>{ location.hash===h?route():(location.hash=h); };
 /* ─────────── events ─────────── */
 const goHome=()=>{ $("q").value=""; $("results").innerHTML=""; go("#/"); };
 $("home").onclick=$("home2").onclick=goHome;
+$("favBtn").onclick=()=>go("#/list"); $("back2").onclick=()=>go("#/"); saveFav();
+$("drops").onclick=e=>{ const b=e.target.closest(".drop"); if(b) go("#/c/"+b.dataset.g+"?q="+encodeURIComponent(b.dataset.q)); };
+const cardOf=el=>{ const a=el.closest(".item"); return a&&a.dataset.t?{a,g:(GROUPS[a.dataset.t]||[]).find(x=>x.id===a.dataset.id)}:{}; };
+document.addEventListener("click",async e=>{
+  const fb=e.target.closest(".fav");
+  if(fb){ const {g}=cardOf(fb); if(!g) return; toggleFav(g); if(!$("listView").hidden) renderList(); else { const on=isFav(g); fb.classList.toggle("on",on); fb.textContent=on?"♥":"♡"; } return; }
+  const qb=e.target.closest(".qty button");
+  if(qb){ const {g}=cardOf(qb); const f=g&&FAV.find(x=>x.k===favKey(g)); if(f){ f.q=Math.max(1,Math.min(99,f.q+ +qb.dataset.q)); saveFav(); renderList(); } return; }
+  const db=e.target.closest("[data-del]"); if(db){ FAV=FAV.filter(f=>f.k!==db.dataset.del); saveFav(); renderList(); return; }
+  if(e.target.closest("#favClear")){ if(confirm("Siyahı təmizlənsin?")){ FAV=[]; saveFav(); renderList(); } return; }
+  if(e.target.closest("#favCopy")){ const t=favText(); try{ await navigator.clipboard.writeText(t); e.target.textContent="✓ Kopyalandı"; }catch(x){ prompt("Kopyala:",t); } return; }
+  const ob=e.target.closest(".o");   // mağaza sətri: qiymət tarixçəsi
+  if(ob){ const nx=ob.nextElementSibling; if(nx&&nx.classList.contains("o-h")){ nx.remove(); return; }
+    const {g}=cardOf(ob), o=g&&g.offers[ob.dataset.s]; if(!o) return;
+    const d=document.createElement("div"); d.className="o-h"; d.textContent="…"; ob.after(d);
+    const h=(await hist())[hk(ob.dataset.s,o.n)];
+    d.innerHTML=h&&h.length>1?h.map(x=>`${x[0].slice(5).replace("-",".")}: <b>${fmt(x[1])}</b>`).join(" → "):o.pp?`Əvvəl ${fmt(o.pp)} (${esc(o.pd)}) → indi <b>${fmt(o.p)}</b>`:"Son dəyişiklik qeydə alınmayıb";
+    d.innerHTML+=`<div>${esc(o.n)}</div>`; }
+});
 $("back").onclick=()=>go("#/");
 $("retry").onclick=load;
 $("catGrid").onclick=e=>{const b=e.target.closest(".cat"); if(b) go("#/c/"+b.dataset.id);};

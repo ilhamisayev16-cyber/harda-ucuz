@@ -46,16 +46,17 @@ Scraper hər gün avtomatik işləyəcək.
 - Cədvəldə Wolt qiymətləri <sup>W</sup> ilə işarələnir (Wolt qiyməti rəf qiymətindən bir qədər yüksək ola bilər).
 - Scrape boş nəticə qaytararsa, köhnə qiymətlər silinmir (`meta` bölməsində hər mağazanın son yenilənmə vaxtı var).
 - Wolt filialının slug-ı dəyişibsə, mühit dəyişəni ilə verin: `WOLT_SLUG_NEPTUN=neptun-supermarket-...` (vergüllə bir neçə).
-- Çoxfilialli mağazalarda (`WOLT_BRANCHES`, hazırda Bravo) bir neçə filialın kataloqu birləşdirilir: məhsul sayı artır, qiymət filiallar üzrə mediandır.
+- Çoxfilialli mağazalarda (`WOLT_BRANCHES`: Bravo, Neptun, Tamstore) bir neçə filialın kataloqu birləşdirilir: məhsul sayı artır, qiymət filiallar üzrə mediandır.
 - "Wolta Özəl" kimi yalnız Wolt-a aid endirim kateqoriyalarındakı məhsullar götürülmür (bu endirim mağazanın rəfində yoxdur). Təxmini çevirmə (məs. Wolt qiymətindən faiz çıxmaq) edilmir.
 - Öz saytı yoxlanılıb, qiymətli kataloq tapılmayıb (2026-10): neptun.az (boş cavab), bravosupermarket.az, tamstore.az, rahatmarket.az (yalnız kampaniyalar). Bunlar üçün yeganə mənbə Wolt-dur.
 
 ## Mağazalar
 - **Bravo** → Wolt (bir neçə filial)
-- **Neptun** → Wolt
+- **Neptun** → Wolt (bir neçə filial)
 - **OBA** → oba.az
 - **Araz** → arazmarket.az API (+ Wolt)
-- **Tamstore**, **Rahat** → Wolt
+- **Tamstore** → Wolt (bir neçə filial)
+- **Rahat** → Wolt
 - **Bazarstore** → bazarstore.az (öz saytı, nopCommerce HTML)
 - **SPAR** → Wolt
 

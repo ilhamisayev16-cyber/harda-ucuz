@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>QiymətMüqayisə — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz və Neptun supermarketlərinin qiymətlərini bir yerdə müqayisə edin.">
 <meta name="theme-color" content="#e35600">
@@ -216,6 +218,9 @@ details.more-f summary::-webkit-details-marker{display:none}
     <div class="drops" id="drops" hidden></div>
     <div class="grid" id="catGrid"></div>
     <p class="note" id="srcNote"></p>
+    <p class="note">Qiymətlər mağazaların açıq saytlarından avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
+      Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları və şəkillər öz sahiblərinə məxsusdur. Sayt cookie və izləmə istifadə etmir;
+      alış-veriş siyahısı yalnız sizin brauzerinizdə saxlanır.</p>
   </section>
 
   <section id="listView" hidden>
@@ -1072,7 +1077,7 @@ function route(){
   if(!DB) return;
   if(location.hash==="#/list"){ $("homeView").hidden=true; $("catView").hidden=true; $("listView").hidden=false; renderList(); window.scrollTo(0,0); return; }
   $("listView").hidden=true;
-  const mq=location.hash.match(/\?q=(.*)$/), qv=mq?decodeURIComponent(mq[1]):"";
+  const mq=location.hash.match(/\?q=(.*)$/); let qv=""; try{ qv=mq?decodeURIComponent(mq[1]):""; }catch(e){}
   const m=location.hash.match(/^#\/c\/([\w-]+)(?:\/([\w-]+))?/), p=m&&/^p\d+$/.test(m[2]||"")?m[2]:null;
   if(m&&GM[m[1]]){
     $("homeView").hidden=true; $("catView").hidden=false; openCat(m[1],p,p||!GM[m[1]].cats.includes(m[2])?null:m[2]);
@@ -1103,7 +1108,7 @@ document.addEventListener("click",async e=>{
     const {g}=cardOf(ob), o=g&&g.offers[ob.dataset.s]; if(!o) return;
     const d=document.createElement("div"); d.className="o-h"; d.textContent="…"; ob.after(d);
     const h=(await hist())[hk(ob.dataset.s,o.n)];
-    d.innerHTML=h&&h.length>1?h.map(x=>`${x[0].slice(5).replace("-",".")}: <b>${fmt(x[1])}</b>`).join(" → "):o.pp?`Əvvəl ${fmt(o.pp)} (${esc(o.pd)}) → indi <b>${fmt(o.p)}</b>`:"Son dəyişiklik qeydə alınmayıb";
+    d.innerHTML=h&&h.length>1?h.map(x=>`${esc(String(x[0]).slice(5).replace("-","."))}: <b>${fmt(+x[1])}</b>`).join(" → "):o.pp?`Əvvəl ${fmt(o.pp)} (${esc(o.pd)}) → indi <b>${fmt(o.p)}</b>`:"Son dəyişiklik qeydə alınmayıb";
     d.innerHTML+=`<div>${esc(o.n)}</div>`; }
 });
 $("back").onclick=()=>go("#/");

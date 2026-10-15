@@ -267,6 +267,15 @@ WOLT_SLUGS = {
                "neptun-supermarket-nizami"],
 }
 
+# Çoxfilialli şəbəkələr: bu filialların hamısının kataloqu birləşdirilir (məhsul sayı artır).
+# Wolt filialları fərqli çeşid saxlayır (Koroğlu hipermarketi ~14 min, kiçik filial ~6 min məhsul).
+# Eyni məhsulun qiyməti filiallarda fərqli ola bilər: filiallar üzrə median götürülür (cüt sayda aşağı orta).
+# Mühit dəyişəni ilə əvəz etmək olar: WOLT_BRANCHES_BRAVO=slug1,slug2
+WOLT_BRANCHES = {
+    "Bravo": ["bravo-hypermarket-koroglu", "bravo-radiozavod", "bravo-supermarket-globus-centre",
+              "bravo-supermarket-yeni-yasamal", "bravo-azadlig-avenue", "bravo-supermarket-5-sayli-xestexana"],
+}
+
 def wolt_slugs(store):
     env = os.environ.get("WOLT_SLUG_" + store.upper(), "")
     extra = [x.strip() for x in env.split(",") if x.strip()]
@@ -1128,15 +1137,27 @@ def _wolt_pick_venue(ses, store, probe):
         time.sleep(10 * (attempt + 1))
     return None
 
-def scrape_wolt_full(store):
+def scrape_wolt_full(store, slug=None):
     """Filialın BÜTÜN kataloqu: kateqoriya ağacı -> hər yarpaq kateqoriya (səhifələmə ilə).
     Açar söz axtarışından çox məhsul verir. Uğursuz olarsa None."""
     ses = _session()
     def probe(slug):
         r = ses.get(_wolt_base(slug), params={"language": "az"}, timeout=30)
         return r.status_code == 200 and bool(r.json().get("categories"))
-    slug = _wolt_pick_venue(ses, store, probe)
-    if not slug: return None
+    if slug:   # konkret filial (çoxfilialli rejim): 3 cəhd
+        ok = False
+        for attempt in range(3):
+            try:
+                ok = probe(slug)
+            except Exception as e:
+                print(f"  [Wolt/{store}] {slug}: {type(e).__name__}")
+            if ok: break
+            time.sleep(8 * (attempt + 1))
+        if not ok: return None
+        print(f"  [Wolt/{store}] filial: {slug}")
+    else:
+        slug = _wolt_pick_venue(ses, store, probe)
+        if not slug: return None
     base = _wolt_base(slug)
     tree = ses.get(base, params={"language": "az"}, timeout=30).json()["categories"]
     leaves = []   # (slug, "Üst > Alt")
@@ -1207,9 +1228,49 @@ def scrape_wolt_full(store):
           + (f"; {len(failed)} sorğu alınmadı {sorted({str(f[1]) for f in failed})}" if failed else ""), flush=True)
     return results if total else None
 
+# Qiymətin mənbə üsulu (tək filial / filiallar üzrə median). Üsul dəyişən gün qiymət fərqləri
+# real qiymət dəyişikliyi deyil, ona görə həmin gün dəyişiklik nişanı və tarixçə yazılmır.
+WOLT_SRC = {}
+
+def scrape_wolt_multi(store):
+    """WOLT_BRANCHES-dəki bütün filialların tam kataloqu: ad üzrə birləşdirilir, qiymət = filiallar üzrə median.
+    Heç bir filial alınmasa None."""
+    import statistics
+    slugs = [x.strip() for x in os.environ.get("WOLT_BRANCHES_" + store.upper(), "").split(",") if x.strip()] \
+        or WOLT_BRANCHES.get(store)
+    if not slugs: return None
+    merged, ok, t0 = {}, 0, time.time()
+    for slug in slugs:
+        res = scrape_wolt_full(store, slug)
+        if not res:
+            print(f"  [Wolt/{store}] ✗ {slug} alınmadı", flush=True)
+            continue
+        ok += 1
+        before = len(merged)
+        for cid, items in res.items():
+            for e in items:
+                k = re.sub(r"\s+", " ", e["name"].lower()).strip()
+                m = merged.get(k)
+                if m is None:
+                    merged[k] = {"cid": cid, "p": [e["wolt_price"]], "e": dict(e)}
+                else:
+                    m["p"].append(e["wolt_price"])
+                    for f in ("img", "wt"):
+                        if f not in m["e"] and e.get(f): m["e"][f] = e[f]
+        print(f"  [Wolt/{store}] {slug}: +{len(merged) - before} yeni (cəmi {len(merged)}); {round(time.time() - t0)} san", flush=True)
+        time.sleep(5)
+    if not ok: return None
+    results = {c: [] for c in CATEGORIES}
+    for m in merged.values():
+        e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
+        results[m["cid"]].append(e)
+    print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
+    WOLT_SRC[store] = "multi"
+    return results
+
 def scrape_wolt(store):
     """Əvvəl tam kataloq; alınmasa açar söz axtarışı (köhnə üsul)."""
-    full = scrape_wolt_full(store)
+    full = scrape_wolt_multi(store) or scrape_wolt_full(store)
     if full: return full
     print(f"  [Wolt/{store}] tam kataloq alınmadı → açar söz axtarışı")
     ses = _session()
@@ -1317,6 +1378,11 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
         return False
     wolt_only = store in ("Bravo", "Neptun", "Tamstore", "Rahat")
     old = track_changes(store, data, hist)
+    src = WOLT_SRC.get(store, "single") if wolt_only else None
+    prev_src = (data.get("meta", {}).get(store) or {}).get("src", "single")
+    if src and src != prev_src:
+        print(f"  [{store}] qiymət mənbəyi dəyişdi ({prev_src} → {src}): bu dəfə dəyişiklik nişanı qoyulmur")
+        old = {}
     today = datetime.now().strftime("%Y-%m-%d")
     old_day = _iso((data.get("meta", {}).get(store) or {}).get("updated", "")) or _iso(data.get("last_updated", ""))
     for cid in CATEGORIES:
@@ -1332,6 +1398,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
         "own": sum(len(v) for v in own_res.values()),
         "wolt": sum(len(v) for v in wolt_res.values()),
     }
+    if src: data["meta"][store]["src"] = src
     return True
 
 # ── MAIN ─────────────────────────────────────────────────────────────────

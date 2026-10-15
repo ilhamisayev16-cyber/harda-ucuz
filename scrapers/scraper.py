@@ -933,7 +933,10 @@ def scrape_araz():
                 if pid in seen or not name or price is None: continue
                 seen.add(pid)
                 cat = classify(name, f"{title} > {p.get('category_title') or ''}")
-                results[cat].append({"name": name, "price": price})
+                e = {"name": name, "price": price}
+                rp = clean_price(p.get("sales_price"))
+                if p.get("is_discount") and rp and rp > price: e["rp"] = rp   # adi qiymət (yalnız birləşdirmə üçün, yazılmır)
+                results[cat].append(e)
     total = len(seen)
     print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)" + (f"; alınmadı: {failed}" if failed else ""), flush=True)
     return results if total else None
@@ -1359,7 +1362,10 @@ def merge_own_wolt(own_list, wolt_list):
     Eyni məhsul: ölçü eyni (hər iki adda varsa), rəqəmlər ziddiyyətsiz, qiymət 1.6 dəfədən az fərqli və
     çəkili ad oxşarlığı >= 0.6 (ölçü yalnız bir adda: >= 0.8, heç birində: >= 0.7). Söz çəkisi = log(1 + N / tezlik):
     "Prezident", "Chivas" kimi nadir sözlər "yağ", "süd"-dən ağırdır. Hər Wolt məhsulu ən çox bir öz məhsula bağlanır
-    (ən oxşar cütlər əvvəl). Əvvəllər ölçü yoxlanmırdı: "Süd 1 L" Wolt-un "Süd 0.5 L"-i ilə birləşir, o Wolt məhsulu siyahıdan düşürdü."""
+    (ən oxşar cütlər əvvəl). Əvvəllər ölçü yoxlanmırdı: "Süd 1 L" Wolt-un "Süd 0.5 L"-i ilə birləşir, o Wolt məhsulu siyahıdan düşürdü.
+    Böyük aksiya (öz qiymət adi qiymətin `rp` yarısı və ya daha az): mağaza saytındakı aksiya çox vaxt onlayn sifarişə aiddir,
+    rəfdə qiymət fərqli olur (Araz "Avokado əd": saytda 3.49 → 0.99, kassada 1.99). Eyni məhsulun Wolt qiyməti varsa
+    öz qiymət götürülmür, yalnız Wolt qiyməti qalır (saytda W ilə). Qiymət yoxlaması adi qiymətlə də aparılır."""
     import math
     own_p = [_parse(it["name"]) for it in own_list]
     wolt_p = [_parse(w["name"]) for w in wolt_list]
@@ -1375,10 +1381,10 @@ def merge_own_wolt(own_list, wolt_list):
     for i, (ws, sz) in enumerate(own_p):
         cand = set()
         for t in ws: cand.update(idx.get(t, ()))
-        p = own_list[i]["price"]
+        p = own_list[i]["price"]; hi = max(p, own_list[i].get("rp") or 0)   # aksiyalıda: aksiya ilə adi qiymət arası
         for j in cand:
             q = wolt_list[j]["wolt_price"]
-            if p <= 0 or q <= 0 or max(p, q) > 1.6 * min(p, q): continue
+            if p <= 0 or q <= 0 or q > 1.6 * hi or q * 1.6 < p: continue
             s = sim(own_p[i], wolt_p[j], wt)
             osz = wolt_p[j][1]
             need = 0.6 if sz and osz else 0.7 if not sz and not osz else 0.8
@@ -1395,6 +1401,8 @@ def merge_own_wolt(own_list, wolt_list):
             w = wolt_list[j]
             if abs(w["wolt_price"] - item["price"]) > 0.005: entry["wolt_price"] = w["wolt_price"]
             if w.get("wt"): entry["wt"] = w["wt"]
+            if item.get("rp") and item["price"] <= 0.5 * item["rp"] and "wolt_price" in entry:
+                del entry["price"]   # 50%+ aksiya: Wolt qiyməti göstərilir
         merged.append(entry)
     for j, w in enumerate(wolt_list):   # yalnız Wolt-da olanlar
         if j not in used:

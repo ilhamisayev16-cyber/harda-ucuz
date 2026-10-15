@@ -261,3 +261,15 @@ def test_build_site(tmp_path):
     assert "<loc>https://example.org/q/qiymetler/</loc>" in sm and sm.count("<url>") > 20
     page = (tmp_path / "site" / "qiymetler" / "sud" / "index.html").read_text(encoding="utf-8")
     assert '<link rel="canonical" href="https://example.org/q/qiymetler/sud/">' in page and "#/c/sud" in page and "<script" not in page
+
+
+# ── böyük aksiya (50%+): Wolt qiyməti varsa o göstərilir ──
+def test_big_own_discount_falls_back_to_wolt_price():
+    own = [{"name": "Avokado əd", "price": 0.99, "rp": 3.49}, {"name": "Banan kq", "price": 2.0, "rp": 2.5},
+           {"name": "Kivi kq", "price": 1.0, "rp": 4.0}]
+    wolt = [{"name": "Avokado əd", "wolt_price": 1.99}, {"name": "Banan kq", "wolt_price": 2.2}]
+    out = {i["name"]: i for i in S.merge_own_wolt(own, wolt)}
+    assert out["Avokado əd"] == {"name": "Avokado əd", "wolt_price": 1.99}      # 72% aksiya → Wolt
+    assert out["Banan kq"] == {"name": "Banan kq", "price": 2.0, "wolt_price": 2.2}   # kiçik aksiya: öz qiymət
+    assert out["Kivi kq"] == {"name": "Kivi kq", "price": 1.0}                  # Wolt yoxdur: öz qiymət qalır
+    assert len(out) == 3 and all("rp" not in i for i in out.values())

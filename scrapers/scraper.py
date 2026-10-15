@@ -274,6 +274,11 @@ WOLT_SLUGS = {
 WOLT_BRANCHES = {
     "Bravo": ["bravo-hypermarket-koroglu", "bravo-radiozavod", "bravo-supermarket-globus-centre",
               "bravo-supermarket-yeni-yasamal", "bravo-azadlig-avenue", "bravo-supermarket-5-sayli-xestexana"],
+    # Neptun və Tamstore qiymətləri filiallarda eynidir (sınaq: 100% uyğun); filiallar yalnız çeşidi artırır
+    "Neptun": ["neptun-supermarket-narimanovv", "neptun-supermarket-28", "neptun-supermarket-ag-sheher",
+               "neptun-8-mkr", "neptun-supermarket-3-mkr"],
+    "Tamstore": ["tamstore-narimanov-1", "tamstore-genclik", "tamstore-yeni-yasamal", "tamstore-papanin",
+                 "tamstore-olimpik-star", "tamstore-bineqedi"],
 }
 
 def wolt_slugs(store):

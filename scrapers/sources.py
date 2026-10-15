@@ -5,7 +5,7 @@ Heç nə uydurulmur.
 """
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 # type: "wolt"  – Wolt kataloqu (yalnız wolt_price)  |  "own" – mağazanın öz saytı/API-si  |  "own+wolt"
@@ -89,5 +89,13 @@ def atomic_write_json(obj, path):
     os.replace(tmp, path)
 
 
+# Bakı vaxtı (UTC+4, 2016-dan yay vaxtı yoxdur). GitHub Actions serveri UTC-də işləyir: datetime.now() 4 saat geri göstərirdi.
+BAKU = timezone(timedelta(hours=4))
+
+
+def now():
+    return datetime.now(BAKU)
+
+
 def now_iso():
-    return datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    return now().strftime("%Y-%m-%dT%H:%M:%S")

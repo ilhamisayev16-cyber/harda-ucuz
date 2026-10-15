@@ -8,6 +8,17 @@
 <title>QiymətMüqayisə — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
 <meta name="theme-color" content="#e35600">
+<link rel="canonical" href="https://ilhamisayev16-cyber.github.io/qiymet-muqayise/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="QiymətMüqayisə">
+<meta property="og:locale" content="az_AZ">
+<meta property="og:title" content="Hansı market daha ucuzdur? — QiymətMüqayisə">
+<meta property="og:description" content="Bravo, OBA, Araz, Neptun, SPAR və digər Bakı supermarketlərinin qiymətlərini bir yerdə müqayisə edin.">
+<meta property="og:url" content="https://ilhamisayev16-cyber.github.io/qiymet-muqayise/">
+<meta property="og:image" content="https://ilhamisayev16-cyber.github.io/qiymet-muqayise/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="data/prices.json" as="fetch" crossorigin>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🛒%3C/text%3E%3C/svg%3E">
 <style>
@@ -49,6 +60,7 @@ button{cursor:pointer}
 .res:last-child{border:0}
 .res:active{background:var(--soft)}
 .res small{color:var(--mute);display:block}
+.res .lo{color:var(--good);font-weight:700}
 .cat-hit{background:var(--brand-soft)}
 .res strong{display:block;font-size:15px}
 
@@ -200,6 +212,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 </div></header>
 
 <main class="wrap">
+  <noscript><p>Sayt JavaScript tələb edir. Qiymətlərin sadə siyahısı: <a href="qiymetler/">Bütün qiymətlər</a>.</p></noscript>
   <div id="loading">
     <div class="skel" style="height:30px;width:70%;margin:18px 0 16px"></div>
     <div class="grid" id="skelgrid"></div>
@@ -219,7 +232,8 @@ details.more-f summary::-webkit-details-marker{display:none}
     <p class="note" id="srcNote"></p>
     <p class="note">Qiymətlər mağazaların açıq saytlarından avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
       Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları öz sahiblərinə məxsusdur. Sayt cookie və izləmə istifadə etmir;
-      alış-veriş siyahısı yalnız sizin brauzerinizdə saxlanır. <a href="haqqinda.html" style="color:inherit">Haqqında, şərtlər və məxfilik</a></p>
+      alış-veriş siyahısı yalnız sizin brauzerinizdə saxlanır. <a href="qiymetler/" style="color:inherit">Bütün qiymətlər (kateqoriyalar üzrə siyahı)</a> ·
+      <a href="haqqinda.html" style="color:inherit">Haqqında, şərtlər və məxfilik</a></p>
   </section>
 
   <section id="listView" hidden>
@@ -756,20 +770,22 @@ function compat(a,b){
    eyni markanı bu sözlə ayrıca satır, marka (ilk söz) heç bir tərəfdə yoxdur, qiymət 3 dəfədən çox fərqli.
    Kartlar: ən oxşar cütlərdən başlayaraq birləşdirilir; kartdakı hər üzv digər mağazaların BÜTÜN üzvləri ilə uyğun olmalıdır (zəncir yoxdur),
    bir kartda bir mağazadan bir məhsul (eyni ad = dublikat). Namizədlər: nadir sözlərin indeksi (prefiks filtri). */
-function group(cat,prod){
+function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (data/groups.json); rec: kart üzvlərinin nömrələri (qurma skripti üçün)
   const it=[], df=new Map(), P=new Map(), TI=new Map(), TOK=[], DF=[], LD=new Map();   // söz -> id (ədədi müqayisə üçün); LD: söz neçə adda ilk sözdür (marka)
   for(const store of Object.keys(cat.stores||{})){ const L=cat.stores[store]||[], R=(cat.cats||{})[store]||[]; let ri=0;
    for(let i=0;i<L.length;i++){ const x=L[i]; while(ri<R.length-1&&i>=R[ri][0]) ri++;   // məhsulun alt kateqoriyası
-    const f=fold(x.name), tk=tokens(f); let a=attrs(x.name);
+    const f=fold(x.name); let a=attrs(x.name);
     if(x.wt>0&&!(x.price!=null&&a.wv!=null&&norm(a.wv,a.wu)<1000&&!/\d\s*-\s*\d/.test(x.name)))   // Wolt çəki (wt): qiymət 1 kq üçündür;
       a={...a,kg:true,wv:null,wu:null,pack:0,unit:0,uu:""};             // mağazanın öz qiyməti + 1 kq-dan kiçik sabit ölçü ("Gerda 250qr") isə qablaşdırma
-    const ta=[...tk], e={x,store,f,a,tk,ta,tid:null,ids:null,tkey:"",key:"",c:R.length?R[ri][1]:null,lead:tk.lead,mat:tk.mat,p:x.price??x.wolt_price??0}; it.push(e);
+    if(pre){ it.push({i:it.length,x,store,f,a,c:R.length?R[ri][1]:null,p:x.price??x.wolt_price??0}); continue; }   // hazır kartlar: söz/oxşarlıq hesabı lazım deyil
+    const tk=tokens(f), ta=[...tk], e={i:it.length,x,store,f,a,tk,ta,tid:null,ids:null,tkey:"",key:"",c:R.length?R[ri][1]:null,lead:tk.lead,mat:tk.mat,p:x.price??x.wolt_price??0}; it.push(e);
     const tid=new Int32Array(ta.length);
     for(let k=0;k<ta.length;k++){ const t=ta[k]; let d=TI.get(t); if(d===undefined){ TI.set(t,d=TOK.length); TOK.push(t); DF.push(0); } DF[d]++; tid[k]=d; }
     if(tk.lead!=null) LD.set(tk.lead,(LD.get(tk.lead)||0)+1);
     e.tid=tid; e.ids=tid.slice().sort();                                // ids: artan sıra (birləşdirmə ilə kəsişmə); tkey: söz çoxluğunun açarı, key: + kod (dublikat)
     let k=""; for(const d of e.ids) k+=d+" "; e.tkey=k; e.key=tk.code.size?k+"|"+[...tk.code].sort().join(" "):k;
   }}
+  if(pre){ if(!usePre(it,pre)) return null; } else {                   // hazır kartlar yoxdursa / uyğun gəlmirsə: brauzerdə hesablanır
   for(let d=0;d<TOK.length;d++) df.set(TOK[d],DF[d]);
   const N=it.length, W=new Map(), gen=Math.max(5,N*.01), rare=Math.max(5,N*OPT.X);
   /* kəsilmiş adlar: mağazanın adları çox vaxt eyni max uzunluqdadırsa (Bazarstore: 40), son söz yarımçıq ola bilər ("Boqat", "Qəhvəy") */
@@ -891,6 +907,7 @@ function group(cat,prod){
     const [K,Q]=A.m.length>=B.m.length?[A,B]:[B,A];
     for(const z of Q.m){ z.C=K; K.m.push(z); } K.lo=Math.min(K.lo,Q.lo); K.hi=Math.max(K.hi,Q.hi);
   }
+  }
   const out=[]; let n=1;
   for(const x of it){ const C=x.C; if(C.g) continue;                   // kartın adı: ilk üzv (mağaza sırası ilə)
     const g=C.g={id:"p"+n++,name:x.x.name,fd:x.f,a:x.a,c:x.c,m:C.m};
@@ -902,9 +919,20 @@ function group(cat,prod){
     const o=Object.values(g.offers), v=o.map(x=>x.p);
     const fr=o.filter(x=>!x.st).map(x=>x.p), vv=fr.length?fr:v;   // arxiv (yenidən yoxlanmayan) qiymətlər ən ucuz/qənaət hesabına girmir
     g.n=vv.length; g.min=Math.min(...vv); g.max=Math.max(...vv); g.save=g.n>1?g.max-g.min:0;
+    if(rec) g.mi=g.m.map(x=>x.i);
     delete g.m;
   }
+  if(rec) out.N=it.length;
   return out;
+}
+/* hazır kartlar (pre): {n: məhsul sayı, m: [[üzvlərin nömrələri], ...]} — yalnız 2+ üzvlü kartlar, qalanları təkdir.
+   Nömrə = məhsulun group()-dakı sırası (mağaza, sonra alt kateqoriya sırası ilə). Uyğunsuzluq olsa false: kartlar brauzerdə hesablanır */
+function usePre(it,pre){
+  if(!pre||pre.n!==it.length||!Array.isArray(pre.m)) return false;
+  for(const x of it) x.C={m:[x]};
+  for(const ix of pre.m){ if(!Array.isArray(ix)||ix.length<2) return false; const C={m:[],k:1};
+    for(const i of ix){ const x=Number.isInteger(i)&&it[i]; if(!x||x.C.k) return false; x.C=C; C.m.push(x); } }
+  return true;
 }
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
@@ -913,18 +941,19 @@ function mk(it){
 }
 
 /* ─────────── state ─────────── */
-let DB=null; const GROUPS={}; let stores=[], GL=[], GM={};
+let DB=null, PRE=null; const GROUPS={}; let stores=[], GL=[], GM={};
 let cur=null, filtered=[], shown=PAGE, hl=null;
 const F={sub:null,mode:"Hamısı",size:null,fat:null,q:"",sort:"savings_desc"};
 /* ümumi kateqoriya = bir neçə alt kateqoriyanın birləşməsi */
-function groups(gid){
-  if(GROUPS[gid]) return GROUPS[gid];
+function groups(gid,rec){
+  if(GROUPS[gid]&&!rec) return GROUPS[gid];
   const stv={}, cv={};
   for(const cid of GM[gid].cats){
     const c=DB.categories[cid]; if(!c) continue;
     for(const s of Object.keys(c.stores)){ const l=stv[s]||(stv[s]=[]); for(const it of c.stores[s]) l.push(it); (cv[s]=cv[s]||[]).push([l.length,cid]); }   // alt kateqoriya: [son indeks, id]
   }
-  const r=group({stores:stv,cats:cv},gid==="meyve"||gid==="sebze"); r.forEach(g=>g.t=gid);
+  const cat={stores:stv,cats:cv}, prod=gid==="meyve"||gid==="sebze", pre=!rec&&PRE&&PRE[gid];
+  const r=(pre&&group(cat,prod,pre))||group(cat,prod,null,rec); r.forEach(g=>g.t=gid);
   return GROUPS[gid]=r;
 }
 const catName=c=>(DB.categories[c]||{}).name||c;
@@ -947,6 +976,8 @@ function toggleFav(g){ const k=favKey(g), i=FAV.findIndex(f=>f.k===k); if(i>=0) 
 /* qiymət tarixçəsi (data/history.json, ilk dəfə lazım olanda) */
 let HIST=null;
 async function hist(){ if(HIST) return HIST; try{ const r=await fetch("data/history.json"); HIST=r.ok?((await r.json()).h||{}):{}; }catch(e){ HIST={}; } return HIST; }
+const SRC=document.currentScript?document.currentScript.textContent:"";   // bu skriptin mətni: hazır kartların hansı kod versiyası ilə qurulduğunu yoxlamaq üçün
+const siteHash=()=>hk("site",SRC);
 function hk(s,n){ let h1=0x811c9dc5,h2=5381; for(const b of new TextEncoder().encode(s+"|"+n)){ h1=Math.imul(h1^b,0x01000193)>>>0; h2=(Math.imul(h2,33)^b)>>>0; }
   return h1.toString(16).padStart(8,"0")+h2.toString(16).padStart(8,"0"); }
 
@@ -954,11 +985,16 @@ function hk(s,n){ let h1=0x811c9dc5,h2=5381; for(const b of new TextEncoder().en
 async function load(){
   $("loading").hidden=false; $("error").hidden=true;
   try{
+    const pj=fetch("data/groups.json").then(r=>r.ok?r.json():null).catch(()=>null);   // serverdə hazırlanmış kartlar (paralel)
     const r=await fetch("data/prices.json"); if(!r.ok) throw new Error("HTTP "+r.status);
     DB=await r.json(); stores=DB.stores||[];
     GL=DB.groups||Object.entries(DB.categories).map(([id,c])=>({id,name:c.name,cats:[id]}));
     GM=Object.fromEntries(GL.map(g=>[g.id,g]));
-    renderHome(); route();
+    renderHome();
+    const P=await Promise.race([pj,new Promise(r=>setTimeout(()=>r(null),3000))]);   // yalnız eyni data və eyni sayt kodu üçün hazırlanıbsa; gecikərsə gözlənilmir
+    PRE=P&&P.v===DB.last_updated&&P.s===siteHash()?P.g:null;
+    route();
+    if(PRE) setTimeout(warm,300);
   }catch(e){ $("errmsg").textContent=e.message; $("error").hidden=false; }
   finally{ $("loading").hidden=true; }
 }
@@ -1166,6 +1202,10 @@ $("tq").oninput=debounce(e=>{F.q=e.target.value.slice(0,100);shown=PAGE;apply();
 $("sort").onchange=e=>{F.sort=e.target.value;apply();};
 
 /* global search */
+/* nəticədə mağazalar ucuzdan bahaya; ən ucuz (arxiv olmayan) yaşıl */
+const offs=g=>Object.entries(g.offers).sort((a,b)=>a[1].p-b[1].p).map(([s,o])=>{
+  const t=esc(s)+" "+fmt(o.p)+(g.a.kg?"/kq":"")+(o.w?"<sup>W</sup>":"");
+  return g.n>1&&!o.st&&o.p===g.min?`<span class="lo">${t}</span>`:t; }).join(" · ");
 $("q").oninput=debounce(e=>{
   const raw=e.target.value.trim().slice(0,100), box=$("results");
   if(raw.length<2){box.innerHTML="";return;}
@@ -1175,11 +1215,13 @@ $("q").oninput=debounce(e=>{
     :`<button class="res cat-hit" data-go="#/c/${c.id}"><strong>${EMOJI[c.id]||"📦"} ${esc(GM[c.id].name)}</strong><small>${esc(GEN_NAME[c.id]||"")} · kateqoriyaya keç</small></button>`).join("");
   box.innerHTML=chips+r.res.map(([id,g])=>
     `<button class="res" data-go="#/c/${id}/${g.id}"><small>${EMOJI[g.c]||"📦"} ${esc(catName(g.c))}</small>
-     <strong>${esc(g.name)}</strong><small class="mono">${Object.entries(g.offers).map(([s,o])=>s+" "+fmt(o.p)+(g.a.kg?"/kq":"")).join(" · ")}</small></button>`).join("")
+     <strong>${esc(g.name)}</strong><small class="mono">${offs(g)}</small></button>`).join("")
      ||'<div class="res"><small>Heç nə tapılmadı</small></div>';
 },150);
-/* axtarış qutusuna toxunanda qrupları əvvəlcədən hazırla: ilk nəticə gözlədilməsin */
-$("q").addEventListener("focus",()=>{ let i=0; const step=()=>{ if(!DB||i>=GL.length) return; groups(GL[i++].id); setTimeout(step,0); }; step(); },{once:true});
+/* qrupları əvvəlcədən hazırla (bir-bir, səhifəni dondurmadan): axtarış qutusuna toxunanda, hazır kartlar varsa yüklənən kimi */
+let warmed=false;
+function warm(){ if(warmed||!DB) return; warmed=true; let i=0; const step=()=>{ if(i>=GL.length) return; groups(GL[i++].id); setTimeout(step,0); }; step(); }
+$("q").addEventListener("focus",warm,{once:true});
 $("results").onclick=e=>{const b=e.target.closest("[data-go]"); if(!b)return; $("results").innerHTML=""; $("q").value=""; go(b.dataset.go);};
 addEventListener("keydown",e=>{ if(e.key==="Escape"){$("results").innerHTML="";$("q").blur();} });
 addEventListener("click",e=>{ if(!e.target.closest(".search")) $("results").innerHTML=""; });

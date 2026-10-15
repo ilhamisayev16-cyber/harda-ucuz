@@ -23,7 +23,7 @@ from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
-from sources import SOURCES, wolt_enabled, source_meta, validate_prices, store_counts, atomic_write_json
+from sources import SOURCES, wolt_enabled, source_meta, validate_prices, store_counts, atomic_write_json, now
 
 def _low(t):
     """Kiçik hərf + I/İ/ı eyniləşdirilir (saytlar böyük hərfdə "QIRMIZI"/"QİRMİZİ" qarışıq yazır)."""
@@ -310,32 +310,6 @@ def clean_price(raw):
     if not m: return None
     v = float(m.group())
     return round(v, 2) if 0.05 < v < 9999 else None
-
-_IMG_KEYS = ("image","img","image_url","imageUrl","thumbnail","thumb","photo","picture","cover","main_image")
-_IMG_LISTS = ("images","photos","pictures","media","gallery")
-_IMG_INNER = ("url","src","original","large","medium","small","path","thumbnail")
-
-def _pick_img(v):
-    if isinstance(v, str): return v.strip()
-    if isinstance(v, dict):
-        for k in _IMG_INNER:
-            r = _pick_img(v.get(k))
-            if r: return r
-    if isinstance(v, list):
-        for x in v:
-            r = _pick_img(x)
-            if r: return r
-    return None
-
-def img_of(item, base=""):
-    """Məhsul obyektindən şəkil linkini çıxarır (sahə adları mənbədən asılı olaraq fərqlənir)."""
-    for k in _IMG_KEYS + _IMG_LISTS:
-        u = _pick_img(item.get(k))
-        if not u: continue
-        if u.startswith("//"): u = "https:" + u
-        elif u.startswith("/") and base: u = base.rstrip("/") + u
-        if u.startswith("https://"): return u
-    return None
 
 _JUICE = re.compile(r"(?<!\w)(?:" + "|".join(re.escape(_f(w)) for w in JUICE_WORDS) + r")(?![kdh])")   # "Morskoy", "Şüyüdlü", "Morshynska" deyil
 def has_juice(name):
@@ -777,11 +751,74 @@ def classify(name, path=""):
     if pc in _WEAK: return pc if kw in _AMBIG or (kw in _BRAND and same) else nc
     return pc
 
-def sim(a, b):
-    wa = set(re.sub(r"[^\w\s]","",a.lower()).split())
-    wb = set(re.sub(r"[^\w\s]","",b.lower()).split())
-    if not wa or not wb: return 0
-    return len(wa & wb) / max(len(wa), len(wb))
+# ── Ad təmizliyi və dublikatlar ──────────────────────────────────────────
+def clean_name(n):
+    """Artıq boşluq, vergül/nöqtədən əvvəlki boşluq və sonda qalan vergül/defis atılır:
+    "FAIRY LIMON MAYE QABYUYAN , 750 ml" -> "FAIRY LIMON MAYE QABYUYAN, 750 ml"."""
+    n = re.sub(r"\s+", " ", str(n)).strip()
+    n = re.sub(r"\s+([,.;:!?)%])", r"\1", n)
+    n = re.sub(r"\(\s+", "(", n)
+    return re.sub(r"[\s,;:\-]+$", "", n) or n
+
+def name_key(n):
+    """Dublikat açarı: diakritiksiz, yalnız hərf/rəqəm; rəqəmlər arasındakı nöqtə qalır (1.5 L ≠ 15 L).
+    "Vernel 1.44 L Lale" = "Vernel 1,44 L Lalə", "Dtj 750ml" = "Dtj  750 ml"."""
+    k = re.sub(r"(\d)[.,](?=\d)", r"\1.", _f(n))
+    return re.sub(r"\.(?!\d)|(?<!\d)\.|[^\w.]|_", "", k)
+
+def _pref(it):
+    """Dublikatlardan hansı qalır: yoxlanmış (arxiv olmayan), mağazanın öz qiyməti, sonra ucuz olan (sayt da kartda ucuzu göstərir)."""
+    p = it.get("price", it.get("wolt_price"))
+    return (bool(it.get("stale")), "price" not in it, p if isinstance(p, (int, float)) else 1e9)
+
+def dedupe(items):
+    """Eyni mağaza + kateqoriyada yalnız yazılışı fərqli təkrarlar bir qeyd olur (ilk rastlaşdığı yerdə)."""
+    best = {}
+    for it in items:
+        k = name_key(it["name"]) or it["name"]
+        if k not in best or _pref(it) < _pref(best[k]): best[k] = it
+    return list(best.values())
+
+def tidy(data):
+    """Bütün mağazalar: adlar təmizlənir, dublikatlar birləşir, köhnə şəkil linkləri silinir (sayt şəkil göstərmir)."""
+    for c in data.get("categories", {}).values():
+        for s, items in c.get("stores", {}).items():
+            for it in items:
+                it.pop("img", None)
+                it["name"] = clean_name(it["name"])
+            c["stores"][s] = dedupe(items)
+
+# ── Öz sayt ↔ Wolt: eyni məhsul (ad sözləri + ÖLÇÜ) ─────────────────────────
+_SZ = re.compile(r"(\d+(?:[.,]\d+)?)\s*(kq|kg|qr|gr|q|g|ml|lt|litr|l)(?![a-z])")
+_SZU = {"kq": ("w", 1000), "kg": ("w", 1000), "qr": ("w", 1), "gr": ("w", 1), "q": ("w", 1), "g": ("w", 1),
+        "ml": ("v", 1), "lt": ("v", 1000), "litr": ("v", 1000), "l": ("v", 1000)}
+
+def _parse(name):
+    """(sözlər, ölçülər): diakritiksiz ("GUNEBAXAN YAGI" = "Günəbaxan yağı"); ölçü q/ml-ə çevrilir (0.5 L = 500 ml)."""
+    t = _f(name)
+    sz = set()
+    for m in _SZ.finditer(t):
+        fam, mul = _SZU[m.group(2)]
+        sz.add((fam, round(float(m.group(1).replace(",", ".")) * mul)))
+    words = {_stem(w) for w in re.findall(r"[a-z0-9]+(?:\.\d+)?", _SZ.sub(" ", t))}
+    return words, sz
+
+def _stem(w):
+    """Sadə şəkilçi: yağı = yağ, sabunu = sabun, kremaları = krema (yalnız müqayisə üçün)."""
+    return re.sub(r"(?:lari|leri|lar|ler|si|su|i|u)$", "", w) if len(w) > 4 and not w[0].isdigit() else w
+
+def sim(a, b, w=None):
+    """Ad oxşarlığı 0..1: ortaq sözlərin çəkisi / uzun adın sözlərinin çəkisi (w: söz -> çəki; nadir söz ağır, yoxdursa hamısı 1).
+    0: ölçülər fərqlidir (1 L ≠ 0.5 L), hər iki adda fərqli rəqəm (18 yaş ≠ 12 yaş, 1+1 ≠ 4 ədəd)
+    və ya hər iki adda o birində olmayan söz var (dad/rəng/növ)."""
+    (wa, sa), (wb, sb) = (a if isinstance(a, tuple) else _parse(a)), (b if isinstance(b, tuple) else _parse(b))
+    if not wa or not wb or (sa and sb and not sa & sb): return 0
+    na, nb = {t for t in wa if t[0].isdigit()}, {t for t in wb if t[0].isdigit()}
+    if na and nb and na != nb: return 0
+    if {t for t in wa - wb if len(t) > 2 and not t[0].isdigit()} and {t for t in wb - wa if len(t) > 2 and not t[0].isdigit()}:
+        return 0   # hər iki adda qarşılıqsız söz: adətən fərqli dad/rəng/növ (Limon ≠ Alma, Yaşıl ≠ Qara)
+    f = (lambda S: sum(w.get(t, 1) for t in S)) if w else len
+    return f(wa & wb) / max(f(wa), f(wb))
 
 def empty_data():
     return {
@@ -799,19 +836,16 @@ def empty_data():
 _OBA_CARD = re.compile(
     r'<h3[^>]*>([^<]+)</h3>.*?<p class="color-mako[^>]*>([^<]*)</p>.*?'
     r'<span class="fs-lg-24 fs-20 lh-24 fw-400">([\d.,]+)</span>', re.S)
-_OBA_IMG = re.compile(r'<img[^>]*\ssrc="(https://[^"]+)"')
 OBA_STEP = 24
 
 def _oba_cards(html):
-    """(ad, kateqoriya, qiymət, şəkil) — kart "<!-- Product card -->" ilə ayrılır; "Logoba" = şəkli olmayan məhsul."""
+    """(ad, kateqoriya, qiymət) — kart "<!-- Product card -->" ilə ayrılır."""
     from html import unescape
     out = []
     for chunk in html.split("<!-- Product card -->")[1:]:
         m = _OBA_CARD.search(chunk)
         if not m: continue
-        im = _OBA_IMG.search(chunk[:m.start()])
-        img = im.group(1) if im and "logoba" not in im.group(1).lower() else None
-        out.append((unescape(m.group(1)).strip(), unescape(m.group(2)).strip(), m.group(3), img))
+        out.append((unescape(m.group(1)).strip(), unescape(m.group(2)).strip(), m.group(3)))
     return out
 
 def scrape_oba():
@@ -836,13 +870,13 @@ def scrape_oba():
             offsets = [start + i * OBA_STEP for i in range(8)]
             new_in_batch = 0
             for cards in ex.map(page, offsets):
-                for name, ocat, raw, img in cards:
+                for name, ocat, raw in cards:
                     price = clean_price(raw)
                     key = (name.lower(), price)
                     if not name or price is None or key in seen: continue
                     seen.add(key); total += 1; new_in_batch += 1
                     cat = classify(name, ocat)
-                    if cat: results[cat].append({"name": name, "price": price, **({"img": img} if img else {})})
+                    if cat: results[cat].append({"name": name, "price": price})
             if new_in_batch == 0: empty += 1
             start += 8 * OBA_STEP
             print(f" {total}", end="", flush=True)
@@ -899,10 +933,7 @@ def scrape_araz():
                 if pid in seen or not name or price is None: continue
                 seen.add(pid)
                 cat = classify(name, f"{title} > {p.get('category_title') or ''}")
-                e = {"name": name, "price": price}
-                im = img_of(p, "https://arazmarket.az")
-                if im: e["img"] = im
-                results[cat].append(e)
+                results[cat].append({"name": name, "price": price})
     total = len(seen)
     print(f"  [Araz] ✓ {total} məhsul (arazmarket.az)" + (f"; alınmadı: {failed}" if failed else ""), flush=True)
     return results if total else None
@@ -920,7 +951,6 @@ def scrape_bazarstore_flat():
     ses.headers.update({"User-Agent": "Mozilla/5.0", "Accept-Language": "az"})
     url = "https://bazarstore.az/b%C3%BCt%C3%BCn-m%C9%99hsullar"
     item_rx = re.compile(r'class="product-item" data-productid="(\d+)" data-bzdl-item=\'([^\']*)\'(.*?)</div>\s*</div>\s*</div>', re.S)
-    img_rx = re.compile(r'data-lazyloadsrc="([^"]+)"')
 
     def page(p):
         for attempt in range(4):
@@ -950,10 +980,7 @@ def scrape_bazarstore_flat():
             price = clean_price(d.get("price"))
             if not name or price is None or name.replace(" ", "").isdigit(): continue   # adı yalnız kod olan məhsullar
             seen.add(pid); n += 1
-            e = {"name": _title(name), "price": price}
-            m = img_rx.search(body)
-            if m and "default-image" not in m.group(1): e["img"] = m.group(1)
-            results[classify(name, d.get("item_category") or "")].append(e)
+            results[classify(name, d.get("item_category") or "")].append({"name": _title(name), "price": price})
         return n
     ingest(first)
     with ThreadPoolExecutor(max_workers=16) as ex:
@@ -1015,7 +1042,6 @@ def scrape_bazarstore():
         print("  [Bazarstore] menyu tapılmadı → ümumi siyahı"); return scrape_bazarstore_flat()
     print(f"  [Bazarstore] {len(leaves)} kateqoriya", flush=True)
     item_rx = re.compile(r'class="product-item" data-productid="(\d+)" data-bzdl-item=\'([^\']*)\'(.*?)</div>\s*</div>\s*</div>', re.S)
-    img_rx = re.compile(r'data-lazyloadsrc="([^"]+)"')
 
     def page(job):
         url, path, p = job
@@ -1040,10 +1066,7 @@ def scrape_bazarstore():
             price = clean_price(d.get("price"))
             if not name or price is None or name.replace(" ", "").isdigit(): continue
             seen.add(pid); new += 1
-            e = {"name": _title(name), "price": price}
-            m = img_rx.search(body)
-            if m and "default-image" not in m.group(1): e["img"] = m.group(1)
-            results[classify(name, path)].append(e)
+            results[classify(name, path)].append({"name": _title(name), "price": price})
         return new
     # kateqoriyalar çox üst-üstə düşür: növbəti səhifə yalnız əvvəlki səhifə yeni məhsul verən kateqoriyalar üçün çəkilir
     with ThreadPoolExecutor(max_workers=24) as ex:
@@ -1133,8 +1156,6 @@ def _wolt_entry(item, path=""):
     price = _wolt_price(item)
     if not name or price is None or price >= 999: return None
     e = {"name": name, "wolt_price": price}
-    im = img_of(item)
-    if im: e["img"] = im
     wt = _wolt_weight(item)
     if wt: e["wt"] = wt
     return classify(name, path), e
@@ -1276,14 +1297,13 @@ def scrape_wolt_multi(store):
         before = len(merged)
         for cid, items in res.items():
             for e in items:
-                k = re.sub(r"\s+", " ", e["name"].lower()).strip()
+                k = name_key(e["name"]) or e["name"]   # "Dtj 750ml" = "Dtj  750 ml": filiallarda yazılışı fərqli eyni məhsul birləşir
                 m = merged.get(k)
                 if m is None:
                     merged[k] = {"cid": cid, "p": [e["wolt_price"]], "e": dict(e)}
                 else:
                     m["p"].append(e["wolt_price"])
-                    for f in ("img", "wt"):
-                        if f not in m["e"] and e.get(f): m["e"][f] = e[f]
+                    if "wt" not in m["e"] and e.get("wt"): m["e"]["wt"] = e["wt"]
         print(f"  [Wolt/{store}] {slug}: +{len(merged) - before} yeni (cəmi {len(merged)}); {round(time.time() - t0)} san", flush=True)
         time.sleep(5)
     if not ok: return None
@@ -1335,29 +1355,50 @@ def scrape_wolt(store):
 
 # ── BİRLƏŞDİRMƏ ──────────────────────────────────────────────────────────
 def merge_own_wolt(own_list, wolt_list):
+    """Öz sayt siyahısı əsasdır; eyni məhsulun Wolt qiyməti `wolt_price` kimi əlavə olunur, qalan Wolt məhsulları ayrıca.
+    Eyni məhsul: ölçü eyni (hər iki adda varsa), rəqəmlər ziddiyyətsiz, qiymət 1.6 dəfədən az fərqli və
+    çəkili ad oxşarlığı >= 0.6 (ölçü yalnız bir adda: >= 0.8, heç birində: >= 0.7). Söz çəkisi = log(1 + N / tezlik):
+    "Prezident", "Chivas" kimi nadir sözlər "yağ", "süd"-dən ağırdır. Hər Wolt məhsulu ən çox bir öz məhsula bağlanır
+    (ən oxşar cütlər əvvəl). Əvvəllər ölçü yoxlanmırdı: "Süd 1 L" Wolt-un "Süd 0.5 L"-i ilə birləşir, o Wolt məhsulu siyahıdan düşürdü."""
+    import math
+    own_p = [_parse(it["name"]) for it in own_list]
+    wolt_p = [_parse(w["name"]) for w in wolt_list]
+    df = {}
+    for ws, _ in own_p + wolt_p:
+        for t in ws: df[t] = df.get(t, 0) + 1
+    n = len(own_p) + len(wolt_p)
+    wt = {t: math.log(1 + n / c) for t, c in df.items()}
+    idx = {}
+    for j, (ws, _) in enumerate(wolt_p):
+        for t in ws: idx.setdefault(t, []).append(j)
+    pairs = []
+    for i, (ws, sz) in enumerate(own_p):
+        cand = set()
+        for t in ws: cand.update(idx.get(t, ()))
+        p = own_list[i]["price"]
+        for j in cand:
+            q = wolt_list[j]["wolt_price"]
+            if p <= 0 or q <= 0 or max(p, q) > 1.6 * min(p, q): continue
+            s = sim(own_p[i], wolt_p[j], wt)
+            osz = wolt_p[j][1]
+            need = 0.6 if sz and osz else 0.7 if not sz and not osz else 0.8
+            if s >= need: pairs.append((-s, i, j))
+    pairs.sort()
+    match, used = {}, set()
+    for _, i, j in pairs:
+        if i not in match and j not in used: match[i] = j; used.add(j)
     merged = []
-    used = set()
-    for item in own_list:
+    for i, item in enumerate(own_list):
         entry = {"name": item["name"], "price": item["price"]}
-        if item.get("img"): entry["img"] = item["img"]
-        best_s, best_i = 0, -1
-        for i, w in enumerate(wolt_list):
-            s = sim(item["name"], w["name"])
-            if s > best_s: best_s, best_i = s, i
-        if best_s >= 0.5 and best_i >= 0:
-            wp = wolt_list[best_i]["wolt_price"]
-            if abs(wp - item["price"]) > 0.005:
-                entry["wolt_price"] = wp
-            if "img" not in entry and wolt_list[best_i].get("img"):
-                entry["img"] = wolt_list[best_i]["img"]
-            if wolt_list[best_i].get("wt"):
-                entry["wt"] = wolt_list[best_i]["wt"]
-            used.add(best_i)
+        j = match.get(i)
+        if j is not None:
+            w = wolt_list[j]
+            if abs(w["wolt_price"] - item["price"]) > 0.005: entry["wolt_price"] = w["wolt_price"]
+            if w.get("wt"): entry["wt"] = w["wt"]
         merged.append(entry)
-    # Wolt-only items
-    for i, w in enumerate(wolt_list):
-        if i not in used:
-            merged.append({k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w})
+    for j, w in enumerate(wolt_list):   # yalnız Wolt-da olanlar
+        if j not in used:
+            merged.append({k: w[k] for k in ("name", "wolt_price", "wt") if k in w})
     return merged
 
 # ── Qiymət dəyişikliyi: məhsulda "pp" (əvvəlki qiymət) + "pd" (dəyişmə tarixi); tam tarixçə data/history.json-da ───────
@@ -1380,7 +1421,7 @@ def _iso(dmy):
 
 def track_changes(store, data, hist):
     """Yeni qiymətləri mağazanın əvvəlki qiymətləri ilə müqayisə edir (apply_to_data əvvəlki məlumatı əvəz etməzdən əvvəl çağırılır)."""
-    return {it["name"]: it for c in data["categories"].values() for it in c["stores"].get(store, [])}
+    return {clean_name(it["name"]): it for c in data["categories"].values() for it in c["stores"].get(store, [])}
 
 def mark_changes(old, items, store, hist, today, old_day):
     for it in items:
@@ -1415,14 +1456,16 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     if src and src != prev_src and store in data.get("meta", {}):
         print(f"  [{store}] qiymət mənbəyi dəyişdi ({prev_src} → {src}): bu dəfə dəyişiklik nişanı qoyulmur")
         old = {}
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = now().strftime("%Y-%m-%d")
     old_day = _iso((data.get("meta", {}).get(store) or {}).get("updated", "")) or _iso(data.get("last_updated", ""))
     for cid in CATEGORIES:
         if wolt_only:
-            items = [{k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w}
+            items = [{k: w[k] for k in ("name", "wolt_price", "wt") if k in w}
                      for w in wolt_res.get(cid,[])]
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))
+        for it in items: it["name"] = clean_name(it["name"])
+        items = dedupe(items)
         mark_changes(old, items, store, hist, today, old_day)
         if not wolt_on and not wolt_only:   # Wolt söndürülüb: köhnə Wolt-only məhsullar silinmir, "arxiv" kimi işarələnir
             have = {it["name"] for it in items}
@@ -1431,13 +1474,13 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
                     items.append({**it, "stale": True})
         data["categories"][cid]["stores"][store] = items
     data.setdefault("meta", {})[store] = {
-        "updated": datetime.now().strftime("%d.%m.%Y %H:%M"),
+        "updated": now().strftime("%d.%m.%Y %H:%M"),
         "own": sum(len(v) for v in own_res.values()),
         "wolt": sum(len(v) for v in wolt_res.values()),
     }
     if src: data["meta"][store]["src"] = src
     data["meta"][store].update(source_meta(store, wolt_on))
-    data["meta"][store]["last_success"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    data["meta"][store]["last_success"] = now().strftime("%Y-%m-%dT%H:%M:%S")
     return True
 
 def mark_stale(store, data):
@@ -1456,7 +1499,7 @@ STORE_KEYS = {s.lower(): s for s in ALL_STORES}   # --store açarı -> mağaza a
 
 def _save(data, out):
     data["groups"] = GROUPS
-    data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+    data["last_updated"] = now().strftime("%d.%m.%Y %H:%M")
     ok, errs = validate_prices(data)
     if not ok:   # səhv/natamam data əvvəlki etibarlı faylın yerinə yazılmır
         print("  ⚠ prices.json YAZILMADI (yoxlama uğursuz):", errs[:3]); return False
@@ -1465,7 +1508,7 @@ def _save(data, out):
 
 def _save_hist(hist, path):
     """90 gündən köhnə son qeydli açarlar atılır."""
-    cut = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+    cut = (now() - timedelta(days=90)).strftime("%Y-%m-%d")
     h = {k: v for k, v in hist.items() if v and v[-1][0] >= cut}
     atomic_write_json({"h": h}, path)
 
@@ -1511,6 +1554,7 @@ def main():
                 data["categories"][cid] = {"name":info["name"],"stores":{s:[] for s in ALL_STORES}}
     else:
         data = empty_data()
+    tidy(data)   # köhnə datada qalmış təkrarlar / şəkil linkləri (mağaza bu dəfə yenilənməsə də)
 
     if args.recategorize:
         recategorize(data)
@@ -1559,7 +1603,7 @@ def main():
         _save_hist(hist, hist_path)
 
     data["groups"] = GROUPS
-    data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
+    data["last_updated"] = now().strftime("%d.%m.%Y %H:%M")
     _save(data, out)
     print(f"\n✅  Saxlandı: {out}  ({out.stat().st_size//1024} KB)")
     print("\n📊  Nəticə:")

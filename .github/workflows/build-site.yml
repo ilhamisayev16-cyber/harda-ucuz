@@ -1,0 +1,36 @@
+name: Build Site
+
+# Sayt kodu (index.html) və ya qurma skripti dəyişəndə hazır kartlar və statik səhifələr yenidən qurulur:
+# data/groups.json saytın kod versiyasına bağlıdır, köhnəsi qəbul olunmur (sayt onda kartları özü hesablayır, yavaş).
+# Gündəlik scrape eyni addımı özü işlədir (bot commit-ləri başqa workflow-u işə salmır).
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'scripts/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape   # scrape ilə eyni anda işləmir (eyni faylları commit edir)
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Saytı qur
+        run: node scripts/build_site.js
+
+      - name: GitHub-a yüklə
+        run: |
+          git config user.name "Price Bot"
+          git config user.email "bot@qiymet.az"
+          for f in data/groups.json sitemap.xml qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
+          git diff --staged --quiet || git commit -m "Sayt yenidən quruldu"
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push

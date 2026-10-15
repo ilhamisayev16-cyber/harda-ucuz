@@ -1,4 +1,4 @@
-# QiymətMüqayisə — layihənin tam izahı (ChatGPT / yeni developer üçün)
+# Harda Ucuz — layihənin tam izahı (ChatGPT / yeni developer üçün)
 
 > Bu sənəd layihəni sıfırdan başa salmaq üçündür: nə edir, data haradan və necə yığılır, necə təmizlənir və təsnif olunur,
 > saytda məhsullar necə müqayisə olunur, nələr bilərəkdən belə seçilib və hansı zəif yerlər var.
@@ -19,7 +19,7 @@
 - **Dil:** interfeys Azərbaycan dilindədir. Məhsul adları qarışıqdır: Azərbaycan (ə ı ö ü ç ş ğ), ruscadan latın hərflərinə çevrilmiş (Xlebtsi/Xlebçi), türk və ingilis sözləri.
 
 ```
-qiymet-muqayise/
+harda-ucuz/
 ├── index.html                  ← bütün sayt (HTML + CSS + JS, ~100 KB)
 ├── data/
 │   ├── prices.json             ← əsas data (scraper yazır, sayt oxuyur)
@@ -213,7 +213,7 @@ Kartda ♡; siyahı `localStorage`-da saxlanır (hər element: qrup + adın norm
 - `qiymetler/`: hər ana qrup və alt növ (5+ kart) üçün JavaScript-siz HTML (ən çox 150 kart; bir neçə mağazada olanlar əvvəl), `qiymetler/index.html` — hamısının siyahısı.
   `sitemap.xml` bunları sadalayır. Sayt ünvanı skriptdə (`SITE_URL` / `--site`) və `index.html`-in `canonical` / `og:` teqlərindədir — domen dəyişsə ikisini də dəyişin.
 - GitHub Pages "project site" olduğu üçün `robots.txt` domen kökündə deyil; sitemap-i **Google Search Console**-da əl ilə verin: URL-prefix mülkiyyəti
-  `https://ilhamisayev16-cyber.github.io/qiymet-muqayise/` → Sitemaps → `sitemap.xml`.
+  `https://ilhamisayev16-cyber.github.io/harda-ucuz/` → Sitemaps → `sitemap.xml`.
 - Content-Security-Policy `<meta>` ilə (`img-src 'self' data:`, `connect-src 'self'`, xarici skript yoxdur); bütün mətn `esc()` ilə təmizlənir.
 
 ---

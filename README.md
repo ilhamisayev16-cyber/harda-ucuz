@@ -1,4 +1,4 @@
-# 🛒 QİYMƏTMÜQAYİSƏ
+# 🛒 HARDA UCUZ
 
 Azərbaycan supermarketlərindəki ərzaq qiymətlərini müqayisə edən sayt.
 
@@ -36,7 +36,7 @@ statistika `https://qiymetmuqayise.goatcounter.com`-dadır. Kod `index.html`-də
 (CSP `img-src`-də də var). Yalnız səhifə yolu göndərilir (`/c/sud/pendir`), axtarış sözü və siyahı göndərilmir.
 
 ### Google-da görünmək üçün (bir dəfə)
-Google Search Console → mülkiyyət əlavə et (URL prefix: `https://ilhamisayev16-cyber.github.io/qiymet-muqayise/`) → Sitemaps → `sitemap.xml` göndər.
+Google Search Console → mülkiyyət əlavə et (URL prefix: `https://ilhamisayev16-cyber.github.io/harda-ucuz/`) → Sitemaps → `sitemap.xml` göndər.
 
 ## Quraşdırma addımları
 
@@ -44,14 +44,14 @@ Google Search Console → mülkiyyət əlavə et (URL prefix: `https://ilhamisay
 → github.com
 
 ### 2. Yeni repo yaradın
-→ "qiymet-muqayise" adı ilə
+→ "harda-ucuz" adı ilə
 
 ### 3. Bu faylları yükləyin
 → Bütün faylları repo-ya əlavə edin
 
 ### 4. GitHub Pages aktivləşdirin
 → Settings → Pages → Source: main branch → / (root)
-→ Saytınız: https://ADINIZ.github.io/qiymet-muqayise
+→ Saytınız: https://ADINIZ.github.io/harda-ucuz
 
 ### 5. Hazırdır! 
 Scraper hər gün avtomatik işləyəcək.

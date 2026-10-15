@@ -15,7 +15,7 @@ const ROOT = path.resolve(__dirname, "..");
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const PRICES = path.resolve(arg("--prices", path.join(ROOT, "data", "prices.json")));
 const OUT = path.resolve(arg("--out", ROOT));
-const SITE = (arg("--site", process.env.SITE_URL || "https://ilhamisayev16-cyber.github.io/qiymet-muqayise/")).replace(/\/?$/, "/");
+const SITE = (arg("--site", process.env.SITE_URL || "https://ilhamisayev16-cyber.github.io/harda-ucuz/")).replace(/\/?$/, "/");
 const STATS = process.env.STATS_URL ?? "https://qiymetmuqayise.goatcounter.com/count";   // anonim ziyarət sayı (cookie yoxdur); "" söndürür
 const MAX_ITEMS = 150;   // alt növ səhifəsində ən çox kart (səhifə yüngül qalsın; tam siyahı saytdadır)
 
@@ -178,7 +178,7 @@ function items(list) {
 }
 
 function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body }) {
-  const up = "../".repeat(depth), url = SITE + p, full = `${title} — Bakı supermarketləri | QiymətMüqayisə`;
+  const up = "../".repeat(depth), url = SITE + p, full = `${title} — Bakı supermarketləri | Harda Ucuz`;
   return `<!doctype html>
 <html lang="az">
 <head>
@@ -189,7 +189,7 @@ function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body })
 <meta name="description" content="${esc(desc.slice(0, 300))}">
 <link rel="canonical" href="${esc(url)}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="QiymətMüqayisə">
+<meta property="og:site_name" content="Harda Ucuz">
 <meta property="og:locale" content="az_AZ">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc.slice(0, 300))}">

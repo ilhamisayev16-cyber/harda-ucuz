@@ -1527,11 +1527,18 @@ def track_changes(store, data, hist):
     """Yeni qiymətləri mağazanın əvvəlki qiymətləri ilə müqayisə edir (apply_to_data əvvəlki məlumatı əvəz etməzdən əvvəl çağırılır)."""
     return {clean_name(it["name"]): it for c in data["categories"].values() for it in c["stores"].get(store, [])}
 
+def _real_change(a, b):
+    """İki qiymət arasındakı fərq real dəyişiklik sayılırmı: 2 dəfədən çox fərq adətən data səhvi və ya aksiyanın mənbə
+    dəyişikliyidir (Araz "Avokado əd": saytda 0.99 → Wolt 1.99), "↑ 101%" nişanı yanıldıcıdır."""
+    return a > 0 and b > 0 and max(a, b) <= 2 * min(a, b)
+
 def mark_changes(old, items, store, hist, today, old_day):
     for it in items:
         p = _eff(it); o = old.get(it["name"])
         if p is None or o is None: continue
+        if ("price" in it) != ("price" in o): continue   # mənbə dəyişib (öz sayt ↔ Wolt): qiymət dəyişikliyi deyil
         op = _eff(o)
+        if op is not None and abs(op - p) > 0.004 and not _real_change(op, p): continue
         if op is not None and abs(op - p) > 0.004:
             it["pp"], it["pd"] = op, today
             if hist is not None and old_day:
@@ -1540,7 +1547,7 @@ def mark_changes(old, items, store, hist, today, old_day):
                 if lst[-1][0] == today: lst[-1][1] = p
                 elif lst[-1][1] != p: lst.append([today, p])
                 del lst[:-40]
-        elif o.get("pp") is not None and o.get("pd") and (datetime.strptime(today, "%Y-%m-%d") - datetime.strptime(o["pd"], "%Y-%m-%d")).days <= 14:
+        elif o.get("pp") is not None and o.get("pd") and _real_change(o["pp"], p) and (datetime.strptime(today, "%Y-%m-%d") - datetime.strptime(o["pd"], "%Y-%m-%d")).days <= 14:
             it["pp"], it["pd"] = o["pp"], o["pd"]   # yaxın vaxtda dəyişib: nişan qalır
 
 def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):

@@ -327,3 +327,21 @@ const g=api.groups('sud'); console.log(JSON.stringify(g.map(x=>[x.name,Object.ke
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stderr[-500:]
     assert json.loads(r.stdout.strip()) == [["Qustiyar Qatılaşdırılmış Süd 370qr", 2]]
+
+
+# ── qiymət dəyişikliyi nişanı: mənbə dəyişikliyi və 2x-dən böyük sıçrayış dəyişiklik deyil ──
+def test_no_change_badge_on_source_switch_or_implausible_jump():
+    old = {"Avokado əd": {"name": "Avokado əd", "price": 0.99, "wolt_price": 1.99},
+           "Banan kq": {"name": "Banan kq", "price": 2.0},
+           "Kivi kq": {"name": "Kivi kq", "wolt_price": 1.0},
+           "Alma kq": {"name": "Alma kq", "wolt_price": 1.99, "pp": 0.99, "pd": "2026-10-16"}}
+    items = [{"name": "Avokado əd", "wolt_price": 1.99}, {"name": "Banan kq", "price": 1.8},
+             {"name": "Kivi kq", "wolt_price": 3.5}, {"name": "Alma kq", "wolt_price": 1.99}]
+    hist = {}
+    S.mark_changes(old, items, "Araz", hist, "2026-10-17", "2026-10-16")
+    by = {i["name"]: i for i in items}
+    assert "pp" not in by["Avokado əd"]                     # öz sayt → Wolt
+    assert by["Banan kq"]["pp"] == 2.0                      # adi dəyişiklik qalır
+    assert "pp" not in by["Kivi kq"]                        # 3.5 dəfə: real sayılmır
+    assert "pp" not in by["Alma kq"]                        # köhnə yanıldıcı nişan da daşınmır
+    assert list(hist) == [S._hk("Araz", "Banan kq")]

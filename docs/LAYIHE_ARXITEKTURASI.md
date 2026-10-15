@@ -107,6 +107,9 @@ Araz/OBA üçün öz siyahı əsasdır; eyni məhsulun Wolt qiyməti `wolt_price
 - hər iki adda o birində olmayan söz varsa — fərqli dad/rəng/növ (Limon ≠ Alma), birləşmir;
 - qiymət 1.6 dəfədən çox fərqlənmir; oxşarlıq IDF çəkili (nadir söz ağır), hədd 0.6 / 0.7 / 0.8 (ölçü hər ikisində / heç birində / birində);
 - hər Wolt məhsulu ən çox bir öz məhsula bağlanır (ən oxşar cütlər əvvəl).
+- **Böyük aksiya (50%+, hələlik yalnız Araz `discount_price` / `sales_price`):** eyni məhsulun Wolt qiyməti varsa öz qiymət götürülmür,
+  yalnız Wolt qiyməti qalır. Səbəb: onlayn mağazadakı aksiya rəfdə olmaya bilər (2026-10: "Avokado əd" saytda 3.49 → 0.99, kassada 1.99).
+  Birləşdirmədə qiymət yoxlaması aksiya ilə adi qiymət arasındakı aralığa görə aparılır.
 
 ### 3.6 Ad təmizliyi və dublikatlar
 `clean_name`: artıq boşluq, vergüldən əvvəlki boşluq, sonda qalan vergül atılır ("FAIRY MAYE , 750 ml" → "FAIRY MAYE, 750 ml").

@@ -16,6 +16,7 @@ const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? proces
 const PRICES = path.resolve(arg("--prices", path.join(ROOT, "data", "prices.json")));
 const OUT = path.resolve(arg("--out", ROOT));
 const SITE = (arg("--site", process.env.SITE_URL || "https://ilhamisayev16-cyber.github.io/qiymet-muqayise/")).replace(/\/?$/, "/");
+const STATS = process.env.STATS_URL ?? "https://qiymetmuqayise.goatcounter.com/count";   // anonim ziyarət sayı (cookie yoxdur); "" söndürür
 const MAX_ITEMS = 150;   // alt növ səhifəsində ən çox kart (səhifə yüngül qalsın; tam siyahı saytdadır)
 
 /* ── index.html-in skriptini node-da yükləmək (DOM yoxdur: sadə əvəzlər) ── */
@@ -183,7 +184,7 @@ function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body })
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:${STATS ? " " + new URL(STATS).origin : ""}; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>${esc(full)}</title>
 <meta name="description" content="${esc(desc.slice(0, 300))}">
 <link rel="canonical" href="${esc(url)}">
@@ -234,6 +235,7 @@ ${body}
 <footer>Qiymətlər mağazaların açıq saytlarından gündə bir dəfə avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
 <sup>W</sup> — Wolt-dan alınan qiymət (rəfdəki qiymətdən fərqli ola bilər). Sayt heç bir mağaza ilə əlaqəli deyil.
 <a href="${up}haqqinda.html">Haqqında, şərtlər və məxfilik</a></footer>
+${STATS ? `<img src="${esc(STATS)}?p=${encodeURIComponent("/" + p)}" alt="" width="1" height="1" style="position:absolute;left:-9px">` : ""}
 </main>
 </body>
 </html>

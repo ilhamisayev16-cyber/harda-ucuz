@@ -30,6 +30,11 @@ qiymet-project/
 4. `scripts/build_site.js` hazır kartları (`data/groups.json`), statik səhifələri (`qiymetler/`) və `sitemap.xml`-i qurur
 5. `index.html` bu JSON-dan oxuyaraq cədvəli göstərir
 
+### Ziyarət statistikası
+Cookie-siz, anonim: [GoatCounter](https://www.goatcounter.com/) (qeyri-kommersiya üçün pulsuz). Hesab kodu `qiymetmuqayise`:
+statistika `https://qiymetmuqayise.goatcounter.com`-dadır. Kod `index.html`-də `STATS` və `scripts/build_site.js`-də `STATS` sabitidir
+(CSP `img-src`-də də var). Yalnız səhifə yolu göndərilir (`/c/sud/pendir`), axtarış sözü və siyahı göndərilmir.
+
 ### Google-da görünmək üçün (bir dəfə)
 Google Search Console → mülkiyyət əlavə et (URL prefix: `https://ilhamisayev16-cyber.github.io/qiymet-muqayise/`) → Sitemaps → `sitemap.xml` göndər.
 

@@ -18,6 +18,7 @@ SOURCES = {
     "Tamstore":   {"type": "wolt",     "auto": True},
     "Rahat":      {"type": "wolt",     "auto": True},
     "Bazarstore": {"type": "own",      "auto": True},
+    "SPAR":       {"type": "wolt",     "auto": True},
 }
 
 

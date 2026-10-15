@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       store:
-        description: 'Mağaza (all, araz, oba, bravo, neptun, tamstore, rahat, bazarstore)'
+        description: 'Mağaza (all, araz, oba, bravo, neptun, tamstore, rahat, bazarstore, spar)'
         default: 'all'
 
 permissions:
@@ -40,7 +40,7 @@ jobs:
           STORE: ${{ github.event.inputs.store || 'all' }}   # input birbaşa shell-ə qoyulmur (injection-a qarşı)
         run: |
           case "$STORE" in
-            all|araz|oba|bravo|neptun|tamstore|rahat|bazarstore) ;;
+            all|araz|oba|bravo|neptun|tamstore|rahat|bazarstore|spar) ;;
             *) echo "Naməlum mağaza: $STORE"; exit 1 ;;
           esac
           python scrapers/scraper.py --store "$STORE"

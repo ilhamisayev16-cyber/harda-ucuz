@@ -4,8 +4,9 @@ QiymətMüqayisə Scraper
   Bravo  -> Wolt
   OBA    -> oba.az
   Araz   -> arazmarket.az API (+ Wolt)
-  Neptun -> Wolt
-  Tamstore, Rahat -> Wolt
+  Neptun -> Wolt (neptun.az kataloqu işləmir)
+  Tamstore, Rahat -> Wolt (öz saytlarında qiymətli kataloq yoxdur)
+  SPAR -> Wolt
   Bazarstore -> bazarstore.az (nopCommerce HTML)
 
 İstifadə:
@@ -251,7 +252,10 @@ GROUPS = [
 _missing = {c for g in GROUPS for c in g["cats"]} ^ set(CATEGORIES)
 assert not _missing, _missing
 
-ALL_STORES = ["Bravo","OBA","Araz","Neptun","Tamstore","Rahat","Bazarstore"]
+ALL_STORES = ["Bravo","OBA","Araz","Neptun","Tamstore","Rahat","Bazarstore","SPAR"]
+# Öz saytı/API-si olmayan mağazalar: qiymət yalnız Wolt-dan (saytda <sup>W</sup> ilə işarələnir).
+# Neptun (neptun.az boş cavab verir), Bravo/Tamstore/Rahat (saytlarında yalnız kampaniyalar var) — 2026-10 yoxlanılıb.
+WOLT_ONLY = {"Bravo","Neptun","Tamstore","Rahat","SPAR"}
 
 # Hər mağaza üçün bir neçə Wolt filialı: ilk işləyən istifadə olunur.
 # Mühit dəyişəni ilə əvəz etmək olar: WOLT_SLUG_NEPTUN=... (vergüllə bir neçə)
@@ -263,8 +267,9 @@ WOLT_SLUGS = {
                "araz-supermarket-28-may"],
     "Tamstore": ["tamstore-narimanov-1", "tamstore-papanin"],
     "Rahat":  ["rahat-supermarket-yasamal"],
-    "Neptun": ["neptun-supermarket-narimanovv", "neptun-supermarket-28", "neptun-supermarket-narimanov",
-               "neptun-supermarket-nizami"],
+    "Neptun": ["neptun-supermarket-28", "neptun-supermarket-narimanovv", "neptun-8-mkr",
+               "neptun-supermarket-xalqlar"],
+    "SPAR":   ["spar-axundov", "araz-spar-1-3mkr", "araz-supermarket-hacibeyli"],
 }
 
 # Çoxfilialli şəbəkələr: bu filialların hamısının kataloqu birləşdirilir (məhsul sayı artır).
@@ -1094,6 +1099,10 @@ def _wolt_url(slug):
     return (f"https://consumer-api.wolt.com/consumer-api/consumer-assortment"
             f"/v1/venues/slug/{slug}/assortment/items/search?language=az")
 
+# Yalnız Wolt-da olan endirim kateqoriyaları ("🎉Wolta Özəl Xüsusi Endirimlər🎉", "Wolt Specials"):
+# bu endirim mağazanın rəfində yoxdur, ona görə həmin məhsullar (adi kateqoriyada da olsalar) götürülmür.
+_WOLT_DEAL = re.compile(_f(r"wolta? ?(özəl|ozel|özel|special|eksklüziv|exclusive)|(?<!\w)wolt deal"))
+
 def _wolt_price(item):
     for k in ("price", "baseprice", "unit_price"):
         v = item.get(k)
@@ -1116,6 +1125,7 @@ def _wolt_entry(item, path=""):
     """Wolt məhsul obyektindən (ad, kateqoriya, yazı) çıxarır; uyğun deyilsə None."""
     name = item.get("name", "")
     if isinstance(name, dict): name = name.get("az") or name.get("en") or ""
+    name = re.sub(r"\s+", " ", name).strip()   # ad olduğu kimi (yalnız artıq boşluqlar)
     price = _wolt_price(item)
     if not name or price is None or price >= 999: return None
     e = {"name": name, "wolt_price": price}
@@ -1199,16 +1209,21 @@ def scrape_wolt_full(store, slug=None):
 
     results = {c: [] for c in CATEGORIES}
     seen = set()
+    deal_ids = set()   # Wolt-özəl endirimdəki məhsullar: götürülmür (eyni məhsul adi kateqoriyada da olur)
+    def is_deal(trail): return bool(_WOLT_DEAL.search(_f(trail)))
     def collect(trail, items):
         for item in items:
             uid = item.get("id") or item.get("name")
-            if uid in seen: continue
+            if uid in seen or uid in deal_ids: continue
             seen.add(uid)
             r = _wolt_entry(item, trail)
             if r: results[r[0]].append(r[1])
     with ThreadPoolExecutor(max_workers=8) as ex:
-        for trail, items in ex.map(fetch, leaves):
-            collect(trail, items)
+        fetched = list(ex.map(fetch, leaves))
+    for trail, items in fetched:
+        if is_deal(trail): deal_ids.update(it.get("id") or it.get("name") for it in items)
+    for trail, items in fetched:
+        collect(trail, items)
 
     # Wolt GitHub IP-lərinə 429 verir: alınmayan kateqoriyalar bir-bir, uzun fasilə ilə təkrar yoxlanır
     if failed:
@@ -1230,12 +1245,15 @@ def scrape_wolt_full(store, slug=None):
         failed.extend((lf[0], "təkrar uğursuz") for lf in todo)
     total = sum(len(v) for v in results.values())
     print(f"  [Wolt/{store}] tam kataloq: {len(leaves)} kateqoriya, {total} məhsul"
+          + (f"; Wolt-özəl endirimli {len(deal_ids)} məhsul çıxarıldı" if deal_ids else "")
           + (f"; {len(failed)} sorğu alınmadı {sorted({str(f[1]) for f in failed})}" if failed else ""), flush=True)
     return results if total else None
 
 # Qiymətin mənbə üsulu (tək filial / filiallar üzrə median). Üsul dəyişən gün qiymət fərqləri
 # real qiymət dəyişikliyi deyil, ona görə həmin gün dəyişiklik nişanı və tarixçə yazılmır.
 WOLT_SRC = {}
+# Üsul versiyası: v2 = Wolt-özəl endirimli məhsullar çıxarılır.
+WOLT_SRC_VER = "v2"
 
 def scrape_wolt_multi(store):
     """WOLT_BRANCHES-dəki bütün filialların tam kataloqu: ad üzrə birləşdirilir, qiymət = filiallar üzrə median.
@@ -1270,7 +1288,7 @@ def scrape_wolt_multi(store):
         e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
         results[m["cid"]].append(e)
     print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
-    WOLT_SRC[store] = "multi"
+    WOLT_SRC[store] = "multi-" + WOLT_SRC_VER
     return results
 
 def scrape_wolt(store):
@@ -1381,11 +1399,11 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
     if not any(own_res.values()) and not any(wolt_res.values()):
         print(f"  [{store}] ⚠ nəticə boşdur — köhnə qiymətlər saxlanıldı")
         return False
-    wolt_only = store in ("Bravo", "Neptun", "Tamstore", "Rahat")
+    wolt_only = store in WOLT_ONLY
     old = track_changes(store, data, hist)
-    src = WOLT_SRC.get(store, "single") if wolt_only else None
+    src = WOLT_SRC.get(store, "single-" + WOLT_SRC_VER) if wolt_only else None
     prev_src = (data.get("meta", {}).get(store) or {}).get("src", "single")
-    if src and src != prev_src:
+    if src and src != prev_src and store in data.get("meta", {}):
         print(f"  [{store}] qiymət mənbəyi dəyişdi ({prev_src} → {src}): bu dəfə dəyişiklik nişanı qoyulmur")
         old = {}
     today = datetime.now().strftime("%Y-%m-%d")
@@ -1407,6 +1425,8 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
     return True
 
 # ── MAIN ─────────────────────────────────────────────────────────────────
+STORE_KEYS = {s.lower(): s for s in ALL_STORES}   # --store açarı -> mağaza adı
+
 def _save(data, out):
     data["groups"] = GROUPS
     data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
@@ -1443,7 +1463,7 @@ def recategorize(data):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--recategorize", action="store_true")
-    ap.add_argument("--store", choices=["bravo","oba","araz","neptun","tamstore","rahat","bazarstore","all"], default="all")
+    ap.add_argument("--store", choices=list(STORE_KEYS) + ["all"], default="all")
     ap.add_argument("--wolt-only",  action="store_true")
     ap.add_argument("--own-only",   action="store_true")
     ap.add_argument("--out", default="../data/prices.json")
@@ -1478,11 +1498,10 @@ def main():
         except Exception:
             hist = {}
 
-    name_map = {"bravo":"Bravo","oba":"OBA","araz":"Araz","neptun":"Neptun","tamstore":"Tamstore","rahat":"Rahat","bazarstore":"Bazarstore"}
-    targets = list(name_map.keys()) if args.store=="all" else [args.store]
+    targets = list(STORE_KEYS) if args.store == "all" else [args.store]
 
     for t in targets:
-        sname = name_map[t]
+        sname = STORE_KEYS[t]
         print(f"\n{'─'*50}\n  {sname}\n{'─'*50}")
         own_res, wolt_res = {}, {}
 
@@ -1515,7 +1534,7 @@ def main():
                      for p in c["stores"].get(s,[]) if "price" in p)
         wolt_c = sum(1 for c in data["categories"].values()
                      for p in c["stores"].get(s,[]) if "wolt_price" in p)
-        print(f"   {s:8} → öz: {own_c:4}  |  Wolt: {wolt_c:4}")
+        print(f"   {s:10} → öz: {own_c:5}  |  Wolt: {wolt_c:5}")
 
 if __name__ == "__main__":
     main()

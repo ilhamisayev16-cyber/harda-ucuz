@@ -19,7 +19,7 @@ qiymet-project/
 ## Necə işləyir?
 
 1. GitHub Actions hər gün saat 06:00-da (Bakı vaxtı) `scraper.py`-ı işlədir
-2. Scraper Bravo, Neptun (Wolt), Araz, OBA-dan qiymətləri toplayır
+2. Scraper mağazaların öz saytından/API-sindən, olmayanda Wolt-dan qiymətləri toplayır
 3. `data/prices.json` faylını yeniləyir
 4. `index.html` bu JSON-dan oxuyaraq cədvəli göstərir
 
@@ -46,17 +46,21 @@ Scraper hər gün avtomatik işləyəcək.
 - Cədvəldə Wolt qiymətləri <sup>W</sup> ilə işarələnir (Wolt qiyməti rəf qiymətindən bir qədər yüksək ola bilər).
 - Scrape boş nəticə qaytararsa, köhnə qiymətlər silinmir (`meta` bölməsində hər mağazanın son yenilənmə vaxtı var).
 - Wolt filialının slug-ı dəyişibsə, mühit dəyişəni ilə verin: `WOLT_SLUG_NEPTUN=neptun-supermarket-...` (vergüllə bir neçə).
+- Çoxfilialli mağazalarda (`WOLT_BRANCHES`, hazırda Bravo) bir neçə filialın kataloqu birləşdirilir: məhsul sayı artır, qiymət filiallar üzrə mediandır.
+- "Wolta Özəl" kimi yalnız Wolt-a aid endirim kateqoriyalarındakı məhsullar götürülmür (bu endirim mağazanın rəfində yoxdur). Təxmini çevirmə (məs. Wolt qiymətindən faiz çıxmaq) edilmir.
+- Öz saytı yoxlanılıb, qiymətli kataloq tapılmayıb (2026-10): neptun.az (boş cavab), bravosupermarket.az, tamstore.az, rahatmarket.az (yalnız kampaniyalar). Bunlar üçün yeganə mənbə Wolt-dur.
 
 ## Mağazalar
-- **Bravo** → Wolt
-- **Neptun** → Wolt  
+- **Bravo** → Wolt (bir neçə filial)
+- **Neptun** → Wolt
 - **OBA** → oba.az
 - **Araz** → arazmarket.az API (+ Wolt)
 - **Tamstore**, **Rahat** → Wolt
 - **Bazarstore** → bazarstore.az (öz saytı, nopCommerce HTML)
+- **SPAR** → Wolt
 
 ## Yeni mağaza əlavə etmək
-`scraper.py` faylında `SCRAPERS` lüğətinə yeni scrape funksiyası əlavə edin.
+`scraper.py`-da `ALL_STORES`-a ad, Wolt-dadırsa `WOLT_SLUGS`-a filial slug-ları (və `WOLT_ONLY`-ə), öz saytı varsa `main()`-ə scrape funksiyası; `index.html`-də `--<Ad>` rəngi; `scrape.yml`-də `case` siyahısına açar əlavə edin.
 
 
 ## Sevimlilər, qiymət dəyişikliyi, vahid qiymət

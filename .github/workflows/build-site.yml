@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}   # işə düşdüyü andakı commit yox, ən son vəziyyət: növbədə gözləyəndən sonra köhnə kod/data ilə qurmasın
 
       - name: Saytı qur
         run: node scripts/build_site.js

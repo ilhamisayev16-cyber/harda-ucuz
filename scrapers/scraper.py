@@ -17,7 +17,7 @@ QiymətMüqayisə Scraper
 import json, os, re, time, argparse
 from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 def _low(t):
@@ -776,11 +776,20 @@ def empty_data():
 _OBA_CARD = re.compile(
     r'<h3[^>]*>([^<]+)</h3>.*?<p class="color-mako[^>]*>([^<]*)</p>.*?'
     r'<span class="fs-lg-24 fs-20 lh-24 fw-400">([\d.,]+)</span>', re.S)
+_OBA_IMG = re.compile(r'<img[^>]*\ssrc="(https://[^"]+)"')
 OBA_STEP = 24
 
 def _oba_cards(html):
+    """(ad, kateqoriya, qiymət, şəkil) — kart "<!-- Product card -->" ilə ayrılır; "Logoba" = şəkli olmayan məhsul."""
     from html import unescape
-    return [(unescape(n).strip(), unescape(c).strip(), pr) for n, c, pr in _OBA_CARD.findall(html)]
+    out = []
+    for chunk in html.split("<!-- Product card -->")[1:]:
+        m = _OBA_CARD.search(chunk)
+        if not m: continue
+        im = _OBA_IMG.search(chunk[:m.start()])
+        img = im.group(1) if im and "logoba" not in im.group(1).lower() else None
+        out.append((unescape(m.group(1)).strip(), unescape(m.group(2)).strip(), m.group(3), img))
+    return out
 
 def scrape_oba():
     """oba.az/products/ — server tərəfindən render olunan HTML, ?start= ilə səhifələmə."""
@@ -804,13 +813,13 @@ def scrape_oba():
             offsets = [start + i * OBA_STEP for i in range(8)]
             new_in_batch = 0
             for cards in ex.map(page, offsets):
-                for name, ocat, raw in cards:
+                for name, ocat, raw, img in cards:
                     price = clean_price(raw)
                     key = (name.lower(), price)
                     if not name or price is None or key in seen: continue
                     seen.add(key); total += 1; new_in_batch += 1
                     cat = classify(name, ocat)
-                    if cat: results[cat].append({"name": name, "price": price})
+                    if cat: results[cat].append({"name": name, "price": price, **({"img": img} if img else {})})
             if new_in_batch == 0: empty += 1
             start += 8 * OBA_STEP
             print(f" {total}", end="", flush=True)
@@ -1263,18 +1272,60 @@ def merge_own_wolt(own_list, wolt_list):
             merged.append({k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w})
     return merged
 
-def apply_to_data(own_res, wolt_res, store, data):
+# ── Qiymət dəyişikliyi: məhsulda "pp" (əvvəlki qiymət) + "pd" (dəyişmə tarixi); tam tarixçə data/history.json-da ───────
+def _hk(store, name):
+    """Qısa açar (index.html-dəki hk() ilə eyni): FNV-1a + djb2, 32 bit hər biri."""
+    h1, h2 = 0x811c9dc5, 5381
+    for b in f"{store}|{name}".encode("utf-8"):
+        h1 = ((h1 ^ b) * 0x01000193) & 0xffffffff
+        h2 = ((h2 * 33) ^ b) & 0xffffffff
+    return f"{h1:08x}{h2:08x}"
+
+def _eff(it):
+    p = it.get("price", it.get("wolt_price"))
+    return None if p is None else round(float(p), 2)
+
+def _iso(dmy):
+    """'15.10.2026 07:26' -> '2026-10-15'"""
+    try: return datetime.strptime(dmy.split()[0], "%d.%m.%Y").strftime("%Y-%m-%d")
+    except Exception: return None
+
+def track_changes(store, data, hist):
+    """Yeni qiymətləri mağazanın əvvəlki qiymətləri ilə müqayisə edir (apply_to_data əvvəlki məlumatı əvəz etməzdən əvvəl çağırılır)."""
+    return {it["name"]: it for c in data["categories"].values() for it in c["stores"].get(store, [])}
+
+def mark_changes(old, items, store, hist, today, old_day):
+    for it in items:
+        p = _eff(it); o = old.get(it["name"])
+        if p is None or o is None: continue
+        op = _eff(o)
+        if op is not None and abs(op - p) > 0.004:
+            it["pp"], it["pd"] = op, today
+            if hist is not None and old_day:
+                k = _hk(store, it["name"])
+                lst = hist.setdefault(k, [[old_day, op]])
+                if lst[-1][0] == today: lst[-1][1] = p
+                elif lst[-1][1] != p: lst.append([today, p])
+                del lst[:-40]
+        elif o.get("pp") is not None and o.get("pd") and (datetime.strptime(today, "%Y-%m-%d") - datetime.strptime(o["pd"], "%Y-%m-%d")).days <= 14:
+            it["pp"], it["pd"] = o["pp"], o["pd"]   # yaxın vaxtda dəyişib: nişan qalır
+
+def apply_to_data(own_res, wolt_res, store, data, hist=None):
     own_res, wolt_res = own_res or {}, wolt_res or {}
     if not any(own_res.values()) and not any(wolt_res.values()):
         print(f"  [{store}] ⚠ nəticə boşdur — köhnə qiymətlər saxlanıldı")
         return False
     wolt_only = store in ("Bravo", "Neptun", "Tamstore", "Rahat")
+    old = track_changes(store, data, hist)
+    today = datetime.now().strftime("%Y-%m-%d")
+    old_day = _iso((data.get("meta", {}).get(store) or {}).get("updated", "")) or _iso(data.get("last_updated", ""))
     for cid in CATEGORIES:
         if wolt_only:
             items = [{k: w[k] for k in ("name", "wolt_price", "img", "wt") if k in w}
                      for w in wolt_res.get(cid,[])]
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))
+        mark_changes(old, items, store, hist, today, old_day)
         data["categories"][cid]["stores"][store] = items
     data.setdefault("meta", {})[store] = {
         "updated": datetime.now().strftime("%d.%m.%Y %H:%M"),
@@ -1290,6 +1341,13 @@ def _save(data, out):
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+
+def _save_hist(hist, path):
+    """90 gündən köhnə son qeydli açarlar atılır."""
+    cut = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+    h = {k: v for k, v in hist.items() if v and v[-1][0] >= cut}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump({"h": h}, f, ensure_ascii=False, separators=(",", ":"))
 
 def recategorize(data):
     """Mövcud məhsulları yenidən təsnif edir (şəbəkə tələb olunmur)."""
@@ -1340,6 +1398,14 @@ def main():
         print("✅  Yenidən təsnif edildi:", out)
         return
 
+    hist_path = out.parent / "history.json"
+    hist = {}
+    if hist_path.exists():
+        try:
+            hist = json.load(open(hist_path, encoding="utf-8")).get("h", {})
+        except Exception:
+            hist = {}
+
     name_map = {"bravo":"Bravo","oba":"OBA","araz":"Araz","neptun":"Neptun","tamstore":"Tamstore","rahat":"Rahat","bazarstore":"Bazarstore"}
     targets = list(name_map.keys()) if args.store=="all" else [args.store]
 
@@ -1361,8 +1427,9 @@ def main():
         if not args.own_only and sname != "Bazarstore":   # Bazarstore Wolt-da yoxdur
             wolt_res = scrape_wolt(sname)
 
-        apply_to_data(own_res, wolt_res, sname, data)
+        apply_to_data(own_res, wolt_res, sname, data, hist)
         _save(data, out)   # timeout olarsa əvvəlki mağazaların nəticəsi itməsin
+        _save_hist(hist, hist_path)
 
     data["groups"] = GROUPS
     data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")

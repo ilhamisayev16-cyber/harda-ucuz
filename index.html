@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>QiymətMüqayisə — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz və Neptun supermarketlərinin qiymətlərini bir yerdə müqayisə edin.">
@@ -104,8 +104,6 @@ details.more-f summary::-webkit-details-marker{display:none}
 .item.hl{background:var(--brand-soft);border-color:var(--brand)}
 .head{display:flex;gap:12px;align-items:center}
 .logo-p{flex:none;width:60px;height:60px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:28px}
-.logo-p.ph{background:#fff;border:1px solid var(--line);overflow:hidden}
-.logo-p img{width:100%;height:100%;object-fit:contain}
 .head>div{min-width:0}
 .item h3{margin:0;font-size:15px;line-height:1.3;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .meta{font-size:12px;color:var(--mute);margin-top:2px}
@@ -219,7 +217,7 @@ details.more-f summary::-webkit-details-marker{display:none}
     <div class="grid" id="catGrid"></div>
     <p class="note" id="srcNote"></p>
     <p class="note">Qiymətlər mağazaların açıq saytlarından avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
-      Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları və şəkillər öz sahiblərinə məxsusdur. Sayt cookie və izləmə istifadə etmir;
+      Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları öz sahiblərinə məxsusdur. Sayt cookie və izləmə istifadə etmir;
       alış-veriş siyahısı yalnız sizin brauzerinizdə saxlanır.</p>
   </section>
 
@@ -860,7 +858,6 @@ function group(cat,prod){
     g.offers={}; for(const x of g.m){ const o=mk(x.x), ex=g.offers[x.store]; if(!ex||o.p<ex.p) g.offers[x.store]=o; }
     g.sk=g.a.kg?"kg":(g.a.wv!=null?fam(g.a.wu)+":"+Math.round(norm(g.a.wv,g.a.wu)*100)/100:"");
     const o=Object.values(g.offers), v=o.map(x=>x.p);
-    g.img=(o.find(x=>x.i&&!x.w)||o.find(x=>x.i)||{}).i||null;
     g.n=v.length; g.min=Math.min(...v); g.max=Math.max(...v); g.save=g.n>1?g.max-g.min:0;
     delete g.m;
   }
@@ -869,7 +866,7 @@ function group(cat,prod){
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
-  return {p:own?it.price:(it.wolt_price||0),w:!own,i:it.img||null,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||""};
+  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||""};
 }
 
 /* ─────────── state ─────────── */
@@ -1037,7 +1034,7 @@ function card(g,o={}){
   const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",fmtSize(a),a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
   return `<article class="item${hl===g.id&&!o.pre?" hl":""}" id="${o.pre||"r"}-${g.id}" data-t="${g.t}" data-id="${g.id}">
     <button class="fav${on?" on":""}" data-fav="1" aria-label="Siyahıma əlavə et" aria-pressed="${on}">${on?"♥":"♡"}</button>
-    <div class="head"><div class="logo-p${g.img?" ph":""}">${g.img?`<img src="${esc(g.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-e="${em}" onerror="this.parentNode.classList.remove('ph');this.parentNode.textContent=this.dataset.e">`:em}</div>
+    <div class="head"><div class="logo-p">${em}</div>
     <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
     ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div>
     ${o.qty?`<div class="qty"><button data-q="-1" aria-label="Azalt">−</button><b>${o.qty}</b><button data-q="1" aria-label="Artır">+</button><span>${a.kg?"kq":"ədəd"}</span></div>`:""}</article>`;

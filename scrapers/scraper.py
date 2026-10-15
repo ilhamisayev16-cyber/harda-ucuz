@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-QiymətMüqayisə Scraper
+Harda Ucuz Scraper
   Bravo  -> Wolt
   OBA    -> oba.az
   Araz   -> arazmarket.az API (+ Wolt)

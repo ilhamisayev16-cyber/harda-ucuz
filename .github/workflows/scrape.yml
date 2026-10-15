@@ -36,6 +36,7 @@ jobs:
         timeout-minutes: 85   # aşarsa da hazır olan mağazalar aşağıda commit olunur
         env:
           PYTHONUNBUFFERED: "1"
+          WOLT_ENABLED: ${{ vars.WOLT_ENABLED || '1' }}   # Settings → Variables → WOLT_ENABLED=0: Wolt sorğuları dayandırılır (köhnə data silinmir)
           STORE: ${{ github.event.inputs.store || 'all' }}   # input birbaşa shell-ə qoyulmur (injection-a qarşı)
         run: |
           case "$STORE" in

@@ -197,6 +197,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 @media (min-width:1300px){ body{zoom:1.45} }
 @media (min-width:1700px){ body{zoom:1.7} }
 
+img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin:0 .04em;pointer-events:none}
 </style>
 </head>
 <body>
@@ -1249,5 +1250,6 @@ addEventListener("click",e=>{ if(!e.target.closest(".search")) $("results").inne
 $("skelgrid").innerHTML=Array(8).fill('<div class="skel" style="height:64px"></div>').join("");
 load();
 </script>
+<script src="assets/twemoji.js" defer></script>
 </body>
 </html>

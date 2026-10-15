@@ -21,6 +21,10 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
+from sources import SOURCES, wolt_enabled, source_meta, validate_prices, store_counts, atomic_write_json
+
 def _low(t):
     """Kiçik hərf + I/İ/ı eyniləşdirilir (saytlar böyük hərfdə "QIRMIZI"/"QİRMİZİ" qarışıq yazır)."""
     return t.replace("İ", "i").replace("ı", "i").replace("I", "i").lower()
@@ -1394,13 +1398,18 @@ def mark_changes(old, items, store, hist, today, old_day):
         elif o.get("pp") is not None and o.get("pd") and (datetime.strptime(today, "%Y-%m-%d") - datetime.strptime(o["pd"], "%Y-%m-%d")).days <= 14:
             it["pp"], it["pd"] = o["pp"], o["pd"]   # yaxın vaxtda dəyişib: nişan qalır
 
-def apply_to_data(own_res, wolt_res, store, data, hist=None):
+def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     own_res, wolt_res = own_res or {}, wolt_res or {}
     if not any(own_res.values()) and not any(wolt_res.values()):
         print(f"  [{store}] ⚠ nəticə boşdur — köhnə qiymətlər saxlanıldı")
         return False
     wolt_only = store in WOLT_ONLY
     old = track_changes(store, data, hist)
+    old_n = len(old)
+    new_n = sum(len(v) for v in own_res.values()) + sum(len(v) for v in wolt_res.values())
+    if old_n >= 200 and new_n < 0.4 * old_n:   # natamam nəticə əvvəlki etibarlı datanı əvəz etməsin
+        print(f"  [{store}] ⚠ nəticə kəskin azalıb ({old_n} → {new_n}) — köhnə qiymətlər saxlanıldı")
+        return False
     src = WOLT_SRC.get(store, "single-" + WOLT_SRC_VER) if wolt_only else None
     prev_src = (data.get("meta", {}).get(store) or {}).get("src", "single")
     if src and src != prev_src and store in data.get("meta", {}):
@@ -1415,6 +1424,11 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))
         mark_changes(old, items, store, hist, today, old_day)
+        if not wolt_on and not wolt_only:   # Wolt söndürülüb: köhnə Wolt-only məhsullar silinmir, "arxiv" kimi işarələnir
+            have = {it["name"] for it in items}
+            for it in data["categories"][cid]["stores"].get(store, []):
+                if "price" not in it and it.get("wolt_price") is not None and it["name"] not in have:
+                    items.append({**it, "stale": True})
         data["categories"][cid]["stores"][store] = items
     data.setdefault("meta", {})[store] = {
         "updated": datetime.now().strftime("%d.%m.%Y %H:%M"),
@@ -1422,7 +1436,20 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
         "wolt": sum(len(v) for v in wolt_res.values()),
     }
     if src: data["meta"][store]["src"] = src
+    data["meta"][store].update(source_meta(store, wolt_on))
+    data["meta"][store]["last_success"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
     return True
+
+def mark_stale(store, data):
+    """Wolt söndürülüb və başqa mənbə yoxdur: mövcud məhsullar silinmir, amma yenidən yoxlanmadığı işarələnir."""
+    n = 0
+    for c in data["categories"].values():
+        for it in c["stores"].get(store, []):
+            if not it.get("stale"): it["stale"] = True; n += 1
+    m = data.setdefault("meta", {}).setdefault(store, {})
+    m.update(source_meta(store, False))
+    m.setdefault("last_success", None)
+    print(f"  [{store}] Wolt söndürülüb: {n} məhsul 'arxiv' işarələndi (silinmədi)")
 
 # ── MAIN ─────────────────────────────────────────────────────────────────
 STORE_KEYS = {s.lower(): s for s in ALL_STORES}   # --store açarı -> mağaza adı
@@ -1430,16 +1457,17 @@ STORE_KEYS = {s.lower(): s for s in ALL_STORES}   # --store açarı -> mağaza a
 def _save(data, out):
     data["groups"] = GROUPS
     data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+    ok, errs = validate_prices(data)
+    if not ok:   # səhv/natamam data əvvəlki etibarlı faylın yerinə yazılmır
+        print("  ⚠ prices.json YAZILMADI (yoxlama uğursuz):", errs[:3]); return False
+    atomic_write_json(data, out)
+    return True
 
 def _save_hist(hist, path):
     """90 gündən köhnə son qeydli açarlar atılır."""
     cut = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
     h = {k: v for k, v in hist.items() if v and v[-1][0] >= cut}
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump({"h": h}, f, ensure_ascii=False, separators=(",", ":"))
+    atomic_write_json({"h": h}, path)
 
 def recategorize(data):
     """Mövcud məhsulları yenidən təsnif edir (şəbəkə tələb olunmur)."""
@@ -1466,6 +1494,7 @@ def main():
     ap.add_argument("--store", choices=list(STORE_KEYS) + ["all"], default="all")
     ap.add_argument("--wolt-only",  action="store_true")
     ap.add_argument("--own-only",   action="store_true")
+    ap.add_argument("--no-wolt",    action="store_true", help="Wolt sorğuları göndərilmir (WOLT_ENABLED=0 ilə eyni)")
     ap.add_argument("--out", default="../data/prices.json")
     args = ap.parse_args()
 
@@ -1515,18 +1544,23 @@ def main():
                 own_res = scrape_bazarstore() or {}
 
         # Wolt
+        wolt_on = wolt_enabled(sname) and not args.no_wolt
         if not args.own_only and sname != "Bazarstore":   # Bazarstore Wolt-da yoxdur
-            wolt_res = scrape_wolt(sname)
+            if wolt_on:
+                wolt_res = scrape_wolt(sname)
+            else:
+                print(f"  [{sname}] Wolt söndürülüb: sorğu göndərilmir, köhnə məlumat saxlanılır")
 
-        apply_to_data(own_res, wolt_res, sname, data, hist)
+        if not wolt_on and not any(own_res.values()) and sname in WOLT_ONLY:
+            mark_stale(sname, data)
+        else:
+            apply_to_data(own_res, wolt_res, sname, data, hist, wolt_on)
         _save(data, out)   # timeout olarsa əvvəlki mağazaların nəticəsi itməsin
         _save_hist(hist, hist_path)
 
     data["groups"] = GROUPS
     data["last_updated"] = datetime.now().strftime("%d.%m.%Y %H:%M")
-    out.parent.mkdir(parents=True, exist_ok=True)
-    with open(out,"w",encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+    _save(data, out)
     print(f"\n✅  Saxlandı: {out}  ({out.stat().st_size//1024} KB)")
     print("\n📊  Nəticə:")
     for s in ALL_STORES:

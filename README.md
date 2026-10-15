@@ -68,3 +68,9 @@ Scraper hər gün avtomatik işləyəcək.
 - **Alış-veriş siyahısı** (♥): məhsul kartında ♡ düyməsi; siyahı brauzerdə (`localStorage`) saxlanır, mağazalar üzrə cəm və "hər məhsulu ən ucuz yerdən alsan" göstərilir, mətn kimi kopyalanır.
 - **Qiymət dəyişikliyi**: scraper hər mağaza üçün əvvəlki qiymətlə müqayisə edir; dəyişən məhsulda `pp` (əvvəlki qiymət) və `pd` (tarix) yazılır — kartda ↓/↑ nişanı, ana səhifədə "ucuzlayanlar". Tam tarixçə `data/history.json`-dadır (açar: `hk(mağaza|ad)`, scraper və index.html-də eyni; 90 gün).
 - **Vahid qiymət**: çəkili qablaşdırma 1 kq-a, həcmli 1 L-ə görə (>5 kq/L göstərilmir); "Vahid qiymət" sıralaması.
+
+## Wolt söndürmə açarı və təhlükəsiz yazma
+- `WOLT_ENABLED=0` (və ya `python scrapers/scraper.py --no-wolt`): Wolt-a heç bir sorğu göndərilmir. GitHub-da: Settings → Variables → `WOLT_ENABLED`.
+- Köhnə Wolt qiymətləri silinmir; `stale: true` ("arxiv qiymət") işarələnir, ən ucuz/qənaət hesabına girmir; `meta[mağaza]`-da `source_type`, `auto_update`, `last_success`.
+- `prices.json` yazılmazdan əvvəl sxem/qiymət yoxlanır, mağaza nəticəsi >60% azalıbsa köhnə data saxlanır, yazma atomikdir.
+- Testlər: `pip install pytest && python -m pytest tests` (`scrapers/sources.py` — mənbə konfiqurasiyası).

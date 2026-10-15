@@ -910,7 +910,7 @@ function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (da
   }
   const out=[]; let n=1;
   for(const x of it){ const C=x.C; if(C.g) continue;                   // kartın adı: ilk üzv (mağaza sırası ilə)
-    const g=C.g={id:"p"+n++,name:x.x.name,fd:x.f,a:x.a,c:x.c,m:C.m};
+    const g=C.g={id:"p"+n++,name:bestName(C.m,x),fd:x.f,a:x.a,c:x.c,m:C.m};   // fd ilk üzvdən: axtarış və sevimlilər dəyişməsin
     for(const y of C.m) if(g.a.fat==null&&y.a.fat!=null) g.a={...g.a,fat:y.a.fat};
     out.push(g); }
   for(const g of out){ // qiymət statistikası bir dəfə
@@ -925,6 +925,14 @@ function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (da
   if(rec) out.N=it.length;
   return out;
 }
+/* kartın adı: üzvlərdən ən oxunaqlısı (BÖYÜK hərflə yazılmayan, ə/ş/ç... hərfli, Bazarstore-un 40 simvolda kəsilmiş adı deyil);
+   bərabərdə ilk üzv (əvvəlki kimi) */
+const nameScore=y=>{ const n=y.x.name, L=n.replace(/[^A-Za-zÀ-ɏƏəЀ-ӿ]/g,""); let s=0;
+  if(L.length>4&&L===L.toUpperCase()) s-=4;
+  if(/[əƏşŞçÇğĞıöÖüÜ]/.test(n)) s+=2;
+  if(y.store==="Bazarstore"&&n.length>=39) s-=2;
+  return s; };
+function bestName(m,x){ let b=x, bs=nameScore(x); for(const y of m){ const s=nameScore(y); if(s>bs||s===bs&&y.i<b.i){ b=y; bs=s; } } return b.x.name; }
 /* hazır kartlar (pre): {n: məhsul sayı, m: [[üzvlərin nömrələri], ...]} — yalnız 2+ üzvlü kartlar, qalanları təkdir.
    Nömrə = məhsulun group()-dakı sırası (mağaza, sonra alt kateqoriya sırası ilə). Uyğunsuzluq olsa false: kartlar brauzerdə hesablanır */
 function usePre(it,pre){

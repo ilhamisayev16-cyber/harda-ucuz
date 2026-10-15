@@ -752,10 +752,23 @@ def classify(name, path=""):
     return pc
 
 # ── Ad təmizliyi və dublikatlar ──────────────────────────────────────────
+_LET = re.compile(r"[A-Za-zÀ-ɏƏəЀ-ӿ]")
+_WRD = re.compile(r"[A-Za-zÀ-ɏƏəЀ-ӿ]+")
+_UNIT_N = re.compile(r"(?<=\d)(\s?)(Gr|Ml|Kq|Kg|Qr|Lt|L|Q|G|Cm|Sm|Mm|M|Əd|Ed|Li|Lu|Lü|Lı)\b")
+
+def _decaps(n):
+    """Tam BÖYÜK hərfli ad normal yazılır: "DR.MILK KAUNAS XAMA 20% 350 GR" -> "Dr.Milk Kaunas Xama 20% 350 gr".
+    Hər söz böyük hərflə başlayır (İ/I düzgün), rəqəmdən sonrakı vahid kiçik hərflə. Qarışıq yazılmış adlara toxunulmur."""
+    chk = re.sub(r"(?i)(?<=\d)\s?(?:ml|gr|g|kg|kq|l|lt|qr|q|pcs|pc|ədəd|əd|ed|cm|mm|sm|m)\b", "", n)   # OBA: "KLAR MAYE, 500 ml"
+    letters = "".join(_LET.findall(chk))
+    if len(letters) < 5 or letters != letters.upper(): return n
+    n = _WRD.sub(lambda m: m.group()[0] + _low(m.group()[1:]), n)
+    return _UNIT_N.sub(lambda m: m.group(1) + m.group(2).lower(), n)
+
 def clean_name(n):
-    """Artıq boşluq, vergül/nöqtədən əvvəlki boşluq və sonda qalan vergül/defis atılır:
-    "FAIRY LIMON MAYE QABYUYAN , 750 ml" -> "FAIRY LIMON MAYE QABYUYAN, 750 ml"."""
-    n = re.sub(r"\s+", " ", str(n)).strip()
+    """Artıq boşluq, vergül/nöqtədən əvvəlki boşluq və sonda qalan vergül/defis atılır, TAM BÖYÜK hərfli ad normal yazılır:
+    "FAIRY LIMON MAYE QABYUYAN , 750 ml" -> "Fairy Limon Maye Qabyuyan, 750 ml"."""
+    n = _decaps(re.sub(r"\s+", " ", str(n)).strip())
     n = re.sub(r"\s+([,.;:!?)%])", r"\1", n)
     n = re.sub(r"\(\s+", "(", n)
     return re.sub(r"[\s,;:\-]+$", "", n) or n
@@ -778,6 +791,89 @@ def dedupe(items):
         k = name_key(it["name"]) or it["name"]
         if k not in best or _pref(it) < _pref(best[k]): best[k] = it
     return list(best.values())
+
+# ── "Digər"-ə düşən məhsullar: ad yalnız brenddir ("Rafaello 70 Q", "Kent Nanotek") və ya mağaza kateqoriya verməyib ──
+# Qayda yalnız "diger"-dəki məhsullara tətbiq olunur (qalan təsnifata təsir etmir). Sıra: qəti açar sözlər (qeyri-qida),
+# brend səsverməsi (eyni brendin başqa məhsulları hansı kateqoriyadadır), yumşaq açar sözlər, məhsul sözü səsverməsi.
+_OTHER_HARD = [(re.compile(r), c) for r, c in (   # c=None: "Digər"də qalsın (səsvermə səhv yerə aparırdı)
+    (r"buz kub", None),
+    (r"\bqapaq\b|sixaca|filt(?:i)?r|katric|komur|skewer|\bsis\b|lanc ?boks|caydan|pencere band|izolent|uzadici|ayirici|borulu|termos"
+     r"|\bkamp\b|cadir|yuxu tulum|mecmeyi|tepsi|\bkasa\b", "mesis"),
+    (r"dixlofos|tuz ruhu|tibtrap|sican|tarakan", "temizlik"),
+    (r"bloknot|pozan\b|\bdefter", "dereterlik"),
+    (r"\bit kendir|\btasma\b|gezdirme qayis", "heyvan_diger"),
+    (r"skuter|futbol|voleybol|\btopu\b|\bparty\b", "oyuncaq"),
+    (r"\bvuse\b|\btustu\b", "siqaret"),
+)]
+_OTHER_SOFT = [(re.compile(r), c) for r, c in (
+    (r"(?:ciy|cig) kofte|yarpaq sarma|blincik|pelmen|dusbere|xinkal|kartof pure", "hazir_yemek"),
+    (r"\bvanil", "istiot"),
+    (r"dadlandirici|stevia", "sekerqum"),
+    (r"seledoc|siyenk|matias|skumbri", "baliq"),
+    (r"midye|krab|krevet|krivet|kalamar", "deniz"),
+    (r"kinoa|quinoa", "bakliyyat"),
+    (r"raf+a[e]?l+o", "konfet"),
+    (r"m&ms|milky way|\btwi?x\b|\btwlx\b", "sokolad"),
+    (r"(?:cocktail|koktail|kokteyl).*\d\s*ml\b", "likor"),
+    (r"oxidant|oksidant", "sac_boya"),
+)]
+_OTHER_SKIP = {"x", "st", "s", "u", "k", "m", "h", "p", "b", "l", "su", "km", "sh", "yeni", "new", "aksiya"}
+_OTHER_STOP = {"dadi", "dadli", "ile", "sade", "qutu", "banka", "suse", "kicik", "boyuk", "plastik", "paket", "karton", "mix",
+               "assorti", "classic", "klassik", "extra", "premium", "super", "gold", "silver", "blue", "white", "black", "red",
+               "qirmizi", "yasil", "sari", "qara", "mavi"}
+
+def _owords(n):
+    w = [t for t in re.split(r"[^a-z0-9&]+", _f(n)) if t]
+    while w and (w[0] in _OTHER_SKIP or len(w[0]) < 2 or w[0].isdigit()): w = w[1:]   # Bazarstore təchizatçı kodları: "X S.u Kasa"
+    return w
+
+def reassign_other(data):
+    """"diger"-dəki məhsulları mümkün olduqda düzgün kateqoriyaya köçürür; köçənlərin sayını qaytarır."""
+    cats = data.get("categories", {})
+    if "diger" not in cats: return 0
+    from collections import Counter, defaultdict
+    b1, b2, tw = defaultdict(Counter), defaultdict(Counter), defaultdict(Counter)
+    for cid, c in cats.items():
+        if cid == "diger" or cid not in CATEGORIES: continue
+        for items in c["stores"].values():
+            for it in items:
+                w = _owords(it["name"])
+                if w and len(w[0]) >= 3:
+                    b1[w[0]][cid] += 1
+                    if len(w) > 1: b2[" ".join(w[:2])][cid] += 1
+                for t in set(w):
+                    if len(t) >= 4 and t.isalpha() and t not in _OTHER_STOP: tw[t][cid] += 1
+    def best(cnt, mn, share):
+        if not cnt: return None
+        cid, k = cnt.most_common(1)[0]
+        return cid if k >= mn and k / sum(cnt.values()) >= share else None
+    def where(name):
+        f = _f(name)
+        for rx, cid in _OTHER_HARD:
+            if rx.search(f): return cid
+        w = _owords(name)
+        if w and len(w[0]) >= 3:
+            cid = (len(w) > 1 and best(b2.get(" ".join(w[:2])), 2, 0.7)) or best(b1.get(w[0]), 3, 0.7)
+            if cid: return cid
+        for rx, cid in _OTHER_SOFT:
+            if rx.search(f): return cid
+        cands = [(tw[t].most_common(1)[0][1] / sum(tw[t].values()), sum(tw[t].values()), t) for t in set(w) if t in tw]
+        for sh, n, t in sorted(cands, reverse=True):
+            if n >= 5 and sh >= 0.8: return tw[t].most_common(1)[0][0]
+        return None
+    have = {(s, name_key(it["name"])) for cid, c in cats.items() if cid != "diger" for s, l in c["stores"].items() for it in l}
+    moved = 0
+    for store, items in list(cats["diger"]["stores"].items()):
+        keep = []
+        for it in items:
+            if (store, name_key(it["name"])) in have: moved += 1; continue   # mağaza eyni məhsulu başqa kateqoriyada da verir
+            cid = where(it["name"])
+            if cid and cid in cats:
+                cats[cid]["stores"].setdefault(store, []).append(it); moved += 1
+            else:
+                keep.append(it)
+        cats["diger"]["stores"][store] = keep
+    return moved
 
 def tidy(data):
     """Bütün mağazalar: adlar təmizlənir, dublikatlar birləşir, köhnə şəkil linkləri silinir (sayt şəkil göstərmir)."""
@@ -1507,6 +1603,7 @@ STORE_KEYS = {s.lower(): s for s in ALL_STORES}   # --store açarı -> mağaza a
 
 def _save(data, out):
     data["groups"] = GROUPS
+    reassign_other(data)
     data["last_updated"] = now().strftime("%d.%m.%Y %H:%M")
     ok, errs = validate_prices(data)
     if not ok:   # səhv/natamam data əvvəlki etibarlı faylın yerinə yazılmır

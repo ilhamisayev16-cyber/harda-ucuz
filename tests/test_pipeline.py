@@ -165,7 +165,7 @@ for(const old of [true,false]){{
 
 # ── ad təmizliyi, dublikatlar, şəkil linkləri ──
 def test_clean_name():
-    assert S.clean_name("FAIRY LIMON MAYE QABYUYAN , 750 ml") == "FAIRY LIMON MAYE QABYUYAN, 750 ml"
+    assert S.clean_name("FAIRY LIMON MAYE QABYUYAN , 750 ml") == "Fairy Limon Maye Qabyuyan, 750 ml"
     assert S.clean_name("Princessa Nuri Zavtrak V Benqali ,") == "Princessa Nuri Zavtrak V Benqali"
     assert S.clean_name("Crystalex  Maye ( Limon )  750 ml") == "Crystalex Maye (Limon) 750 ml"
     assert S.clean_name("Coca-Cola 1 L") == "Coca-Cola 1 L"
@@ -273,3 +273,57 @@ def test_big_own_discount_falls_back_to_wolt_price():
     assert out["Banan kq"] == {"name": "Banan kq", "price": 2.0, "wolt_price": 2.2}   # kiçik aksiya: öz qiymət
     assert out["Kivi kq"] == {"name": "Kivi kq", "price": 1.0}                  # Wolt yoxdur: öz qiymət qalır
     assert len(out) == 3 and all("rp" not in i for i in out.values())
+
+
+# ── BÖYÜK hərfli adlar ──
+@pytest.mark.parametrize("raw,want", [
+    ("DR.MILK KAUNAS XAMA 20% 350 GR", "Dr.Milk Kaunas Xama 20% 350 gr"),
+    ("KLAR ULTRA YAG SOKUCU, 500 ml", "Klar Ultra Yag Sokucu, 500 ml"),
+    ("TAC GİLƏZİ AĞ YUMURTA 10 ƏD", "Tac Giləzi Ağ Yumurta 10 əd"),
+    ("Coca-Cola 1 L", "Coca-Cola 1 L"), ("XXL", "XXL"), ("Pencil Coloredi-252", "Pencil Coloredi-252")])
+def test_all_caps_names_are_normalised(raw, want):
+    assert S.clean_name(raw) == want
+
+
+# ── "Digər"-dəki məhsulların yeri ──
+def test_reassign_other_by_keyword_brand_word_and_duplicate():
+    d = S.empty_data()
+    st = d["categories"]
+    st["siqaret"]["stores"]["Bravo"] = [{"name": f"Kent Nanotek {i}", "wolt_price": 5.0} for i in range(3)]
+    st["konfet"]["stores"]["Bravo"] = [{"name": "Beyaz Trubka, 1 kg", "price": 3.0}]
+    st["diger"]["stores"]["Bazarstore"] = [{"name": "Kent Nanotek Neo 4", "price": 5.2},       # brend → siqaret
+                                           {"name": "St Skuter Sc001 530-12", "price": 40.0},  # açar söz → oyuncaq
+                                           {"name": "Urojay Qapaq 82 Mm 20 Li", "price": 2.0},  # qeyri-qida → məişət
+                                           {"name": "Bumbuz 1 Kq", "price": 4.0}]               # bilinmir → qalır
+    st["diger"]["stores"]["Bravo"] = [{"name": "Beyaz Trubka , 1 kg", "price": 3.0}]          # eyni mağazada artıq var → silinir
+    assert S.reassign_other(d) == 4
+    assert [i["name"] for i in st["diger"]["stores"]["Bazarstore"]] == ["Bumbuz 1 Kq"] and st["diger"]["stores"]["Bravo"] == []
+    assert {i["name"] for i in st["siqaret"]["stores"]["Bazarstore"]} == {"Kent Nanotek Neo 4"}
+    assert st["oyuncaq"]["stores"]["Bazarstore"][0]["name"].startswith("St Skuter")
+    assert st["mesis"]["stores"]["Bazarstore"][0]["name"].startswith("Urojay Qapaq")
+
+
+def test_reassign_other_on_real_data_shrinks_other():
+    d = copy.deepcopy(PRICES)
+    n0 = sum(len(l) for l in d["categories"]["diger"]["stores"].values())
+    S.reassign_other(d)
+    n1 = sum(len(l) for l in d["categories"]["diger"]["stores"].values())
+    assert n1 < n0 / 2 or n0 < 20
+    ok, errs = SRC.validate_prices(d)
+    assert ok, errs
+
+
+# ── kartın adı: ən oxunaqlı üzv ──
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_card_shows_most_readable_name(tmp_path):
+    db = {"stores": ["OBA", "Bravo"], "groups": [{"id": "sud", "name": "Süd", "cats": ["qatilasdirilmis"]}],
+          "categories": {"qatilasdirilmis": {"name": "Qatılaşdırılmış süd", "stores": {
+              "OBA": [{"name": "QUSTIYAR QATILASDIRILMIS SUD, 370 g", "price": 2.89}],
+              "Bravo": [{"name": "Qustiyar Qatılaşdırılmış Süd 370qr", "wolt_price": 2.7}]}}}}
+    f = tmp_path / "db.json"; f.write_text(json.dumps(db, ensure_ascii=False))
+    js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
+api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
+const g=api.groups('sud'); console.log(JSON.stringify(g.map(x=>[x.name,Object.keys(x.offers).length])));"""
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr[-500:]
+    assert json.loads(r.stdout.strip()) == [["Qustiyar Qatılaşdırılmış Süd 370qr", 2]]

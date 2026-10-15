@@ -116,6 +116,14 @@ Araz/OBA üçün öz siyahı əsasdır; eyni məhsulun Wolt qiyməti `wolt_price
 `dedupe`: eyni mağaza + kateqoriyada yazılışı fərqli təkrarlar (`name_key`: diakritikasız, yalnız hərf/rəqəm, "1.5" ≠ "15") bir qeyd olur:
 yoxlanmış > mağazanın öz qiyməti > ucuz. Wolt filiallarının birləşdirilməsi də `name_key` ilə edilir. `tidy` köhnə datanı da yükləyəndə təmizləyir
 (OBA saytı eyni məhsulu iki dəfə göstərirdi: ~500 təkrar).
+`clean_name` TAM BÖYÜK hərfli adları normal yazır ("DR.MILK KAUNAS XAMA 20% 350 GR" → "Dr.Milk Kaunas Xama 20% 350 gr"; ~1300 ad, əsasən Tamstore/OBA).
+Saytda kartın adı üzvlərdən ən oxunaqlısıdır (`bestName`: böyük hərfli deyil, ə/ş/ç hərfli, Bazarstore-un kəsilmiş adı deyil); `fd` (axtarış, sevimlilər) ilk üzvdən qalır.
+
+### 3.7 "Digər"-ə düşən məhsullar (`reassign_other`, hər `_save`-də)
+Ad yalnız brenddirsə ("Rafaello 70 Q", "Kent Nanotek") və ya mağaza kateqoriya verməyibsə, məhsul "diger"-ə düşür. Yalnız bunlar üçün:
+qəti açar sözlər (qapaq, filtr, kömür, skuter...) → brend səsverməsi (eyni brendin başqa məhsullarının ≥70%-i hansı kateqoriyadadır) →
+yumşaq açar sözlər (düşbərə, krevet, dadlandırıcı...) → məhsul sözü səsverməsi (söz ≥5 məhsulda, ≥80% bir kateqoriyada).
+Mağaza eyni məhsulu başqa kateqoriyada da veribsə, "diger"-dəki nüsxə silinir. 2026-10: 249 → ~50.
 
 ---
 

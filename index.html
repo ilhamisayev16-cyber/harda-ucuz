@@ -265,22 +265,63 @@ details.more-f summary::-webkit-details-marker{display:none}
 <script>
 "use strict";
 /* ─────────── constants ─────────── */
-const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"🫙",xama:"🥄",kefir:"🥛",ayran:"🥤",
-  kartof:"🥔",pomidor:"🍅",xiyar:"🥒",soyan:"🧅",kelem:"🥬",yerkoyu:"🥕",cuqundur:"🫚",badimcan:"🍆",biber:"🌶️",
+const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"🥣",xama:"🥄",kefir:"🥛",ayran:"🥤",
+  kartof:"🥔",pomidor:"🍅",xiyar:"🥒",soyan:"🧅",kelem:"🥬",yerkoyu:"🥕",cuqundur:"🟣",badimcan:"🍆",biber:"🌶️",
   sarimsaq:"🧄",alma:"🍎",armud:"🍐",saftal:"🍑",gilas:"🍒",uzum:"🍇",banan:"🍌",kivi:"🥝",limon:"🍋",
-  portaqal:"🍊",nar:"🍎",toyuq:"🍗",dana_ati:"🥩",qoyun_ati:"🍖",hindi:"🦃",kolbasa:"🌭",sosis:"🌭",baliq:"🐟",
-  duyu:"🍚",merci:"🫘",noxud:"🟡",fasulya:"🫘",qarabashaq:"🌾",yulaf:"🌾",un:"🌾",makaron:"🍝",corek:"🍞",
+  portaqal:"🍊",nar:"🔴",toyuq:"🍗",dana_ati:"🥩",qoyun_ati:"🍖",hindi:"🦃",kolbasa:"🌭",sosis:"🌭",baliq:"🐟",
+  duyu:"🍚",merci:"🫘",noxud:"🫛",fasulya:"🫘",qarabashaq:"🌾",yulaf:"🌾",un:"🌾",makaron:"🍝",corek:"🍞",
   pecenye:"🍪",cay:"🍵",qehve:"☕",sire:"🧃",su:"💧",kola:"🥤",energetik:"⚡",sokolad:"🍫",halva:"🍬",bal:"🍯",
   dondurma:"🍦",zeytun_yagi:"🫒",bitki_yagi:"🌻",mayonez:"🫙",ketcup:"🍅",duz:"🧂",sekerqum:"🍬",istiot:"🌶️",
   zibil:"🗑️",bisirme:"🧻",sac_boya:"🎨",deo:"🧴",tras:"🪒",etir:"🌺",kosmetika:"💄",pisik_yemi:"🐱",it_yemi:"🐶",heyvan_diger:"🐾",
-  pive:"🍺",araq:"🥃",viski:"🥃",serab:"🍷",likor:"🍸",siqaret:"🚬",vafli:"🧇",keks:"🥐",tort:"🎂",konfet:"🍬",krem_pasta:"🍫",limonad:"🍋",
-  soyuq_cay:"🧋",qazli_su:"🫧",xardal:"🌭",sirke:"🍶",eriste:"🍜",susi:"🍣",tum:"🌻",zeytun:"🫒",tursu:"🥒",pomidor_pasta:"🍅",
+  pive:"🍺",araq:"🥃",viski:"🥃",serab:"🍷",likor:"🍸",siqaret:"🚬",vafli:"🧇",keks:"🧁",tort:"🎂",konfet:"🍬",krem_pasta:"🍫",limonad:"🍋",
+  soyuq_cay:"🧋",qazli_su:"🫧",xardal:"🟡",sirke:"🍶",eriste:"🍜",susi:"🍣",tum:"🌻",zeytun:"🫒",tursu:"🥒",pomidor_pasta:"🍅",
   hise:"🥓",deniz:"🦐",et_diger:"🥩",kesmik:"🧀",qaymaq:"🥛",sirok:"🍮",yoqurt:"🥣",goyerti:"🌿",gobelek:"🍄",balqabaq:"🎃",
   mandarin:"🍊",ekzotik:"🥭",gile:"🍓",qarpiz:"🍉",bulgur:"🌾",seher:"🥣",bulyon:"🍲",avto:"🚗",sous_diger:"🥫",
   qabyuyan:"🧽",yuyucu:"🧺",temizlik:"🧹",gigiyena:"🧼",
-  heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🍿",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",oyuncaq:"🧸",dereterlik:"✏️",kagiz:"🧻",qadin_gig:"🌸",usaq_baxim:"🍼",dis_baximi:"🪥",sac_baximi:"💇",beden_baximi:"🧴",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
-  usaq:"👶",hazir:"🍿",heyvan:"🐾",tutun:"🚬",geyim:"👕",saglam:"💪",ayaqqabi:"🧦",tekstil:"🛏️",
+  heyvan_yemi:"🐾",usaq_qida:"👶",hazir_yemek:"🍕",cips:"🥔",konserv:"🥫",murebbe:"🍓",qoz:"🥜",mesis:"🏠",diger:"📦",oyuncaq:"🧸",dereterlik:"✏️",kagiz:"🧻",qadin_gig:"🌸",usaq_baxim:"🍼",dis_baximi:"🪥",sac_baximi:"💇",beden_baximi:"🧴",spirtli:"🍷",meyve_diger:"🍎",sebze_diger:"🥕",dondurulmus:"🧊",bakliyyat:"🌾",
+  usaq:"👶",hazir:"🥪",heyvan:"🐾",tutun:"🚬",geyim:"👕",saglam:"💪",ayaqqabi:"👟",tekstil:"🛏️",
   meyve:"🍎",sebze:"🥕",et:"🍗",bakaliya:"🍚",sirniyyat:"🍫",iceckiler:"🥤",yag_sous:"🫒",ev:"🧴"};
+/* məhsul ikonu: adına görə daha dəqiq emoji (ana kateqoriya daxilində, siyahıda ilk uyğunluq qalib); tapılmasa alt kateqoriyanın ikonu */
+const IC=(o)=>Object.entries(o).map(([e,r])=>[new RegExp("\\b(?:"+r+")"),e]);
+const ICONS={
+  meyve:IC({"🍍":"ananas","🥥":"kokos","🥑":"avokado","🥭":"manqo|mango","🍓":"cilek|ciyelek|qulupnay","🫐":"qaragile|goyem","🍋":"laym|limon","🍊":"qreyfrut|kinkan|mandaroz|mandarin|portaqal|portagal",
+    "🌰":"sabalid","🫚":"zencefil","🥦":"brokol","🌽":"qargidali","🥕":"kok\\b|yerkok","🥝":"kivi|feyxoa","🍎":"alma","🍐":"armud","🍑":"saftal|erik|gavali|heyva","🍒":"gilas|albali","🍇":"uzum","🍌":"banan","🍉":"qarpiz","🍈":"yemis"}),
+  sebze:IC({"🥬":"kahi|marul|salat|ispanaq|kelem","🌽":"qargidali","🥦":"brokol|gul kelem|gulkelem","🫚":"zencefil","🥕":"kok\\b|yerkok","🌿":"terxun|prasa|sivet|keviz|reyhan|cereviz|kesnis|nane|yarpa","🥒":"xiyar|borani|qabaq",
+    "🍄":"gobelek|sampinyon","🧅":"sogan","🧄":"sarimsaq","🍅":"pomidor","🍆":"badimcan","🫑":"bolqar|biber","🥔":"kartof"}),
+  et:IC({"🦐":"krevet","🦀":"krab","🦑":"kalmar","🐙":"osmin|osminoq|ahtapot","🐟":"baliq|sprot|kilk|siyenek|skumbr|uskumru|tuna|ton\\b|losos|somon|qizil bal|xek|panqasius|mintay|forel|sudak|kurus|kuru\\b",
+    "🦃":"hind|indeyka","🌭":"sosis|sosiska|sardelka","🥓":"bekon|piy|hise|basturma|bastirma|kolbasa|salyami|servelat|vetcina|jambon","🍗":"toyuq|cuce|qanad|bud\\b|file|nagets|naggets|ordek","🍔":"kotlet|burger","🥩":"dana|mal\\b|mal eti|qoyun|quzu|farsh|qiyme|bifsteks|steyk"}),
+  sud:IC({"🍦":"dondurma|plombir|eskimo","🍮":"puding|sirok|syrok","🧀":"pendir|brinza|motsarella|mozzarella|cheddar|kesmik|tvorog|labne|lor\\b","🥚":"yumurta","🧈":"kere|yag\\b|marqarin","🥣":"yoqurt|yogurt|qatiq|matsoni","🥛":"sud|kefir|ayran|qaymaq|xama|smetana|ryajenka"}),
+  konserv:IC({"🫛":"noxud|qorox|gorox","🌽":"qargidali|kukuruz","🫘":"lobya|fasulya|fasol","🍄":"gobelek|sampinyon","🐟":"tuna|ton\\b|baliq|kilk|skumbr|sprot|siyenek|uskumru|sardin","🥩":"mal eti|dana|tusonka|toyuq","🫒":"zeytun","🥒":"xiyar|tursu|kornison|kelem",
+    "🍅":"pomidor|tomat|ajvar|biber|lecho","🍑":"kompot|saftal|ananas","🍓":"cem|murebbe"}),
+  bakaliya:IC({"🍝":"spaget|makaron|pasta\\b|lazanya","🍜":"eriste|lapsha|rollton|doshirak","🍚":"duyu|duru\\b|plov","🥣":"yulaf|musli|muesli|qranola|sereal|corn flakes|hercules","🫘":"merci|lobya|noxud|fasulya|maş",
+    "🌾":"un\\b|qarabasaq|bulqur|bulgur|manna|arpa|perlovka|kuskus"}),
+  corek:IC({"🫓":"lavas|yuxa|pide|tendir|tandir|sac\\b|lavaş","🥖":"baget|baton\\b|ciabatta|ciabatta","🥐":"kruassan","🥯":"simit|bublik|bulka|kete","🥨":"xleb|suxari|kreker|suski","🍞":"corek|tost|ekmek"}),
+  sirniyyat:IC({"🎂":"tort","🍰":"pirojna|pirojn|rulet|tiramisu|cizkeyk","🧁":"keks|kek\\b|kapkeyk|maffin|muffin|popkek","🍩":"donut|ponc","🥐":"kruassan|croissant","🧇":"vafli|vafel|wafer","🍪":"pecenye|biskvit|kraker|kreker|cookie|kurabiye|qalet",
+    "🍭":"lolipop|cupa|chupa","🍬":"saqqiz|gum\\b|dirol|orbit|mentos|jelibon|marmelad|karamel|konfet|dropsi|lokum","🍮":"puding|pudinq|krem karamel","🍯":"halva|paxlava|pexlava|bal\\b|bali\\b|balli","🍓":"cem|murebbe|povidl|konfityur","🍦":"dondurma","🍫":"sokolad|cikolat|choco|kakao|browni|baton|snickers|twix|mars\\b|bounty|kitkat|nutella"}),
+  hazir:IC({"🍕":"pizza","🍔":"burger","🌭":"hot ?doq|hotdog","🥪":"sendvic|sandvic","🥗":"salat","🍣":"sus[iu]\\b|roll\\b","🥟":"gyoza|pelmen|xengel|manti|dusbere|varenik|xinkal","🫓":"qutab|xacapuri|borek|lahmacun|yufka|xemir|milfoy",
+    "🍗":"nagets|naggets|strips|toyuq","🍟":"fri\\b|free\\b","🍿":"popkorn|popcorn","🥔":"cips|chips|lays|pringles|doritos|cheetos|kartof","🥨":"suxari|xleb|kreker|sticks|cubuq","🌻":"tum\\b|semecki|gunebaxan",
+    "🌰":"sabalid|findiq","🥜":"qoz|badam|fistiq|araxis|pust|kesyu|kesu|cerez","🌴":"xurma","🍇":"kisimis|meyve qurusu|alca|erik qurusu|qaysi","🍜":"eriste|lapsha|rollton|doshirak","🍲":"sorba|bulyon","🥫":"konserv"}),
+  iceckiler:IC({"🧋":"soyuq cay|ice ?tea|fuse|lipton ice","🍵":"cay\\b|caylar|tea\\b|yasil cay","☕":"qehve|kofe|coffee|kapucin|kapuccino|latte|nescafe|jacobs|kakao|cikoriya","🧃":"sire|juice|nektar|kompot|mors","🫧":"mineral|qazli|sirab|badamli|borjomi|soda",
+    "⚡":"energ|red ?bull|monster|burn\\b|hell\\b|adrenaline","🥤":"kola|cola|pepsi|fanta|sprite|tarxun|limonad|tonik","🥛":"ayran|dovga|sud\\b|kefir","💧":"su\\b|water"}),
+  spirtli:IC({"🍺":"pive|beer|piva|ale\\b|lager","🍾":"sampan|prosecco|brut|igristoe","🍷":"serab|wine|vino|kaqor","🍸":"likor|kokteyl|cocktail|martini|vermut","🥃":"viski|whisk|konyak|brendi|brandy|araq|vodka|rom\\b|tekila|tequila|cin\\b|gin\\b"}),
+  yag_sous:IC({"🫒":"zeytun","🌻":"gunebaxan|bitki yag|qargidali yag","🧈":"kere|marqarin|spred","🍅":"ketcup|tomat|pomidor|ajvar","🫙":"mayonez","🌭":"xardal","🍶":"sirke|soya","🍯":"bal\\b","🧂":"duz\\b","🍬":"seker|saxar|sirinlesd",
+    "🌶️":"istiot|pul biber|biber|cili|aci\\b|adjika|acika","🌿":"darcin|vanil|edviyyat|sumax|keklikotu|zire|hil\\b|reyhan|nane|dafna|zerdecal|sarikok|oregano|ziravat","🌾":"susam|kuncut","🧁":"maya\\b|qabartma|jelatin|nisasta|kisel|puding",
+    "🫛":"noxud","🫘":"lobya|fasulya","🍄":"gobelek|sampinyon","🐟":"tuna|ton\\b|baliq|kilk|skumbr|sprot|siyenek","🥒":"xiyar|tursu|kornison","🥫":"sous|konserv"}),
+  usaq:IC({"👶":"bez|pants|tuman|pampers|huggies|molfix|lody|bebem","🧻":"salfet|desmal","🪥":"dis","🧼":"sabun","🧴":"sampun|krem|yag\\b|losyon|dus gel|kalonya","🍼":"qida|pure|siyig|siyiq|qarisig|kasa|nestogen|similac|nutrilon|humana|bebelac|hipp","🧸":"oyuncaq"}),
+  gigiyena:IC({"🪒":"tras|ulgu|gillette|razor|bic\\b","🪥":"dis|mecun|colgate|blend-a|sensodyne|oral-b|splat","🎨":"sac boya|boya|palette|syoss color|garnier color","🧼":"sabun","🚿":"dus|dush","🧻":"tualet kag|kagiz|rulon|salfet|desmal",
+    "🌸":"qadin bez|qadin|tampon|gundelik|always|kotex|libresse|molped|bella|etir|parfum|tualet suyu","💄":"pomada|tus|maskara|lak\\b|kosmetik|pudra|eyeliner|dirnaq","💇":"daraq|sac\\b","🧴":"sampun|balzam|kondision|krem|losyon|deo|antiperspirant|gel\\b|yag\\b"}),
+  ev:IC({"🔋":"batareya|akkumulyator","💡":"lampa|led\\b|lampoc","🕯️":"sam\\b","🔥":"kibrit|alisqan|zajiqal","🗑️":"zibil|paket|torba","🫙":"saxlama|qutu|konteyner|box\\b|orqanayzer","🍳":"tava|qazan|kastryul","☕":"fincan|stekan|stakan|bardaq|kruzka","🍽️":"bosqab|nelbeki|kasa|tarelka|qab\\b","🍴":"qasiq|catal|bicaq",
+    "🧽":"sunger|gubka|qubka|qabyuyan|fairy|pril","🧺":"yuyucu|ariel|persil|tide|losk|perwoll|kondisioner|yumsald|utu","🦟":"agcaqanad|bocek|raid|dixlofos|hasarat|milcek","🌬️":"hava terav|otaq etri|diffuzer|glade|air wick|ozon","🧤":"elcek",
+    "🧻":"folqa|fol\\b|perqament|bisirme|kagiz|salfet","🔌":"uzadici|rozetka","🪴":"guldan|torpaq","🫗":"surahi","🧹":"firca|supurge|sile|desmal","🧴":"agardici|ace\\b|domestos|cif\\b|temizl|vasite"}),
+  heyvan:IC({"🐱":"pisik|cat\\b|whiskas|felix|kitekat|sheba|friskies|perfect fit","🐶":"\\bit\\b|dog\\b|pedigree|chappi|darling","🐦":"qus|tutuqusu|budgie","🐠":"akvarium|baliq"}),
+  oyuncaq:IC({"🪆":"gelincik|kukla|barbie","🚗":"masin|car\\b|jeep","🧱":"blok|lego|konstruktor","🧸":"ayi|yumsaq oyuncaq","⚽":"top\\b|futbol","🚁":"helikopter|teyyare","🎹":"piano","📓":"defter|blokn","✏️":"qelem|karandas|marker","🖍️":"melki|rengli|flomaster","✂️":"qayci","📏":"xetkes","🎨":"plastilin|boya|akvarel","🧴":"yapisdir"}),
+  geyim:IC({"👟":"terlik|cekelek|ayaqqabi|krossovka|sandal","👕":"mayka|t-shirt|koynek|polo|body","🩲":"boxer|tuman|alt paltar","🧦":"corab|kolqotka|noski","🧥":"hoody|sviter|godekce|kurtka|sw-shirt","👖":"salvar|cins|jeans","🧣":"serf|sal\\b","🛏️":"yastiq|edyal|yorgan|mafres|dosek","🛁":"hamam desmal|desmal|xalat","🟫":"xalca|kilim"}),
+  saglam:IC({"☕":"cikori|qehve","💪":"protein|zulal","🍫":"baton|bar\\b|sokolad","🍪":"biskvit|pecenye|suski|qalet","🍬":"tablet|sirinlesd|steviya|fruktoz|diabet","🥣":"musli|muesli|yulaf|taxil|qranola","🧃":"lemonade|drink|sire","🥜":"findiq|fistiq|badam|qoz"}),
+  tutun:IC({"🔥":"alisqan|zajiqal|kibrit","🚬":"."})
+};
+const ICON_ALL=[].concat(...Object.values(ICONS).filter(l=>l!==ICONS.tutun));
+const nrm=s=>String(s).toLowerCase().replace(DIA_RX,c=>DIA[c]);
+const iconOf=g=>g.em||(g.em=(()=>{ const n=nrm(g.name); for(const [r,e] of (ICONS[g.t]||ICON_ALL)) if(r.test(n)) return e; return EMOJI[g.c]||"📦"; })());
 /* ingiliscə ad / axtarış: ana kateqoriya adları və söz uyğunluqları (+ azərbaycanca ümumi sözlər) */
 const GEN={saglam:"healthy diet protein gluten free diabetic fitness pehriz",geyim:"clothes clothing shoes socks textile towel",konserv:"canned pickles olives",tutun:"tobacco cigarettes siqaret",meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
   corek:"bread bakery",bakaliya:"grains rice pasta flour cereal",sirniyyat:"sweets chocolate biscuits candy dessert honey",
@@ -1030,7 +1071,7 @@ function bestOf(g){
   return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${fmt(e[1].p)}${unit(g)}</b></div>`;
 }
 function card(g,o={}){
-  const a=g.a, em=EMOJI[g.c]||"📦", on=isFav(g);
+  const a=g.a, em=iconOf(g), on=isFav(g);
   const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",fmtSize(a),a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
   return `<article class="item${hl===g.id&&!o.pre?" hl":""}" id="${o.pre||"r"}-${g.id}" data-t="${g.t}" data-id="${g.id}">
     <button class="fav${on?" on":""}" data-fav="1" aria-label="Siyahıma əlavə et" aria-pressed="${on}">${on?"♥":"♡"}</button>

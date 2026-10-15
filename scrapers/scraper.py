@@ -1228,6 +1228,10 @@ def scrape_wolt_full(store, slug=None):
           + (f"; {len(failed)} sorğu alınmadı {sorted({str(f[1]) for f in failed})}" if failed else ""), flush=True)
     return results if total else None
 
+# Qiymətin mənbə üsulu (tək filial / filiallar üzrə median). Üsul dəyişən gün qiymət fərqləri
+# real qiymət dəyişikliyi deyil, ona görə həmin gün dəyişiklik nişanı və tarixçə yazılmır.
+WOLT_SRC = {}
+
 def scrape_wolt_multi(store):
     """WOLT_BRANCHES-dəki bütün filialların tam kataloqu: ad üzrə birləşdirilir, qiymət = filiallar üzrə median.
     Heç bir filial alınmasa None."""
@@ -1261,6 +1265,7 @@ def scrape_wolt_multi(store):
         e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
         results[m["cid"]].append(e)
     print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
+    WOLT_SRC[store] = "multi"
     return results
 
 def scrape_wolt(store):
@@ -1373,6 +1378,11 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
         return False
     wolt_only = store in ("Bravo", "Neptun", "Tamstore", "Rahat")
     old = track_changes(store, data, hist)
+    src = WOLT_SRC.get(store, "single") if wolt_only else None
+    prev_src = (data.get("meta", {}).get(store) or {}).get("src", "single")
+    if src and src != prev_src:
+        print(f"  [{store}] qiymət mənbəyi dəyişdi ({prev_src} → {src}): bu dəfə dəyişiklik nişanı qoyulmur")
+        old = {}
     today = datetime.now().strftime("%Y-%m-%d")
     old_day = _iso((data.get("meta", {}).get(store) or {}).get("updated", "")) or _iso(data.get("last_updated", ""))
     for cid in CATEGORIES:
@@ -1388,6 +1398,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None):
         "own": sum(len(v) for v in own_res.values()),
         "wolt": sum(len(v) for v in wolt_res.values()),
     }
+    if src: data["meta"][store]["src"] = src
     return True
 
 # ── MAIN ─────────────────────────────────────────────────────────────────

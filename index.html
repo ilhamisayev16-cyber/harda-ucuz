@@ -1005,7 +1005,7 @@ async function load(){
     const P=await Promise.race([pj,new Promise(r=>setTimeout(()=>r(null),3000))]);   // yalnız eyni data və eyni sayt kodu üçün hazırlanıbsa; gecikərsə gözlənilmir
     PRE=P&&P.v===DB.last_updated&&P.s===siteHash()?P.g:null;
     route();
-    if(PRE) setTimeout(warm,300);
+    if(PRE) setTimeout(()=>window.requestIdleCallback?requestIdleCallback(warm,{timeout:3000}):warm(),4000);   // yükləmə bitəndən sonra boş vaxtda (TBT-yə düşməsin); axtarışa toxunanda dərhal
   }catch(e){ $("errmsg").textContent=e.message; $("error").hidden=false; }
   finally{ $("loading").hidden=true; }
 }

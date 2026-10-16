@@ -417,3 +417,20 @@ def test_icon_lists_have_no_duplicate_keys_and_every_icon_has_svg():
     emo = re.compile("[\U0001F300-\U0001FAFF☀-➿⏰-⏿⬀-⯿]️?")
     missing = {e for e in emo.findall(body) if "-".join(f"{ord(ch):x}" for ch in e if ch != "️") not in have}
     assert not missing, missing
+
+
+def test_own_plus_wolt_store_multi_branch_switch_skips_only_wolt_badges(monkeypatch):
+    d = S.empty_data()
+    d["categories"]["sud"]["stores"]["Araz"] = [{"name": "Süd Atena 1 l", "price": 2.0}, {"name": "Kefir Atena 1 l", "wolt_price": 2.0}]
+    d["meta"] = {"Araz": {"updated": "15.10.2026 07:00"}}
+    monkeypatch.setitem(S.WOLT_SRC, "Araz", "multi-" + S.WOLT_SRC_VER)
+    own = {"sud": [{"name": "Süd Atena 1 l", "price": 1.8}]}
+    wolt = {"sud": [{"name": "Kefir Atena 1 l", "wolt_price": 1.8}]}
+    assert S.apply_to_data(own, wolt, "Araz", d, {})
+    by = {i["name"]: i for i in d["categories"]["sud"]["stores"]["Araz"]}
+    assert by["Süd Atena 1 l"]["pp"] == 2.0                  # öz sayt qiymət dəyişikliyi qalır
+    assert "pp" not in by["Kefir Atena 1 l"]                 # Wolt üsulu dəyişib: median fərqi nişan deyil
+    assert d["meta"]["Araz"]["src"] == "multi-" + S.WOLT_SRC_VER
+    monkeypatch.delitem(S.WOLT_SRC, "Araz")                  # növbəti gün Wolt alınmadı: üsul yaddaşda qalır
+    assert S.apply_to_data(own, {}, "Araz", d, {})
+    assert d["meta"]["Araz"]["src"] == "multi-" + S.WOLT_SRC_VER

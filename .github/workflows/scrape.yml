@@ -19,7 +19,7 @@ concurrency:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 200   # çoxfilialli Wolt kataloqları uzun çəkir (GitHub limiti 360)
     steps:
       - uses: actions/checkout@v7
         with:
@@ -35,7 +35,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Scraper işlət
-        timeout-minutes: 85   # aşarsa da hazır olan mağazalar aşağıda commit olunur
+        timeout-minutes: 180   # aşarsa da hazır olan mağazalar aşağıda commit olunur
         env:
           PYTHONUNBUFFERED: "1"
           WOLT_ENABLED: ${{ vars.WOLT_ENABLED || '1' }}   # Settings → Variables → WOLT_ENABLED=0: Wolt sorğuları dayandırılır (köhnə data silinmir)

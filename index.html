@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-raYOaKPnmSWReQCfhEHQ21C2epa0wkNZJXetuyUvk3Y='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S1JL/C7lSNVTg6Sv7vx7lp+a5vAU5Njqv11dMA3Ce3s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -227,14 +227,26 @@ details.more-f summary::-webkit-details-marker{display:none}
 .sum .r small{color:var(--mute);font-weight:500}
 .sum .ideal{margin-top:8px;padding-top:10px;border-top:1px dashed var(--line);font-size:14px}
 .sum .btns{display:flex;gap:8px;margin-top:10px}
-.drops{margin:0 0 16px}
-.drops h2{margin:0 0 8px;font-size:17px}
-.drop{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:6px}
-.drop .t{min-width:0;flex:1}
-.drop .t b{display:block;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.drop .t small{color:var(--mute);font-size:12px}
-.drop .pr{text-align:right;white-space:nowrap}
-.drop .pr s{color:var(--mute);font-size:12px;margin-right:6px}
+.drops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 16px}
+.drops h2{grid-column:1/-1;margin:0;font-size:17px}
+.drop{display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px 6px}
+.drop .em{font-size:20px;line-height:1}
+.drop b.n{font-size:11.5px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:3.75em;overflow-wrap:anywhere}
+.drop small{display:flex;align-items:center;gap:3px;min-width:0;color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden}
+.drop .pr{display:flex;flex-direction:column;align-items:flex-start;gap:1px;margin-top:auto;line-height:1.2}
+.drop .pr s{color:var(--mute);font-size:11px}
+.drop .pr b{font-size:14px;white-space:nowrap}
+.drop .pr .chg{margin-left:0;font-size:10.5px}
+@media (min-width:600px){
+  .drops{gap:8px}
+  .drop{gap:4px;padding:10px;border-radius:14px}
+  .drop .em{font-size:22px}
+  .drop b.n{font-size:13px;-webkit-line-clamp:2;min-height:2.6em}
+  .drop small{font-size:12px}
+  .drop .pr{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:2px 6px}
+  .drop .pr s{font-size:12px}
+  .drop .pr b{font-size:16px}
+}
 @media (min-width:1000px){ body{zoom:1.25} .wrap{max-width:780px} .grid{grid-template-columns:repeat(3,1fr)} }
 @media (min-width:1300px){ body{zoom:1.45} }
 @media (min-width:1700px){ body{zoom:1.7} }
@@ -1090,12 +1102,13 @@ function renderDrops(){
   for(const [cid,c] of Object.entries(DB.categories)) for(const [s,l] of Object.entries(c.stores)) for(const it of l){
     if(!it.pp||!it.pd) continue; const p=it.price??it.wolt_price; if(p==null||p<.3) continue;
     const d=(it.pp-p)/it.pp; if(d<.08||d>.6||(Date.now()-new Date(it.pd))/864e5>7) continue;
-    const k=fold(it.name); if(seen.has(k)) continue; seen.add(k); out.push({s,g:g2[cid],n:it.name,p,pp:it.pp,d});
+    const k=fold(it.name); if(seen.has(k)) continue; seen.add(k); out.push({s,g:g2[cid],c:cid,n:it.name,p,pp:it.pp,d});
   }
-  out.sort((a,b)=>b.d-a.d); const top=out.slice(0,8);
+  out.sort((a,b)=>b.d-a.d); const top=out.slice(0,4);
   $("drops").hidden=top.length<3;
   $("drops").innerHTML=top.length<3?"":`<h2>🔥 Son günlərdə ucuzlayanlar</h2>`+top.map(x=>
-    `<button class="drop" data-g="${x.g}" data-q="${esc(x.n)}"><span class="t"><b>${esc(x.n)}</b><small><i class="dot" style="--c:var(--${x.s});display:inline-block"></i> ${x.s}</small></span>
+    `<button class="drop" data-g="${x.g}" data-q="${esc(x.n)}"><span class="em">${iconOf({name:x.n,t:x.g,c:x.c})}</span><b class="n">${esc(x.n)}</b>
+     <small><i class="dot" style="--c:var(--${x.s})"></i>${x.s}</small>
      <span class="pr"><s>${fmt(x.pp)}</s><b class="mono" style="color:var(--good)">${fmt(x.p)}</b><em class="chg dn">↓ ${Math.round(x.d*100)}%</em></span></button>`).join("");
 }
 

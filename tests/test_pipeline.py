@@ -1,5 +1,6 @@
 import copy
 import json
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -358,3 +359,61 @@ def test_clean_name_strips_trailing_barcode():
 def test_index_csp_hash_matches_inline_script():
     r = subprocess.run(["node", str(ROOT / "scripts" / "csp_hash.js"), "--check"], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
+
+
+# ── məhsul ikonu: dad/ətir sözü məhsulun özünü üstələmir, hər ikonun öz SVG faylı var ──
+ICON_CASES = [
+    ("Lays Maxx Barbekü Toyuq Qanadı Çipsi 100qr", "hazir", "cips", "🥔"),
+    ("Fanat Suxarı Toyuqlu Ketçuplu 80qr", "hazir", "cips", "🥨"),
+    ("Lays MAXX Pizza 4 Pendir 100 Gr", "hazir", "cips", "🥔"),
+    ("Kaija Losos File 170 gr Tomat Kremli", "konserv", "konserv", "🐟"),
+    ("Dardanel Ton Balığı Qarğıdalı ilə 185qr", "konserv", "konserv", "🐟"),
+    ("Sloboda Provansal Zeytunlu Mayonez 67% Paket, 400 ml", "yag_sous", "mayonez", "🫙"),
+    ("Biscolata Vafli 117 Q Minis Findiqli 18", "sirniyyat", "vafli", "🧇"),
+    ("Natura Şaftalı Şirəsi 1 l", "iceckiler", "sire", "🧃"),
+    ("Lipton Soyuq Çay Şaftalı Ətirli 500ml", "iceckiler", "soyuq_cay", "🧋"),
+    ("Badamlı Premium Qazlı Su Şb 0.33l", "iceckiler", "qazli_su", "🫧"),
+    ("Badamlı Qazsız Su Pet 500ml", "iceckiler", "su", "💧"),
+    ("Greenfield Earl Grey Fantazy 50 qr", "iceckiler", "cay", "🍵"),
+    ("Bella Pambiq Disk 80 Li", "gigiyena", "beden_baximi", "🧴"),
+    ("Colgate Total Diş Məcunu 75ml", "gigiyena", "dis_baximi", "🪥"),
+    ("Doneqal Dırnaq Pilkasi Art P010", "gigiyena", "beden_baximi", "💅"),
+    ("Hacker Ağcaqanad Üçün Maye 480 saat", "ev", "temizlik", "🦟"),
+    ("Aura Şam Ətirli Kofe 32 Saat", "ev", "mesis", "🕯️"),
+    ("Domestos Tualet Geli 750ml Şam Ağacı Təravətli", "ev", "temizlik", "🚽"),
+    ("Abc Yuyucu Toz Lavanda Avtomat Paket 3kq", "ev", "yuyucu", "🧺"),
+    ("Titiz Diş Fırça Qabı 268-2685", "ev", "yuyucu", "🪥"),
+    ("Fairy Qab Yuyucu Maye Limon Ətirli 650 ml", "ev", "qabyuyan", "🧽"),
+    ("Poltino Dondurulmuş Albalı Çəyirdəksiz 400 qr", "hazir", "dondurulmus", "🍒"),
+    ("Vici Brokoli 400 Q Dondurulmuş", "hazir", "dondurulmus", "🥦"),
+    ("Köz Künəfə Dondurulmuş 135 qr", "hazir", "dondurulmus", "🍯"),
+    ("Super Sun Yarpaq Dolması 300 qr", "hazir", "hazir_yemek", "🥘"),
+    ("Miad Alman Yağı Eximo 1 kq", "hazir", "dondurulmus", "🧈"),
+    ("Alma Granny Smith kq", "meyve", "alma", "🍏"),
+    ("Konti \"Сладкое Созвучие\" Шоколад", "sirniyyat", "konfet", "🍫"),
+]
+
+
+def test_product_icons():
+    js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
+const cases={json.dumps([c[:3] for c in ICON_CASES], ensure_ascii=False)};
+console.log(JSON.stringify(cases.map(([name,t,c])=>api.iconOf({{name,t,c}}))));"""
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr[-500:]
+    got = json.loads(r.stdout.strip())
+    bad = [(c[0], c[3], g) for c, g in zip(ICON_CASES, got) if g != c[3]]
+    assert not bad, bad
+
+
+def test_icon_lists_have_no_duplicate_keys_and_every_icon_has_svg():
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+    body = html[html.index("const EMOJI={"):html.index("const ICON_ALL")]
+    for name, lst in re.findall(r'(\w+):IC\(\{([\s\S]*?)\}\)', body):
+        keys = re.findall(r'"([^"]+)":"', lst)
+        assert len(keys) == len(set(keys)), (name, [k for k in keys if keys.count(k) > 1])
+    have = {p.stem for p in (ROOT / "assets" / "twemoji").glob("*.svg")}
+    listed = set(re.search(r'var HAVE=new Set\("([^"]+)"', (ROOT / "assets" / "twemoji.js").read_text()).group(1).split())
+    assert listed == have
+    emo = re.compile("[\U0001F300-\U0001FAFF☀-➿⏰-⏿⬀-⯿]️?")
+    missing = {e for e in emo.findall(body) if "-".join(f"{ord(ch):x}" for ch in e if ch != "️") not in have}
+    assert not missing, missing

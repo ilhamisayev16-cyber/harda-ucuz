@@ -197,7 +197,9 @@ function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body })
 <meta property="og:image" content="${esc(SITE)}og.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#e35600">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🛒%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="${SITE}favicon.ico" sizes="48x48">
+<link rel="icon" href="${SITE}assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="${SITE}assets/icons/apple-touch-icon.png">
 <style>
 :root{--bg:#faf6ee;--card:#fff;--ink:#281505;--mute:#6b5a46;--line:#eedcc4;--brand:#e35600;--good:#0f9d58;--good-soft:#e6f6ee;
 --Bravo:#d93025;--OBA:#0b79d0;--Araz:#8e44ad;--Neptun:#0f9d58;--Tamstore:#e6a100;--Rahat:#c2185b;--Bazarstore:#00897b;--SPAR:#7cb342}

@@ -282,12 +282,21 @@ WOLT_SLUGS = {
 # Mühit dəyişəni ilə əvəz etmək olar: WOLT_BRANCHES_BRAVO=slug1,slug2
 WOLT_BRANCHES = {
     "Bravo": ["bravo-hypermarket-koroglu", "bravo-radiozavod", "bravo-supermarket-globus-centre",
-              "bravo-supermarket-yeni-yasamal", "bravo-azadlig-avenue", "bravo-supermarket-5-sayli-xestexana"],
+              "bravo-supermarket-yeni-yasamal", "bravo-azadlig-avenue", "bravo-supermarket-5-sayli-xestexana",
+              # 2026-10-16: 56 filial ölçülüb, 100-dən çox yeni məhsul verənlər əlavə olunub (15971 -> 16946)
+              "bravo-hypermarket-20-yanvar", "bravo-supermarket-bakixanov", "bravo-supermarket-babek-pr-ti-2004",
+              "bravo-superstore-genclik-mall", "bravo-supermarket-masazr"],
     # Neptun və Tamstore qiymətləri filiallarda eynidir (sınaq: 100% uyğun); filiallar yalnız çeşidi artırır
     "Neptun": ["neptun-supermarket-narimanovv", "neptun-supermarket-28", "neptun-supermarket-ag-sheher",
-               "neptun-8-mkr", "neptun-supermarket-3-mkr"],
+               "neptun-8-mkr", "neptun-supermarket-3-mkr",
+               # 2026-10-16: 12 filial ölçülüb (10853 -> 11609)
+               "market11",   # market11 = Neptun Tbilisi prospekti
+               "neptun-supermarket-xirdalan", "neptun-supermarket-xalqlar"],
     "Tamstore": ["tamstore-narimanov-1", "tamstore-genclik", "tamstore-yeni-yasamal", "tamstore-papanin",
-                 "tamstore-olimpik-star", "tamstore-bineqedi"],
+                 "tamstore-olimpik-star", "tamstore-bineqedi",
+                 # 2026-10-16: 30 filial ölçülüb (8333 -> 9849)
+                 "tamstore-xetai", "tamstore-sumqayit", "tamstore-masazir", "tamstore-novxani",
+                 "tamstore-superstore-khirdalan", "tamstore-badamdar", "tamstore-bayil"],
     # 2026-10-16 sınağı (filialın verdiyi yeni məhsul sayı ilə sıralanıb; ~100-dən az yeni verən filiallar götürülməyib).
     # Araz: 20 Yanvar tək 6554 -> 8 filial 10599; qiymətlər filiallarda 94-99.9% eyni.
     "Araz": ["araz-supermarket-20-yanvarr", "araz-novxani-superstore-f", "araz-supermarket-sumgait-9-microdistrict",

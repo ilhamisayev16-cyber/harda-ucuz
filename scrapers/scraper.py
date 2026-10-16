@@ -270,7 +270,7 @@ WOLT_SLUGS = {
     "Araz":   ["araz-supermarket-20-yanvarr", "araz-supermarket-narimanov", "araz-supermarket-yasamal",
                "araz-supermarket-28-may"],
     "Tamstore": ["tamstore-narimanov-1", "tamstore-papanin"],
-    "Rahat":  ["rahat-supermarket-yasamal"],
+    "Rahat":  ["rahat-supermarket-yasamal", "rahat-supermarket-azadlig", "rahat-supermarket-bayil"],
     "Neptun": ["neptun-supermarket-28", "neptun-supermarket-narimanovv", "neptun-8-mkr",
                "neptun-supermarket-xalqlar"],
     "SPAR":   ["spar-axundov", "araz-spar-1-3mkr", "araz-supermarket-hacibeyli"],
@@ -282,12 +282,34 @@ WOLT_SLUGS = {
 # Mühit dəyişəni ilə əvəz etmək olar: WOLT_BRANCHES_BRAVO=slug1,slug2
 WOLT_BRANCHES = {
     "Bravo": ["bravo-hypermarket-koroglu", "bravo-radiozavod", "bravo-supermarket-globus-centre",
-              "bravo-supermarket-yeni-yasamal", "bravo-azadlig-avenue", "bravo-supermarket-5-sayli-xestexana"],
+              "bravo-supermarket-yeni-yasamal", "bravo-azadlig-avenue", "bravo-supermarket-5-sayli-xestexana",
+              # 2026-10-16: 56 filial ölçülüb, 100-dən çox yeni məhsul verənlər əlavə olunub (15971 -> 16946)
+              "bravo-hypermarket-20-yanvar", "bravo-supermarket-bakixanov", "bravo-supermarket-babek-pr-ti-2004",
+              "bravo-superstore-genclik-mall", "bravo-supermarket-masazr"],
     # Neptun və Tamstore qiymətləri filiallarda eynidir (sınaq: 100% uyğun); filiallar yalnız çeşidi artırır
     "Neptun": ["neptun-supermarket-narimanovv", "neptun-supermarket-28", "neptun-supermarket-ag-sheher",
-               "neptun-8-mkr", "neptun-supermarket-3-mkr"],
+               "neptun-8-mkr", "neptun-supermarket-3-mkr",
+               # 2026-10-16: 12 filial ölçülüb (10853 -> 11609)
+               "market11",   # market11 = Neptun Tbilisi prospekti
+               "neptun-supermarket-xirdalan", "neptun-supermarket-xalqlar"],
     "Tamstore": ["tamstore-narimanov-1", "tamstore-genclik", "tamstore-yeni-yasamal", "tamstore-papanin",
-                 "tamstore-olimpik-star", "tamstore-bineqedi"],
+                 "tamstore-olimpik-star", "tamstore-bineqedi",
+                 # 2026-10-16: 30 filial ölçülüb (8333 -> 9849)
+                 "tamstore-xetai", "tamstore-sumqayit", "tamstore-masazir", "tamstore-novxani",
+                 "tamstore-superstore-khirdalan", "tamstore-badamdar", "tamstore-bayil"],
+    # 2026-10-16 sınağı (filialın verdiyi yeni məhsul sayı ilə sıralanıb; ~100-dən az yeni verən filiallar götürülməyib).
+    # Araz: 20 Yanvar tək 6554 -> 8 filial 10599; qiymətlər filiallarda 94-99.9% eyni.
+    "Araz": ["araz-supermarket-20-yanvarr", "araz-novxani-superstore-f", "araz-supermarket-sumgait-9-microdistrict",
+             "araz-supermarket-space-glass-plaza", "araz-supermarket-xirdalan", "araz-supermarket-nefilr",
+             "araz-supermarket-narimanov", "araz-yasamal-3-superstore-f"],
+    # OBA-nın Wolt kataloqu kiçikdir (~1000/filial); əsas qiymətlər öz saytındandır. 995 -> 1437.
+    "OBA": ["oba-market-nerimanov-1", "oba-market-masazir-2", "oba-market-badamdar"],
+    # Rahat: Yasamal 5515 -> 13648. Rahat Gourmet filialları başqa çeşid saxlayır (supermarketlə ~120 ortaq məhsul).
+    # "Ingilab" filialı ~6% ucuzdur: Azadlıq da əlavə olunub ki, median bir filiala bağlı qalmasın.
+    "Rahat": ["rahat-supermarket-yasamal", "rahat-supermarket-ingilab", "rahat-supermarket-azadlig",
+              "rahat-gourmet-buzovna", "rahat-gourmet-mardakan", "rahat-gourmet-nasimi"],
+    # SPAR: Axundov 4175 -> 3 filial 7802; qiymətlər 98% eyni.
+    "SPAR": ["spar-axundov", "araz-spar-1-3mkr", "araz-supermarket-hacibeyli"],
 }
 
 def wolt_slugs(store):
@@ -1563,11 +1585,14 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     if old_n >= 200 and new_n < 0.4 * old_n:   # natamam nəticə əvvəlki etibarlı datanı əvəz etməsin
         print(f"  [{store}] ⚠ nəticə kəskin azalıb ({old_n} → {new_n}) — köhnə qiymətlər saxlanıldı")
         return False
-    src = WOLT_SRC.get(store, "single-" + WOLT_SRC_VER) if wolt_only else None
+    # Öz saytı olan mağazada (Araz, OBA) Wolt qiyməti yalnız Wolt-da olan məhsullarda göstərilir: üsul dəyişəndə
+    # yalnız onların nişanı buraxılır, öz sayt qiymətlərinin dəyişikliyi adi qaydada qeyd olunur.
+    src = WOLT_SRC.get(store, "single-" + WOLT_SRC_VER) if wolt_only or any(wolt_res.values()) else None
     prev_src = (data.get("meta", {}).get(store) or {}).get("src", "single")
     if src and src != prev_src and store in data.get("meta", {}):
-        print(f"  [{store}] qiymət mənbəyi dəyişdi ({prev_src} → {src}): bu dəfə dəyişiklik nişanı qoyulmur")
-        old = {}
+        print(f"  [{store}] qiymət mənbəyi dəyişdi ({prev_src} → {src}): bu dəfə Wolt qiymətlərinə dəyişiklik nişanı qoyulmur")
+        old = {} if wolt_only else {k: v for k, v in old.items() if "price" in v}
+    src = src or (prev_src if prev_src != "single" else None)   # Wolt bu dəfə alınmayıbsa əvvəlki üsul yaddaşda qalır
     today = now().strftime("%Y-%m-%d")
     old_day = _iso((data.get("meta", {}).get(store) or {}).get("updated", "")) or _iso(data.get("last_updated", ""))
     for cid in CATEGORIES:

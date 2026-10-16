@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S1JL/C7lSNVTg6Sv7vx7lp+a5vAU5Njqv11dMA3Ce3s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HaQ+SDuoxxvQcTC78DJ0ote6/X3ITPq83qN7XPeT0ew='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -215,6 +215,15 @@ details.more-f summary::-webkit-details-marker{display:none}
 .bk-i .qty button{width:34px;height:34px;font-size:18px}
 .bk-i .qty b{min-width:20px}
 .bk-i .x{flex:none;width:34px;height:34px;border:0;background:none;color:var(--mute);font-size:18px;border-radius:50%}
+.bk-a{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
+.bk-ah{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.bk-ah>small{color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bk-a .nm{border:0;background:none;padding:0;text-align:left}
+.bk-a .nm b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.3}
+.bk-ap{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;font-size:13px}
+.bk-ap b{color:var(--good);font-size:15px}
+.bk-ap small{color:var(--mute);font-size:12px}
+.bk-a .btn{flex:none;min-height:38px;padding:0 12px}
 .bk .btns{display:flex;gap:8px;margin-top:12px}
 .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 32px);background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 14px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
 .toast span{white-space:nowrap}
@@ -1248,7 +1257,41 @@ function renderList(){
     <div class="qty"><button data-bq="-1" data-k="${esc(f.k)}" aria-label="Azalt">−</button><b>${f.q}</b><button data-bq="1" data-k="${esc(f.k)}" aria-label="Artır">+</button></div>
     <button class="x" data-del="${esc(f.k)}" aria-label="Səbətdən çıxar">✕</button></div>`
     :`<div class="bk-i"><span class="nm"><b>${esc(f.n)}</b><small>Bu məhsul artıq tapılmadı</small></span><button class="x" data-del="${esc(f.k)}" aria-label="Sil">✕</button></div>`).join("")+
-    `<div class="btns"><button class="btn" id="favCopy">📋 Kopyala</button><button class="btn" id="favClear">🗑 Təmizlə</button></div>`;
+    `<div class="btns"><button class="btn" id="favCopy">📋 Kopyala</button><button class="btn" id="favClear">🗑 Təmizlə</button></div>`+altHtml(ok);
+}
+/* daha ucuz alternativ (səbətin altında): eyni alt növ, ölçü dəqiq eyni (500 q yalnız 500 q ilə, çevirmə yoxdur), eyni satış növü və faiz.
+   Növ sözləri = alt növdə ən azı 2 kartda olan, marka olmayan (çox vaxt adın ilk sözü olan) sözlər. Səbətdəki məhsulun növ sözlərinin hamısı
+   alternativdə olmalıdır, alternativin növ sözləri də səbətdəkində olmalıdır (Ice, Decaf, Bel tiri kimi fərq olmasın);
+   rəqəmli sözlər (10 əd, N1, 3ü 1də) eyni olmalıdır. Növ sözü yoxdursa və ya ölçü oxunmursa təklif edilmir. Arxiv qiymətlər götürülmür. */
+const TW={};
+const tkOf=x=>x.tk||(x.tk=tokens(x.fd));
+const loOf=x=>{ let b=null; for(const [s,o] of Object.entries(x.offers)) if(!o.st&&(!b||o.p<b.p)) b={s,p:o.p}; return b; };
+const sizeKey=x=>isKg(x.a)?"kq":x.a.wv!=null?fmtSize(x.a):null;
+function altOf(g){
+  const sk=sizeKey(g), cur=loOf(g); if(!sk||!cur) return null;
+  const L=groups(g.t), k=g.t+"|"+g.c;
+  let m=TW[k]; if(!m){ const n=new Map(), ld=new Map(); for(const x of L) if(x.c===g.c){ const t=tkOf(x); for(const w of t) if(/^[a-z]+$/.test(w)) n.set(w,(n.get(w)||0)+1); if(t.lead) ld.set(t.lead,(ld.get(t.lead)||0)+1); }
+    m=TW[k]=new Map([...n].filter(([w,c])=>c>=2&&(ld.get(w)||0)*2<c)); }   // marka: sözün yarıdan çoxu adın əvvəlindədir
+  const tw=x=>{ const t=tkOf(x); return {w:[...t].filter(w=>m.has(w)), d:[...t].filter(w=>/\d/.test(w)).sort().join(" ")}; };
+  const A=tw(g); if(!A.w.length) return null; const aw=new Set(A.w);
+  let best=null;
+  for(const x of L){
+    if(x===g||x.c!==g.c||sizeKey(x)!==sk||x.a.fat!==g.a.fat) continue;
+    const lo=loOf(x); if(!lo||lo.p>cur.p-.005) continue;
+    const B=tw(x), bw=new Set(B.w); if(B.d!==A.d||!A.w.every(w=>bw.has(w))||B.w.some(w=>!aw.has(w))) continue;
+    if(!best||lo.p<best.lo.p||lo.p===best.lo.p&&x.n>best.x.n) best={x,lo};
+  }
+  return best&&{g,cur,...best};
+}
+function altHtml(ok){
+  const as=ok.map(({f,g})=>{ const a=altOf(g); return a&&{...a,f}; }).filter(Boolean); if(!as.length) return "";
+  const sv=as.reduce((t,a)=>t+(a.cur.p-a.lo.p)*a.f.q,0);
+  return `<h2>💡 Daha ucuz marka</h2><p class="bk-note" style="margin:0 0 8px">Eyni növ və eyni ölçü, ən ucuz olduğu mağaza ilə:</p>`+as.map(a=>{ const x=a.x, sz=isKg(x.a)?"1 kq":fmtSize(x.a);
+    return `<div class="bk-a"><div class="bk-ah"><small>Səbətdə: ${esc(a.g.name)} · ${esc(a.cur.s)} ${fmt(a.cur.p)}</small>
+      <button class="nm" data-go="#/c/${x.t}/${x.id}"><b>${esc(x.name)}</b></button>
+      <span class="bk-ap"><i class="dot" style="--c:var(--${a.lo.s})"></i>${esc(a.lo.s)} <b class="mono">${fmt(a.lo.p)}</b> <small>${esc(sz)} · −${fmt(a.cur.p-a.lo.p)}${a.f.q>1?" × "+a.f.q:""}</small></span></div>
+      <button class="btn" data-swap="${esc(a.f.k)}" data-to="${esc(favKey(x))}">Dəyiş</button></div>`; }).join("")+
+    (as.length>1?`<p class="bk-note">Hamısını dəyişsən: <b class="mono" style="color:var(--good)">−${fmt(sv)}</b></p>`:"");
 }
 function favText(){
   const {full}=basket();
@@ -1300,6 +1343,9 @@ document.addEventListener("click",async e=>{
   const qb=e.target.closest("[data-bq]");
   if(qb){ const f=FAV.find(x=>x.k===qb.dataset.k); if(f){ f.q=Math.max(1,Math.min(99,f.q+ +qb.dataset.bq)); saveFav(); renderList(); } return; }
   const gb=e.target.closest("#favList [data-go]"); if(gb){ go(gb.dataset.go); return; }
+  const sw=e.target.closest("[data-swap]");
+  if(sw){ const f=FAV.find(x=>x.k===sw.dataset.swap), t=f&&groups(f.t).find(g=>favKey(g)===sw.dataset.to);
+    if(t){ const d=FAV.find(x=>x.k===sw.dataset.to); if(d&&d!==f){ d.q=Math.min(99,d.q+f.q); FAV=FAV.filter(x=>x!==f); } else Object.assign(f,{k:sw.dataset.to,n:t.name}); saveFav(); renderList(); } return; }
   const db=e.target.closest("[data-del]"); if(db){ FAV=FAV.filter(f=>f.k!==db.dataset.del); saveFav(); renderList(); return; }
   if(e.target.closest("#favClear")){ if(confirm("Səbət təmizlənsin?")){ FAV=[]; saveFav(); renderList(); } return; }
   if(e.target.closest("#favCopy")){ const t=favText(); try{ await navigator.clipboard.writeText(t); e.target.textContent="✓ Kopyalandı"; }catch(x){ prompt("Kopyala:",t); } return; }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mFiK1w7E+DZ6zfnEpaB+zWCV2uOIy6tRguKvbI1LALM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -20,7 +20,9 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" href="data/prices.json" as="fetch" crossorigin>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🛒%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
 <style>
 :root{
   --bg:#faf6ee; --card:#fff; --ink:#281505; --mute:#6b5a46; --line:#eedcc4; --soft:#f6efe2;
@@ -323,14 +325,14 @@ const ICONS={
   yag_sous:IC({"🫒":"zeytun","🌻":"gunebaxan|bitki yag|qargidali yag","🧈":"kere|marqarin|spred","🍅":"ketcup|tomat|pomidor|ajvar","🫙":"mayonez","🌭":"xardal","🍶":"sirke|soya","🍯":"bal\\b","🧂":"duzu|duz\\b","🍬":"qend|seker|saxar|sirinlesd",
     "🌶️":"paprika|suneli|tozu|baharat|xmeli|istiot|pul biber|biber|cili|aci\\b|adjika|acika","🌿":"darcin|vanil|edviyyat|sumax|keklikotu|zire|hil\\b|reyhan|nane|dafna|zerdecal|sarikok|oregano|ziravat","🌾":"susam|kuncut","🧁":"maya\\b|qabartma|jelatin|nisasta|kisel|puding",
     "🫛":"noxud","🫘":"lobya|fasulya","🍄":"gobelek|sampinyon","🐟":"tuna|ton\\b|baliq|kilk|skumbr|sprot|siyenek","🥒":"xiyar|tursu|kornison","🥫":"sous|konserv"}),
-  usaq:IC({"👶":"bez|pants|tuman|pampers|huggies|molfix|lody|bebem","🧻":"salfet|desmal","🪥":"dis","🧼":"sabun","🧴":"shamp|body wash|sampun|krem|yag\\b|losyon|dus gel|kalonya","🍼":"aqusa|bebe|qida|pure|siyig|siyiq|qarisig|kasa|nestogen|similac|nutrilon|humana|bebelac|hipp","🧸":"oyuncaq"}),
+  usaq:IC({"👶":"bez|pants|tuman|pampers|huggies|molfix|lody|bebem","🧻":"salfet|desmal","🪥":"dis","🧼":"sabun","🧴":"shamp|body wash|sampun|krem|yag\\b|losyon|dus gel|kalonya","🍼":"fruto|nyanya|kabrita|friso|nan\\b|agusha|agusa|snail|tebii|virastu|pestili|koqda|kogda|pridonya|cicibebe|bebi|siresi|pecenye|aqusa|bebe|qida|pure|siyig|siyiq|qarisig|kasa|nestogen|similac|nutrilon|humana|bebelac|hipp","🧸":"oyuncaq"}),
   gigiyena:IC({"🪒":"teras|tras|ulgu|gillette|razor|bic\\b","🪥":"dis|mecun|colgate|blend-a|sensodyne|oral-b|splat","🎨":"sac boya|boya|palette|syoss color|garnier color","🧼":"sabun|soap|safeguard|protex","🚿":"dus|dush","🧻":"tualet kag|kagiz|rulon|salfet|desmal",
     "🌸":"qadin bez|qadin|tampon|gundelik|always|kotex|libresse|molped|bella|etir|parfum|tualet suyu","💄":"miselyar|makiyaj|skrab|dodaq|pomada|tus|maskara|lak\\b|kosmetik|pudra|eyeliner|dirnaq","💇":"daraq|sac\\b|shamp|elseve|fructis|pantene|syoss","🧴":"dezodorant|rolick|rexona|beden|body|nivea|sampun|balzam|kondision|krem|losyon|deo|antiperspirant|gel\\b|yag\\b"}),
-  ev:IC({"🔋":"batareya|akkumulyator","💡":"lampa|led\\b|lampoc","🕯️":"sam\\b","🔥":"kibrit|alisqan|zajiqal","🚽":"tualet blok|tualet|unitaz|sanitar","🎨":"laki\\b|lak\\b|boya","🧁":"qelib","🗑️":"zibil|paket|torba","🫙":"saxlama|qutu|konteyner|box\\b|orqanayzer","🍳":"tava|qazan|kastryul","☕":"fincan|stekan|stakan|bardaq|kruzka","🍽️":"bosqab|nelbeki|kasa|tarelka|qab\\b","🍴":"qasiq|catal|bicaq",
-    "🧽":"sunger|gubka|qubka|qabyuyan|fairy|pril","🧺":"powder|avtomat|automat|bingo|laska|yuyucu|ariel|persil|tide|losk|perwoll|kondisioner|yumsald|utu","🦟":"agcaqanad|bocek|raid|dixlofos|hasarat|milcek","🌬️":"hava terav|otaq etri|diffuzer|glade|air wick|ozon","🧤":"elcek",
-    "🧻":"folqa|fol\\b|perqament|bisirme|kagiz|salfet","🔌":"uzadici|rozetka","🪴":"guldan|torpaq","🫗":"surahi","🧹":"firca|supurge|sile|desmal|mop\\b|cleaning|cloth|swiffer","🧴":"agardici|ace\\b|domestos|cif\\b|temizl|vasite"}),
+  ev:IC({"🔋":"batareya|batareyka|duracell|energizer|panasonic|aku\\b|akkumulyator","💡":"lampa|led\\b|lampoc","🕯️":"sam\\b|candle|sham|mum\\b","🔥":"manqal|grill|kibrit|alisqan|zajiqal","🚽":"tualet blok|tualet|unitaz|sanitar","🎨":"laki\\b|lak\\b|boya","🧁":"qelib","🗑️":"zibil|paket|torba","🫙":"qapaq|banka|qapagi|duzenleyici|saxlama|qutu|konteyner|box\\b|orqanayzer","🍳":"aluminium|metbex|emal|tava|qazan|kastryul","☕":"fincan|stekan|stakan|bardaq|kruzka","🍽️":"qabi|bosqab|nelbeki|kasa|tarelka|qab\\b","🍴":"qasigi|cengel|qasiq|catal|bicaq",
+    "🧽":"mikrofiber|bez\\b|bezi|sunger|gubka|qubka|qabyuyan|fairy|pril","🧺":"powder|avtomat|automat|bingo|laska|yuyucu|ariel|persil|tide|losk|perwoll|kondisioner|yumsald|utu","🦟":"agcaqanad|bocek|raid|dixlofos|hasarat|milcek","🌬️":"teravet|air\\b|sprey|hava terav|otaq etri|diffuzer|glade|air wick|ozon","🧤":"elcek",
+    "🧻":"folqa|fol\\b|perqament|bisirme|kagiz|salfet","🔌":"uzadici|rozetka|elektrikli|et ceken|nemlendirici","🪴":"guldan|torpaq","🫗":"surahi","🧹":"doseme|yer bezi|silgisi|hesir|dustpan|vileda|lavatutto|terevez|moydadir|firca|supurge|sile|desmal|mop\\b|cleaning|cloth|swiffer","🧴":"agardici|ace\\b|domestos|cif\\b|temizl|vasite|boru|sokucu|cozucu|kirec|ovma|cistin|bref|porcoz|sican","🪣":"vedre|bucket|bowl|leyen|sovok|dustpan","⏰":"saat\\b|termometr","⚖️":"terezi","🧳":"camadan|seyahet|canta","✂️":"rezak|qayci","💇":"daraq","🍵":"caydan|caydani|termos","🥤":"kokteyl copu|pipet|copu","🚰":"su filtir|akvafor|pitcher|katric","🪡":"iyne","🧵":"paltar ipi","👞":"nabuk|zamsi|zamuj|zamshi","🎉":"party|yeni il|balon|hediyyelik|bayram","🥄":"suzgec|skimmer|aleti|acici","🪑":"masa\\b|stul|kreslo","🪝":"asilqan","🧰":"vends|kelbetin|qifil|vint|dubel|cekic"}),
   heyvan:IC({"🐱":"pisik|cat\\b|whiskas|felix|kitekat|sheba|friskies|perfect fit","🐶":"\\bit\\b|dog\\b|pedigree|chappi|darling","🐦":"qus|tutuqusu|budgie","🐠":"akvarium|baliq"}),
-  oyuncaq:IC({"🪆":"gelincik|kukla|barbie","🚗":"masin|car\\b|jeep","🧱":"blok|lego|konstruktor","🧸":"ayi|yumsaq oyuncaq","⚽":"top\\b|futbol","🚁":"helikopter|teyyare","🎹":"piano","📓":"defter|blokn","🐶":"it oyuncag|dog toy|pisik oyuncag","🎲":"planset|daska|puzzle|pazl","✏️":"pencil|pen\\b|texmarker|ruchka|qelem|karandas|marker","🖍️":"melki|rengli|flomaster","✂️":"qayci","📏":"xetkes","🎨":"plastilin|boya|akvarel","🧴":"yapisdir"}),
+  oyuncaq:IC({"🪆":"gelincik|kukla|barbie","🚗":"masin|car\\b|jeep","🧱":"blok|lego|konstruktor","🧸":"ayi|yumsaq oyuncaq|oyuncaq|supertoys|seti\\b|hekim|korpe|slaym|kopuk|tapanca|avengers|spiderman|skuter|polis|usta|qiz","⚽":"top\\b|futbol","🚁":"helikopter|teyyare","🎹":"piano","📓":"defter|blokn","🐶":"it oyuncag|dog toy|pisik oyuncag","🎲":"planset|daska|puzzle|pazl","✏️":"pencil|pen\\b|texmarker|ruchka|qelem|karandas|marker","🖍️":"melki|rengli|flomaster","✂️":"qayci","📏":"xetkes","🎨":"plastilin|boya|akvarel","🧴":"yapisdir"}),
   geyim:IC({"👟":"terlik|cekelek|ayaqqabi|krossovka|sandal","👕":"mayka|t-shirt|koynek|polo|body","🩲":"boxer|tuman|alt paltar","🧦":"corab|kolqotka|noski","🧥":"hoody|sviter|godekce|kurtka|sw-shirt","👖":"salvar|cins|jeans","🧣":"serf|sal\\b","🛏️":"yastiq|edyal|yorgan|mafres|dosek","🛁":"hamam desmal|desmal|xalat","🟫":"xalca|kilim"}),
   saglam:IC({"☕":"cikori|qehve","💪":"bombbar|qwik|snaq|protein|zulal","🍫":"baton|bar\\b|sokolad","🍪":"biskvit|pecenye|suski|qalet","🍬":"tablet|sirinlesd|steviya|fruktoz|diabet","🥣":"musli|muesli|yulaf|taxil|qranola","🧃":"lemonade|drink|sire","🥜":"findiq|fistiq|badam|qoz"}),
   tutun:IC({"🔥":"alisqan|zajiqal|kibrit","🚬":"."})
@@ -1003,7 +1005,7 @@ async function load(){
     const P=await Promise.race([pj,new Promise(r=>setTimeout(()=>r(null),3000))]);   // yalnız eyni data və eyni sayt kodu üçün hazırlanıbsa; gecikərsə gözlənilmir
     PRE=P&&P.v===DB.last_updated&&P.s===siteHash()?P.g:null;
     route();
-    if(PRE) setTimeout(warm,300);
+    if(PRE) setTimeout(()=>window.requestIdleCallback?requestIdleCallback(warm,{timeout:3000}):warm(),4000);   // yükləmə bitəndən sonra boş vaxtda (TBT-yə düşməsin); axtarışa toxunanda dərhal
   }catch(e){ $("errmsg").textContent=e.message; $("error").hidden=false; }
   finally{ $("loading").hidden=true; }
 }

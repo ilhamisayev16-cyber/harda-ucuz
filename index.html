@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ycum8If8+xmyFuqaFvCa56hQoU/Nr/wQhVdnRbGTAPQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-wt+yG4RVTJshU8ssuogGEqNm4ZFMhMjRqRGRr8OzU9A='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -122,6 +122,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 .head>div{min-width:0}
 .item h3{margin:0;font-size:15px;line-height:1.3;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .meta{font-size:12px;color:var(--mute);margin-top:2px}
+.meta .tp{font-weight:600;color:var(--ink)}
 .best{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0 8px;padding:10px 12px;
   background:var(--good-soft);border-radius:12px;color:var(--good)}
 .best>span{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;min-width:0}
@@ -1085,6 +1086,7 @@ async function load(){
     const P=await Promise.race([pj,new Promise(r=>setTimeout(()=>r(null),3000))]);   // yalnız eyni data və eyni sayt kodu üçün hazırlanıbsa; gecikərsə gözlənilmir
     PRE=P&&P.v===DB.last_updated&&P.s===siteHash()?P.g:null;
     route();
+    setTimeout(()=>window.requestIdleCallback?requestIdleCallback(tpStart,{timeout:3000}):tpStart(),1000);   // növ etiketləri üçün indeks (boş vaxtda)
     if(PRE) setTimeout(()=>window.requestIdleCallback?requestIdleCallback(warm,{timeout:3000}):warm(),4000);   // yükləmə bitəndən sonra boş vaxtda (TBT-yə düşməsin); axtarışa toxunanda dərhal
   }catch(e){ $("errmsg").textContent=e.message; $("error").hidden=false; }
   finally{ $("loading").hidden=true; }
@@ -1200,13 +1202,64 @@ function bestOf(g){
   const sv=g.n>1?`<small>${fmt(g.save)} qənaət (ən bahadan)</small>`:`<small>yalnız bu mağazada</small>`;
   return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${fmt(e[1].p)}${unit(g)}</b></div>`;
 }
+/* növ etiketi: ad məhsulun nə olduğunu demirsə ("Merci Storck Knusper 250qr"), adın altında, ölçüdən əvvəl alt növ yazılır: "Şokolad · 250 q".
+   Alt növ scraper-də mağazanın öz kateqoriyası + ad üzrə təyin olunub, amma səhvsiz deyil; ona görə etiket yalnız etibarlı olanda çıxır:
+   - adda heç bir növ sözü yoxdur (hər hansı alt növ adının sözü və ya ingiliscəsi: şokolad, pendir, chocolate) — varsa ad özü deyir və ya ziddiyyət var;
+   - addakı sözlər başqa alt növü göstərmir: bütün məhsullarda əsasən (60%+) başqa alt növdə işlənən söz ("Skumbriya" balıqdır) etiketi söndürür;
+   - addakı ən azı bir söz (çox vaxt marka) başqa məhsullarda da əsasən bu alt növdə işlənir ("Storck" -> şokolad);
+   - kartdakı bütün mağazalar eyni alt növü deyir; alt növ ümumi deyil (digər, sağlam qida, dondurulmuş); meyvə-tərəvəz deyil (ad onsuz da növdür). */
+const TP_SKIP=/diger|^saglam$|^dondurulmus$/, TP_GRP=new Set(["meyve","sebze"]);
+const TP_NOISE=new Set([...Object.keys(UNITMAP),"eded","ede","pcs","paket","pak","qutu","sade","yeni"]);   // ölçü/qablaşdırma sözləri növ dəlili deyil
+let TPW=null, TPC=null, TPL=[];
+const TPK=new Map();   // xam söz -> kökləri (67 min adda sözlər çox təkrarlanır: fold/stem hər söz üçün bir dəfə)
+const tpWords=n=>{ const o=new Set();
+  for(const x of n.toLowerCase().split(/\s+/)){ let r=TPK.get(x);
+    if(!r){ r=[]; for(const w of fold(x).split(/[^a-z]+/)) if(w.length>1){ const s=stem(w); r.push(s);
+        const t=s.replace(/(s[iu]|y[iu]|[iu])$/,""); if(t.length>1&&t!==s) r.push(t); }   // yağı/südü/suyu -> yağ/süd/su (stem 4 hərfli sözə toxunmur)
+      TPK.set(x,r); }
+    for(const s of r) o.add(s); }
+  return [...o]; };
+/* indeks bir dəfə, alt növ-alt növ qurulur (setTimeout ilə hissə-hissə: 67 min ad telefonda səhifəni dondurmasın);
+   hazır olanda ekrandakı kartların alt sətri yenilənir. tpIdx(): eyni iş birdəfəyə (testlər) */
+let TPS=null;
+function tpStep(st){   // bir alt növün adlarını sayır; st: {i, ids, W, C}
+  const cid=st.ids[st.i++], c=DB.categories[cid];
+  for(const w of tpWords(c.name.replace(/[\/,()-]/g," "))) if(!CSTOP.has(w)) st.C.add(w);
+  const L=new Map();
+  for(const l of Object.values(c.stores)) for(const it of l) for(const w of tpWords(it.name)) L.set(w,(L.get(w)||0)+1);
+  for(const [w,v] of L){ const e=st.W.get(w); if(!e) st.W.set(w,{n:v,c:cid,k:v}); else { e.n+=v; if(v>e.k){ e.c=cid; e.k=v; } } }
+  if(st.i<st.ids.length) return false;
+  for(const k in SYN) for(const s of SYN[k].split(" ")) if(st.C.has(stem(s))) st.C.add(stem(fold(k)));   // chocolate -> şokolad
+  TPW=st.W; TPC=st.C; TPL=[...st.C].filter(t=>t.length>3); return true;
+}
+const tpNew=()=>({i:0,ids:Object.keys(DB.categories),W:new Map(),C:new Set()});
+function tpIdx(){ const st=tpNew(); if(st.ids.length) while(!tpStep(st)); }
+function tpStart(){
+  if(TPS||TPW||!DB) return; const st=TPS=tpNew(); if(!st.ids.length) return;
+  const run=()=>{ if(st!==TPS) return; if(!tpStep(st)) return void setTimeout(run,0);
+    for(const el of document.querySelectorAll(".item")){ const {a,g}=cardOf(el), m=a&&a.querySelector(".meta"); if(g&&m&&typeOf(g)) m.innerHTML=metaOf(g); } };
+  setTimeout(run,0);
+}
+const typeOf=g=>{ if(g.tp!==undefined) return g.tp;
+  const c=g.c;
+  if(!c||TP_SKIP.test(c)||TP_GRP.has(g.t)||!DB.categories[c]||(g.m&&g.m.some(x=>x.c!==c))) return g.tp="";
+  if(!TPW){ tpStart(); return ""; }   // indeks hələ hazır deyil: etiketsiz göstərilir, hazır olanda yenilənir
+  let ok=false; const nm=g.m?g.m.length:1;
+  for(const w of tpWords(g.name)){ if(TPC.has(w)||(w.length>4&&TPL.some(t=>w.startsWith(t)))) return g.tp="";   // "Şokoladniy", "Nektarin": növ sözü ilə başlayır
+    const e=w.length>2&&!TP_NOISE.has(w)&&TPW.get(w); if(!e||e.k/e.n<.6) continue;
+    if(e.c!==c){ if(e.n>=3) return g.tp=""; }
+    else if(e.n>=nm+2) ok=true; }   // dəstək: eyni söz başqa məhsullarda da əsasən bu alt növdədir (Storck, Felix, Snickers)
+  return g.tp=ok?catName(c):"";
+};
+const metaOf=g=>{ const a=g.a, tp=typeOf(g);
+  const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",fmtSize(a),a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
+  return `${tp?`<b class="tp">${esc(tp)}</b>${info?" · ":""}`:""}${esc(info||(tp?"":catName(g.c)))}`; };
 function card(g,o={}){
   const a=g.a, em=iconOf(g), on=isFav(g);
-  const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",fmtSize(a),a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
   return `<article class="item${hl===g.id&&!o.pre?" hl":""}" id="${o.pre||"r"}-${g.id}" data-t="${g.t}" data-id="${g.id}">
     <button class="fav${on?" on":""}" data-fav="1" aria-label="${on?"Səbətdən çıxar":"Səbətə əlavə et"}" aria-pressed="${on}">${on?"✓":"+"}</button>
     <div class="head"><div class="logo-p">${em}</div>
-    <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
+    <div><h3>${esc(g.name)}</h3><div class="meta">${metaOf(g)}</div></div></div>
     ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div>
     ${o.qty?`<div class="qty"><button data-q="-1" aria-label="Azalt">−</button><b>${o.qty}</b><button data-q="1" aria-label="Artır">+</button><span>${a.kg?"kq":"ədəd"}</span></div>`:""}</article>`;
 }

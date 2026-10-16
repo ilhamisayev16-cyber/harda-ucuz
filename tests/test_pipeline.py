@@ -332,6 +332,37 @@ const g=api.groups('sud'); console.log(JSON.stringify(g.map(x=>[x.name,Object.ke
     assert json.loads(r.stdout.strip()) == [["Qustiyar Qatılaşdırılmış Süd 370qr", 2]]
 
 
+# ── növ etiketi: ad növü demirsə alt növ yazılır, etibarlı deyilsə heç nə ──
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_type_label_only_when_name_hides_type_and_data_agrees(tmp_path):
+    sok = [{"name": n, "wolt_price": 5.0} for n in ["Merci Storck Knusper 250qr", "Merci Storck Südlü Şokolad 100qr",
+           "Storck Merci Tünd Şokolad 100qr", "Storck Toffifee 125qr", "Storck Riesen 105qr", "Milka Südlü Şokolad 90qr",
+           "Twix 50qr", "Skumbriya Merci 200qr"]]
+    bal = [{"name": n, "wolt_price": 3.0} for n in ["Santa Skumbriya Hisə 300qr", "Vici Skumbriya File 200qr", "Skumbriya Dondurulmuş kq"]]
+    db = {"stores": ["Bravo"], "groups": [{"id": "sirniyyat", "name": "Şirniyyat", "cats": ["sokolad"]},
+                                          {"id": "et", "name": "Ət, balıq", "cats": ["baliq"]}],
+          "categories": {"sokolad": {"name": "Şokolad", "stores": {"Bravo": sok}},
+                         "baliq": {"name": "Balıq", "stores": {"Bravo": bal}}}}
+    f = tmp_path / "db.json"; f.write_text(json.dumps(db, ensure_ascii=False))
+    js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
+api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
+const g=api.groups('sirniyyat'); const pre=Object.fromEntries(g.map(x=>[x.name,api.typeOf(x)]));   // indeks hazır deyil: etiket yox
+for(const x of g) delete x.tp; api.tpIdx();
+const out=Object.fromEntries(g.map(x=>[x.name,api.typeOf(x)]));
+const k=g.find(x=>x.name.includes('Knusper'));
+console.log(JSON.stringify({{pre,out,meta:api.metaOf(k)}}));"""
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr[-500:]
+    d = json.loads(r.stdout.strip())
+    assert not any(d["pre"].values())
+    o = d["out"]
+    assert o["Merci Storck Knusper 250qr"] == "Şokolad"          # ad növü demir, Storck/Merci başqa şokoladlarda da var
+    assert o["Milka Südlü Şokolad 90qr"] == ""                    # ad özü deyir
+    assert o["Twix 50qr"] == ""                                   # dəstəkləyən söz yoxdur (yalnız bir məhsul)
+    assert o["Skumbriya Merci 200qr"] == ""                       # "Skumbriya" başqa alt növü (balıq) göstərir
+    assert d["meta"] == '<b class="tp">Şokolad</b> · 250 q'
+
+
 # ── qiymət dəyişikliyi nişanı: mənbə dəyişikliyi və 2x-dən böyük sıçrayış dəyişiklik deyil ──
 def test_no_change_badge_on_source_switch_or_implausible_jump():
     old = {"Avokado əd": {"name": "Avokado əd", "price": 0.99, "wolt_price": 1.99},

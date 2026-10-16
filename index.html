@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HaQ+SDuoxxvQcTC78DJ0ote6/X3ITPq83qN7XPeT0ew='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ycum8If8+xmyFuqaFvCa56hQoU/Nr/wQhVdnRbGTAPQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -1259,39 +1259,47 @@ function renderList(){
     :`<div class="bk-i"><span class="nm"><b>${esc(f.n)}</b><small>Bu məhsul artıq tapılmadı</small></span><button class="x" data-del="${esc(f.k)}" aria-label="Sil">✕</button></div>`).join("")+
     `<div class="btns"><button class="btn" id="favCopy">📋 Kopyala</button><button class="btn" id="favClear">🗑 Təmizlə</button></div>`+altHtml(ok);
 }
-/* daha ucuz alternativ (səbətin altında): eyni alt növ, ölçü dəqiq eyni (500 q yalnız 500 q ilə, çevirmə yoxdur), eyni satış növü və faiz.
-   Növ sözləri = alt növdə ən azı 2 kartda olan, marka olmayan (çox vaxt adın ilk sözü olan) sözlər. Səbətdəki məhsulun növ sözlərinin hamısı
-   alternativdə olmalıdır, alternativin növ sözləri də səbətdəkində olmalıdır (Ice, Decaf, Bel tiri kimi fərq olmasın);
-   rəqəmli sözlər (10 əd, N1, 3ü 1də) eyni olmalıdır. Növ sözü yoxdursa və ya ölçü oxunmursa təklif edilmir. Arxiv qiymətlər götürülmür. */
+/* daha ucuz alternativ (səbətin altında). Növ: eyni alt növ, eyni faiz; növ sözləri = alt növdə ən azı 2 kartda olan, marka olmayan
+   (çox vaxt adın ilk sözü olan) sözlər, iki adda tam eyni olmalıdır (Ice, Decaf, Bel tiri kimi fərq olmasın); rəqəmli sözlər (N1, 3ü 1də, 20 əd) eyni.
+   Qiymət: adda yazılan ölçüdən vahid qiymət (qablaşdırılmış: 100 q / 100 ml, kq ilə satılan: 1 kq) — fərqli ölçülər də müqayisə olunur
+   (410 q 2.20 ₼ ↔ 600 q 3.30 ₼); kq ilə satılan yalnız kq ilə satılanla (Wolt-da "kq" yazılan qablaşdırma ola bilər). Ölçü vahidə çevrilə bilmirsə (ədəd), yalnız dəqiq eyni ölçü ilə müqayisə. Növ və ya ölçü oxunmursa təklif yoxdur.
+   Arxiv qiymətlər götürülmür. */
 const TW={};
 const tkOf=x=>x.tk||(x.tk=tokens(x.fd));
 const loOf=x=>{ let b=null; for(const [s,o] of Object.entries(x.offers)) if(!o.st&&(!b||o.p<b.p)) b={s,p:o.p}; return b; };
 const sizeKey=x=>isKg(x.a)?"kq":x.a.wv!=null?fmtSize(x.a):null;
+const uvOf=(x,p)=>{ if(isKg(x.a)) return {v:p,u:"kq"}; const r=upr(x,p); return r&&{v:r.v,u:r.u}; };   // 1 kq və ya 1 L qiyməti
 function altOf(g){
   const sk=sizeKey(g), cur=loOf(g); if(!sk||!cur) return null;
-  const L=groups(g.t), k=g.t+"|"+g.c;
+  const L=groups(g.t), k=g.t+"|"+g.c, cu=uvOf(g,cur.p);
   let m=TW[k]; if(!m){ const n=new Map(), ld=new Map(); for(const x of L) if(x.c===g.c){ const t=tkOf(x); for(const w of t) if(/^[a-z]+$/.test(w)) n.set(w,(n.get(w)||0)+1); if(t.lead) ld.set(t.lead,(ld.get(t.lead)||0)+1); }
     m=TW[k]=new Map([...n].filter(([w,c])=>c>=2&&(ld.get(w)||0)*2<c)); }   // marka: sözün yarıdan çoxu adın əvvəlindədir
   const tw=x=>{ const t=tkOf(x); return {w:[...t].filter(w=>m.has(w)), d:[...t].filter(w=>/\d/.test(w)).sort().join(" ")}; };
   const A=tw(g); if(!A.w.length) return null; const aw=new Set(A.w);
   let best=null;
   for(const x of L){
-    if(x===g||x.c!==g.c||sizeKey(x)!==sk||x.a.fat!==g.a.fat) continue;
-    const lo=loOf(x); if(!lo||lo.p>cur.p-.005) continue;
+    if(x===g||x.c!==g.c||x.a.fat!==g.a.fat) continue;
+    const lo=loOf(x); if(!lo) continue;
+    let key;
+    if(cu){ const u=uvOf(x,lo.p); if(!u||u.u!==cu.u||!x.a.kg!==!g.a.kg||u.v>cu.v*.99) continue; key=u.v; }
+    else{ if(sizeKey(x)!==sk||lo.p>cur.p-.005) continue; key=lo.p; }
     const B=tw(x), bw=new Set(B.w); if(B.d!==A.d||!A.w.every(w=>bw.has(w))||B.w.some(w=>!aw.has(w))) continue;
-    if(!best||lo.p<best.lo.p||lo.p===best.lo.p&&x.n>best.x.n) best={x,lo};
+    if(!best||key<best.key-1e-9||Math.abs(key-best.key)<1e-9&&(sizeKey(x)===sk)>(sizeKey(best.x)===sk)) best={x,lo,key};
   }
-  return best&&{g,cur,...best};
+  return best&&{g,cur,cu,...best,same:sizeKey(best.x)===sk};
 }
 function altHtml(ok){
   const as=ok.map(({f,g})=>{ const a=altOf(g); return a&&{...a,f}; }).filter(Boolean); if(!as.length) return "";
-  const sv=as.reduce((t,a)=>t+(a.cur.p-a.lo.p)*a.f.q,0);
-  return `<h2>💡 Daha ucuz marka</h2><p class="bk-note" style="margin:0 0 8px">Eyni növ və eyni ölçü, ən ucuz olduğu mağaza ilə:</p>`+as.map(a=>{ const x=a.x, sz=isKg(x.a)?"1 kq":fmtSize(x.a);
-    return `<div class="bk-a"><div class="bk-ah"><small>Səbətdə: ${esc(a.g.name)} · ${esc(a.cur.s)} ${fmt(a.cur.p)}</small>
+  const per=a=>a.cu.u==="kq"&&isKg(a.g.a)&&isKg(a.x.a)?{d:1,l:"kq"}:{d:10,l:a.cu.u==="kq"?"100 q":"100 ml"};   // kq ilə satılanlar 1 kq-a, qalanı 100 q / 100 ml-ə görə
+  const sv=as.filter(a=>a.same).reduce((t,a)=>t+(a.cur.p-a.lo.p)*a.f.q,0);
+  return `<h2>💡 Daha ucuz alternativ</h2><p class="bk-note" style="margin:0 0 8px">Eyni növ məhsul, 100 q / 1 kq qiymətinə görə ən ucuzu və onun mağazası:</p>`+as.map(a=>{ const x=a.x, sz=isKg(x.a)?"1 kq":fmtSize(x.a), szc=isKg(a.g.a)?"1 kq":fmtSize(a.g.a);
+    const P=a.cu&&per(a), up=v=>`${fmt(v/P.d)}/${P.l}`;
+    const note=a.same?`${esc(sz)} · −${fmt(a.cur.p-a.lo.p)}${a.f.q>1?" × "+a.f.q:""}`:`${esc(sz)} · ${up(a.key)} <s>${up(a.cu.v)}</s>`;
+    return `<div class="bk-a"><div class="bk-ah"><small>Səbətdə: ${esc(a.g.name)} · ${esc(a.cur.s)} ${fmt(a.cur.p)}${a.same?"":` (${esc(szc)})`}</small>
       <button class="nm" data-go="#/c/${x.t}/${x.id}"><b>${esc(x.name)}</b></button>
-      <span class="bk-ap"><i class="dot" style="--c:var(--${a.lo.s})"></i>${esc(a.lo.s)} <b class="mono">${fmt(a.lo.p)}</b> <small>${esc(sz)} · −${fmt(a.cur.p-a.lo.p)}${a.f.q>1?" × "+a.f.q:""}</small></span></div>
+      <span class="bk-ap"><i class="dot" style="--c:var(--${a.lo.s})"></i>${esc(a.lo.s)} <b class="mono">${fmt(a.lo.p)}</b> <small>${note}</small></span></div>
       <button class="btn" data-swap="${esc(a.f.k)}" data-to="${esc(favKey(x))}">Dəyiş</button></div>`; }).join("")+
-    (as.length>1?`<p class="bk-note">Hamısını dəyişsən: <b class="mono" style="color:var(--good)">−${fmt(sv)}</b></p>`:"");
+    (sv>.005&&as.filter(a=>a.same).length>1?`<p class="bk-note">Eyni ölçülüləri dəyişsən: <b class="mono" style="color:var(--good)">−${fmt(sv)}</b></p>`:"");
 }
 function favText(){
   const {full}=basket();

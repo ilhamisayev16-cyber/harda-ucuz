@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-leymlMQKnbGAHX9CKPFx/FAKAmfPnjg8hG7XKfcG9TU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-4EWk8b1RliNDk8S0y/2kdQnGRLLfD3Iqx8bThAqbm/I='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -233,15 +233,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 .bk-dl .na b{font-weight:500;font-size:12px}
 .bk-dl .sum2{border-top:1px dashed var(--line);margin-top:4px;padding-top:8px;font-weight:700}
 .bk-dl .sum2 b{font-weight:800}
-.bk-al{display:flex;flex-direction:column;gap:1px;padding:6px 0}
-.bk-al.cur{border-bottom:1px dashed var(--line);opacity:.85}
-.bk-al.cur .bk-ap b{color:var(--ink)}
-.bk-al>small{color:var(--mute);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em}
-.bk-al .nm2{font-size:14px;font-weight:600;line-height:1.3}
-.bk-sv{display:inline-block;align-self:flex-start;margin-top:4px;padding:2px 8px;border-radius:999px;background:var(--good-soft);color:var(--good);font-size:12px;font-weight:700}
-.bk-a2{display:block;margin-top:6px;white-space:normal!important;color:var(--mute);font-size:12px}
-.bk-ab{flex:none;display:flex;flex-direction:column;gap:6px}
-.bk-ab .btn.sm{min-height:34px;padding:0}
+.bk-sv{display:inline-block;padding:1px 7px;border-radius:999px;background:var(--good-soft);color:var(--good);font-size:12px;font-weight:700}
 .bk-a{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
 .bk-ah{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .bk-ah>small{color:var(--mute);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1412,23 +1404,19 @@ function altOf(g){
 function altHtml(ok){
   const as=ok.map(({f,g})=>{ const a=altOf(g); return a&&{...a,f}; }).filter(Boolean); if(!as.length) return "";
   const per=a=>a.cu.u==="əd"?{d:1,l:"ədəd"}:a.cu.u==="kq"&&a.g.a.kg&&a.x.a.kg?{d:1,l:"kq"}:{d:10,l:a.cu.u==="kq"?"100 q":"100 ml"};   // kq ilə satılan 1 kq-a, ədəd 1 ədədə, qalanı 100 q / 100 ml-ə görə
-  const szT=x=>isKg(x.a)&&x.a.kg?"kq ilə satılır":fmtSize(x.a).replace(/ədəd$/,"ədəd");
   const svOf=a=>a.cu?(a.cu.v-a.key)*amtOf(a.g)*a.f.q:(a.cur.p-a.lo.p)*a.f.q;   // səbətdəki eyni miqdar üçün
   const tot=as.reduce((t,a)=>t+svOf(a),0);
-  const row=(lbl,x,lo,u,P,cls)=>`<div class="bk-al${cls}"><small>${lbl}</small><b class="nm2">${esc(x.name)}</b>
-      <span class="bk-ap"><i class="dot" style="--c:var(--${lo.s})"></i>${esc(lo.s)} <b class="mono">${fmt(lo.p)}</b> <small>${esc(szT(x))}${u!=null?` · ${fmt(u/P.d)}/${P.l}`:""}</small></span></div>`;
-  return `<h2>💡 Daha ucuz alternativ</h2><p class="bk-note" style="margin:0 0 8px">Eyni növ (və ya oxşar, başqa marka) məhsul: qablaşdırılmış 100 q / 100 ml, kq ilə satılan 1 kq, ədədlə satılan 1 ədəd qiymətinə görə ən ucuzu.</p>`+as.map(a=>{
-    const P=a.cu&&per(a), sv=svOf(a), pct=a.cu?Math.round((1-a.key/a.cu.v)*100):Math.round((1-a.lo.p/a.cur.p)*100);
-    const amt=a.same?"":(a.cu?` (səbətdəki ${a.f.q>1?a.f.q+" × ":""}${esc(szT(a.g))} qədər)`:"");
+  /* sadə kart: səbətdəki (boz, bir sətir) -> alternativ, mağaza, qiymət, endirim faizi; ölçü fərqlidirsə vahid qiyməti də */
+  return `<h2>💡 Daha ucuz alternativ</h2>`+as.map(a=>{
+    const P=a.cu&&per(a), pct=a.cu?Math.round((1-a.key/a.cu.v)*100):Math.round((1-a.lo.p/a.cur.p)*100);
+    const uv=sizeKey(a.x)!==sizeKey(a.g)&&P?`<small>${fmt(a.key/P.d)}/${P.l} · səbətdəki ${fmt(a.cu.v/P.d)}</small>`:"";
     return `<div class="bk-a"><div class="bk-ah">
-      ${row("Səbətdə",a.g,a.cur,a.cu&&a.cu.v,P," cur")}
-      ${row(a.sim?"Oxşar məhsul, başqa marka":a.same?"Eyni ölçüdə daha ucuz":"Vahid qiyməti daha ucuz",a.x,a.lo,a.cu&&a.key,P,"")}
-      <span class="bk-sv">−${pct}% · ${fmt(sv)} qənaət${amt}</span>
-      ${a.alt2?`<small class="bk-a2">Eyni ölçüdə: ${esc(a.alt2.x.name)} · ${esc(a.alt2.lo.s)} <b class="mono">${fmt(a.alt2.lo.p)}</b></small>`:""}
-      ${a.alt3?`<small class="bk-a2">Başqa marka: <a href="#/c/${a.alt3.x.t}/${a.alt3.x.id}">${esc(a.alt3.x.name)}</a> · ${esc(a.alt3.lo.s)} <b class="mono">${fmt(a.alt3.lo.p)}</b>${P?` · ${fmt(a.alt3.key/P.d)}/${P.l}`:""}</small>`:""}</div>
-      <div class="bk-ab"><button class="btn" data-swap="${esc(a.f.k)}" data-to="${esc(favKey(a.x))}">Dəyiş</button>
-      <button class="btn sm" data-go="#/c/${a.x.t}/${a.x.id}" aria-label="Məhsula bax">↗</button></div></div>`; }).join("")+
-    (as.length>1&&tot>.005?`<p class="bk-note">Hamısını dəyişsən (eyni miqdarda): <b class="mono" style="color:var(--good)">−${fmt(tot)}</b></p>`:"");
+      <small>Səbətdə: ${esc(a.g.name)} · ${fmt(a.cur.p)}</small>
+      <button class="nm" data-go="#/c/${a.x.t}/${a.x.id}"><b>${esc(a.x.name)}</b></button>
+      <span class="bk-ap"><i class="dot" style="--c:var(--${a.lo.s})"></i>${esc(a.lo.s)} <b class="mono">${fmt(a.lo.p)}</b><span class="bk-sv">−${pct}%</span>${a.sim?`<small>başqa marka</small>`:""}</span>
+      ${uv}</div>
+      <button class="btn" data-swap="${esc(a.f.k)}" data-to="${esc(favKey(a.x))}">Dəyiş</button></div>`; }).join("")+
+    (tot>.005?`<p class="bk-note">Hamısını dəyişsən: <b class="mono" style="color:var(--good)">−${fmt(tot)}</b></p>`:"");
 }
 function favText(){
   const {full}=basket();

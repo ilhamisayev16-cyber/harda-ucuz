@@ -347,3 +347,14 @@ def test_no_change_badge_on_source_switch_or_implausible_jump():
     assert "pp" not in by["Kivi kq"]                        # 3.5 dəfə: real sayılmır
     assert "pp" not in by["Alma kq"]                        # köhnə yanıldıcı nişan da daşınmır
     assert list(hist) == [S._hk("Araz", "Banan kq")]
+
+
+def test_clean_name_strips_trailing_barcode():
+    assert S.clean_name("Yağ Svalya 200qr 82% 4770275045353") == "Yağ Svalya 200qr 82%"
+    assert S.clean_name("Şor Rb 1 Kg 2100419") == "Şor Rb 1 Kg 2100419"   # qısa kod toxunulmur
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_index_csp_hash_matches_inline_script():
+    r = subprocess.run(["node", str(ROOT / "scripts" / "csp_hash.js"), "--check"], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr

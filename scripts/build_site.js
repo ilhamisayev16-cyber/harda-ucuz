@@ -185,6 +185,7 @@ function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body })
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:${STATS ? " " + new URL(STATS).origin : ""}; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${esc(full)}</title>
 <meta name="description" content="${esc(desc.slice(0, 300))}">
 <link rel="canonical" href="${esc(url)}">

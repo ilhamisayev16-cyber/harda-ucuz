@@ -769,6 +769,7 @@ def clean_name(n):
     """Artıq boşluq, vergül/nöqtədən əvvəlki boşluq və sonda qalan vergül/defis atılır, TAM BÖYÜK hərfli ad normal yazılır:
     "FAIRY LIMON MAYE QABYUYAN , 750 ml" -> "Fairy Limon Maye Qabyuyan, 750 ml"."""
     n = _decaps(re.sub(r"\s+", " ", str(n)).strip())
+    n = re.sub(r"\s+\d{12,14}$", "", n)   # sonda qalan ştrix-kod (EAN) ada aid deyil
     n = re.sub(r"\s+([,.;:!?)%])", r"\1", n)
     n = re.sub(r"\(\s+", "(", n)
     return re.sub(r"[\s,;:\-]+$", "", n) or n

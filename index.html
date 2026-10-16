@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-VXxAlk+v5EGfIdfAQdxYlHSmxo8uSUcVPFcGH/2yKxI='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S1JL/C7lSNVTg6Sv7vx7lp+a5vAU5Njqv11dMA3Ce3s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -163,11 +163,13 @@ details.more-f summary::-webkit-details-marker{display:none}
 /* kompüterdə hər şey kiçik görünməsin: geniş ekranda miqyas böyüyür (150% yaxınlaşdırmağa ehtiyac qalmır) */
 /* sevimlilər, qiymət dəyişikliyi, vahid qiymət */
 .item{position:relative}
-.fav{position:absolute;top:6px;right:6px;width:40px;height:40px;border:0;background:none;font-size:24px;line-height:1;color:var(--mute);border-radius:50%}
-.fav.on{color:#e0245e}
-.fav:active{background:var(--soft)}
-.head>div:last-child{padding-right:30px}
-.favbtn{flex:none;position:relative;width:44px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:20px;color:#e0245e;padding:0}
+.fav{position:absolute;top:10px;right:10px;width:38px;height:38px;border:2px solid var(--brand);background:var(--card);color:var(--brand);font-size:22px;font-weight:800;line-height:1;border-radius:50%;padding:0}
+.fav.on{background:var(--good);border-color:var(--good);color:#fff;font-size:18px}
+.fav:active{transform:scale(.92)}
+.head>div:last-child{padding-right:36px}
+.favbtn{flex:none;position:relative;display:flex;align-items:center;justify-content:center;gap:6px;min-width:44px;height:44px;border:1px solid var(--line);background:var(--card);border-radius:12px;font-size:20px;padding:0 10px}
+.favbtn span{display:none;font-size:14px;font-weight:700}
+@media (min-width:600px){ .favbtn span{display:inline} }
 .favbtn i{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--brand);color:#fff;font:700 11px/18px system-ui;font-style:normal;text-align:center}
 .favbtn i:empty{display:none}
 .chg{font-style:normal;font-size:11px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:6px;white-space:nowrap}
@@ -179,6 +181,44 @@ details.more-f summary::-webkit-details-marker{display:none}
 .qty button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:20px;font-weight:700}
 .qty b{min-width:26px;text-align:center}
 .qty span{color:var(--mute);font-size:13px}
+/* səbət səhifəsi */
+.bk h2{margin:18px 0 8px;font-size:16px}
+.bk-top{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bk-top.one{grid-template-columns:1fr}
+.bk-c{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;min-width:0}
+.bk-c.first{background:var(--good-soft);border-color:var(--good)}
+.bk-c .s{display:flex;align-items:center;gap:6px;font-weight:700;font-size:15px}
+.bk-c .s em{font-style:normal;font-size:12px;font-weight:700;color:var(--mute)}
+.bk-c b{display:block;font-size:24px;font-weight:800;margin-top:4px;white-space:nowrap}
+.bk-c.first b{color:var(--good)}
+.bk-c small{display:block;font-size:12px;color:var(--mute);font-weight:600}
+.bk-c.first small{color:var(--good)}
+.bk-t{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;font-size:14px}
+.bk-t th,.bk-t td{padding:8px 10px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+.bk-t th{border-top:0;font-size:13px;background:var(--soft)}
+.bk-t th:first-child,.bk-t td:first-child{text-align:left;white-space:normal;width:100%}
+.bk-t td:first-child small{color:var(--mute);font-weight:600;white-space:nowrap}
+.bk-t .lo{color:var(--good);font-weight:700}
+.bk-t .na{color:var(--mute);font-size:12px}
+.bk-t tfoot td{font-weight:800;background:var(--soft)}
+.bk-r{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:6px;font-size:14px}
+.bk-r>span{display:flex;align-items:center;gap:8px;min-width:0}
+.bk-r small{display:block;color:var(--mute);font-size:12px}
+.bk-r b{white-space:nowrap}
+.bk-note{font-size:13px;color:var(--mute);margin:8px 0 0}
+.bk-i{display:flex;align-items:center;gap:10px;padding:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
+.bk-i .ic{flex:none;width:40px;height:40px;border-radius:10px;background:var(--soft);display:grid;place-items:center;font-size:22px}
+.bk-i .nm{flex:1;min-width:0;text-align:left;border:0;background:none;padding:0}
+.bk-i .nm b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.3}
+.bk-i .nm small{color:var(--mute);font-size:12px}
+.bk-i .qty{margin:0;gap:6px;flex:none}
+.bk-i .qty button{width:34px;height:34px;font-size:18px}
+.bk-i .qty b{min-width:20px}
+.bk-i .x{flex:none;width:34px;height:34px;border:0;background:none;color:var(--mute);font-size:18px;border-radius:50%}
+.bk .btns{display:flex;gap:8px;margin-top:12px}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:30;display:flex;align-items:center;gap:12px;width:max-content;max-width:calc(100% - 32px);background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 14px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast span{white-space:nowrap}
+.toast button{border:0;background:none;color:var(--brand);font-weight:800;padding:4px 0;white-space:nowrap}
 .sum{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,30,0,.06)}
 .sum h2{margin:0 0 8px;font-size:16px}
 .sum .r{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:10px;font-size:14px}
@@ -187,16 +227,26 @@ details.more-f summary::-webkit-details-marker{display:none}
 .sum .r small{color:var(--mute);font-weight:500}
 .sum .ideal{margin-top:8px;padding-top:10px;border-top:1px dashed var(--line);font-size:14px}
 .sum .btns{display:flex;gap:8px;margin-top:10px}
-.drops{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:0 0 16px}
+.drops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 16px}
 .drops h2{grid-column:1/-1;margin:0;font-size:17px}
-.drop{display:flex;flex-direction:column;gap:4px;min-width:0;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px}
-.drop .em{font-size:22px;line-height:1}
-.drop b.n{font-size:13px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
-.drop small{display:flex;align-items:center;gap:4px;color:var(--mute);font-size:12px}
-.drop .pr{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 6px;margin-top:auto}
-.drop .pr s{color:var(--mute);font-size:12px}
-.drop .pr .chg{margin-left:0}
-@media (min-width:600px){ .drops{grid-template-columns:repeat(4,1fr)} }
+.drop{display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px 6px}
+.drop .em{font-size:20px;line-height:1}
+.drop b.n{font-size:11.5px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:3.75em;overflow-wrap:anywhere}
+.drop small{display:flex;align-items:center;gap:3px;min-width:0;color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden}
+.drop .pr{display:flex;flex-direction:column;align-items:flex-start;gap:1px;margin-top:auto;line-height:1.2}
+.drop .pr s{color:var(--mute);font-size:11px}
+.drop .pr b{font-size:14px;white-space:nowrap}
+.drop .pr .chg{margin-left:0;font-size:10.5px}
+@media (min-width:600px){
+  .drops{gap:8px}
+  .drop{gap:4px;padding:10px;border-radius:14px}
+  .drop .em{font-size:22px}
+  .drop b.n{font-size:13px;-webkit-line-clamp:2;min-height:2.6em}
+  .drop small{font-size:12px}
+  .drop .pr{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:2px 6px}
+  .drop .pr s{font-size:12px}
+  .drop .pr b{font-size:16px}
+}
 @media (min-width:1000px){ body{zoom:1.25} .wrap{max-width:780px} .grid{grid-template-columns:repeat(3,1fr)} }
 @media (min-width:1300px){ body{zoom:1.45} }
 @media (min-width:1700px){ body{zoom:1.7} }
@@ -213,7 +263,7 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
     <input id="q" type="search" maxlength="100" placeholder="Məhsul axtar: süd, banan…" autocomplete="off" aria-label="Axtarış">
     <div class="results" id="results" role="listbox"></div>
   </div>
-  <button class="favbtn" id="favBtn" type="button" aria-label="Alış-veriş siyahım">♥<i id="favN"></i></button>
+  <button class="favbtn" id="favBtn" type="button" aria-label="Səbət">🧺<span>Səbət</span><i id="favN"></i></button>
 </div></header>
 
 <main class="wrap">
@@ -237,17 +287,17 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
     <p class="note" id="srcNote"></p>
     <p class="note">Qiymətlər mağazaların açıq saytlarından avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
       Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları öz sahiblərinə məxsusdur. Sayt cookie istifadə etmir, ziyarət sayı anonim hesablanır;
-      alış-veriş siyahısı yalnız sizin brauzerinizdə saxlanır. <a href="qiymetler/" style="color:inherit">Bütün qiymətlər (kateqoriyalar üzrə siyahı)</a> ·
+      səbət yalnız sizin brauzerinizdə saxlanır. <a href="qiymetler/" style="color:inherit">Bütün qiymətlər (kateqoriyalar üzrə siyahı)</a> ·
       <a href="haqqinda.html" style="color:inherit">Haqqında, şərtlər və məxfilik</a></p>
   </section>
 
   <section id="listView" hidden>
     <div class="bar">
       <button class="btn" id="back2" aria-label="Geri">←</button>
-      <h1 class="title">♥ Alış-veriş siyahım</h1>
+      <h1 class="title">🧺 Səbətim</h1>
     </div>
-    <div id="favSum"></div>
-    <div class="list" id="favList"></div>
+    <div class="bk" id="favSum"></div>
+    <div class="bk" id="favList"></div>
   </section>
 
   <section id="catView" hidden>
@@ -280,6 +330,7 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
     <p class="note"><b style="color:var(--good)">Yaşıl</b> — ən ucuz, <b style="color:var(--bad)">qırmızı</b> — ən baha.
       <sup>W</sup> — qiymət Wolt-dan götürülüb, rəf qiymətindən bir qədər yüksək ola bilər.</p>
   </section>
+  <div class="toast" id="toast" hidden><span>Səbətə əlavə olundu</span><button type="button" id="toastGo">Səbətə bax →</button></div>
 </main>
 
 <script>
@@ -998,7 +1049,7 @@ const uk=g=>g.a.kg?{v:g.min,u:"kq"}:upr(g,g.min);
 function chg(o){ if(!o.pp||!o.pd||o.pp===o.p) return ""; const d=(o.pp-o.p)/o.pp;
   if(Math.abs(d)<.02||(Date.now()-new Date(o.pd))/864e5>14) return "";
   return `<em class="chg ${d>0?"dn":"up"}" title="əvvəl ${fmt(o.pp)} · ${o.pd}">${d>0?"↓":"↑"} ${Math.round(Math.abs(d)*100)}%</em>`; }
-/* sevimlilər (alış-veriş siyahısı): brauzerdə saxlanır; məhsul = qrup + ad (data yenilənəndə kart nömrəsi dəyişir) */
+/* səbət (köhnə adı sevimlilər, açar "fav" qalır ki, əvvəlki siyahılar itməsin): brauzerdə saxlanır; məhsul = qrup + ad (data yenilənəndə kart nömrəsi dəyişir) */
 let FAV=[]; try{FAV=JSON.parse(localStorage.getItem("fav")||"[]");}catch(e){}
 const favKey=g=>g.t+"|"+g.fd;
 const isFav=g=>FAV.some(f=>f.k===favKey(g));
@@ -1144,7 +1195,7 @@ function card(g,o={}){
   const a=g.a, em=iconOf(g), on=isFav(g);
   const info=[a.kg?"kq ilə satılır · qiymət 1 kq üçün":"",fmtSize(a),a.fat!=null?trim(a.fat)+"%":""].filter(Boolean).join(" · ");
   return `<article class="item${hl===g.id&&!o.pre?" hl":""}" id="${o.pre||"r"}-${g.id}" data-t="${g.t}" data-id="${g.id}">
-    <button class="fav${on?" on":""}" data-fav="1" aria-label="Siyahıma əlavə et" aria-pressed="${on}">${on?"♥":"♡"}</button>
+    <button class="fav${on?" on":""}" data-fav="1" aria-label="${on?"Səbətdən çıxar":"Səbətə əlavə et"}" aria-pressed="${on}">${on?"✓":"+"}</button>
     <div class="head"><div class="logo-p">${em}</div>
     <div><h3>${esc(g.name)}</h3><div class="meta">${esc(info||catName(g.c))}</div></div></div>
     ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div>
@@ -1158,26 +1209,52 @@ function render(){
   $("more").textContent=`Daha çox göstər (${filtered.length-shown} qalıb)`;
 }
 
-/* ─────────── alış-veriş siyahısı ─────────── */
+/* ─────────── səbət: hər mağazada səbətin cəmi ───────────
+   Cəm yalnız səbətdəki bütün məhsulları olan mağazalar üçün sıralanır; məhsulu olmayan mağazaya qiymət uydurulmur,
+   o mağaza ayrıca "yoxdur: ..." ilə göstərilir. Qiymət = kartdakı qiymət × say (kq ilə satılanda kq sayı). */
+function basket(){
+  const rs=FAV.map(f=>({f,g:GM[f.t]?groups(f.t).find(g=>favKey(g)===f.k):null})), ok=rs.filter(x=>x.g), n=ok.length;
+  const tot=stores.map(s=>{ let t=0; const miss=[]; for(const {f,g} of ok){ const o=g.offers[s]; if(o) t+=o.p*f.q; else miss.push(g.name); } return {s,t,miss,h:n-miss.length}; }).filter(x=>x.h);
+  const full=tot.filter(x=>!x.miss.length).sort((a,b)=>a.t-b.t), part=tot.filter(x=>x.miss.length).sort((a,b)=>b.h-a.h||a.t-b.t);
+  return {rs,ok,n,full,part,ideal:ok.reduce((a,{f,g})=>a+g.min*f.q,0)};
+}
 function renderList(){
-  const rs=FAV.map(f=>({f,g:GM[f.t]?groups(f.t).find(g=>favKey(g)===f.k):null})), ok=rs.filter(x=>x.g);
-  $("favSum").innerHTML=""; 
-  if(!FAV.length){ $("favList").innerHTML='<div class="empty">Siyahı boşdur.<br>Məhsul kartında ♡ düyməsinə basıb əlavə et.</div>'; return; }
-  const tot=[]; for(const s of stores){ let t=0,h=0; for(const {f,g} of ok){ const o=g.offers[s]; if(o){ t+=o.p*f.q; h++; } } if(h) tot.push({s,t,h}); }
-  const n=ok.length, full=x=>x.h===n;
-  tot.sort((a,b)=>full(b)-full(a)||(full(a)?a.t-b.t:b.h-a.h||a.t-b.t));
-  const ideal=ok.reduce((a,{f,g})=>a+g.min*f.q,0), bf=tot.find(full);
-  $("favSum").innerHTML=n?`<div class="sum"><h2>Hansı mağaza daha ucuzdur?</h2>`+tot.map((x,i)=>
-    `<div class="r${i===0&&full(x)?" best1":""}"><span><i class="dot" style="--c:var(--${x.s})"></i>${x.s} <small>${x.h}/${n} məhsul</small></span><b class="mono">${fmt(x.t)}</b></div>`).join("")+
-    `<div class="ideal">Hər məhsulu ən ucuz mağazadan alsan: <b class="mono">${fmt(ideal)}</b>${bf&&bf.t-ideal>.005?` <small style="color:var(--good)">(−${fmt(bf.t-ideal)} qənaət)</small>`:""}</div>
-     <div class="btns"><button class="btn" id="favCopy">📋 Kopyala</button><button class="btn" id="favClear">🗑 Təmizlə</button></div></div>`:"";
-  $("favList").innerHTML=rs.map(({f,g})=>g?card(g,{pre:"f",qty:f.q}):
-    `<article class="item"><h3>${esc(f.n)}</h3><div class="meta">Bu məhsul artıq tapılmadı</div><button class="btn" data-del="${esc(f.k)}" style="margin-top:8px">Sil</button></article>`).join("");
-  $("favSum").dataset.n=n;
+  const {rs,ok,n,full,part,ideal}=basket(), dot=s=>`<i class="dot" style="--c:var(--${s})"></i>`;
+  $("favSum").innerHTML=""; $("favSum").dataset.n=n;
+  if(!FAV.length){ $("favList").innerHTML='<div class="empty">Səbət boşdur.<br>Məhsul kartında <b>+</b> düyməsinə basıb əlavə et.</div>'; return; }
+  let h="";
+  if(n){
+    const top=(full.length?full:part).slice(0,2);
+    h+=full.length?`<h2>${full.length>1?"Ən ucuz iki mağaza":"Səbətin hamısı yalnız bir mağazada var"}</h2>`
+      :`<h2>Səbətin hamısı heç bir mağazada yoxdur</h2><p class="bk-note">Ən çox məhsulu olan mağazalar (cəm yalnız olan məhsullar üçündür):</p>`;
+    h+=`<div class="bk-top${top.length<2?" one":""}">`+top.map((x,i)=>`<div class="bk-c${full.length&&x.t-top[0].t<.005?" first":""}">
+      <div class="s">${dot(x.s)}${esc(x.s)} <em>${i+1}.</em></div><b class="mono">${fmt(x.t)}</b>
+      <small>${x.miss.length?`${x.h}/${n} məhsul`:i===0?(top[1]?"ən ucuz":"tam səbət"):x.t-top[0].t<.005?"eyni qiymət":`+${fmt(x.t-top[0].t)} bahalı`}</small></div>`).join("")+`</div>`;
+    if(top.length){   // məhsul-məhsul müqayisə: ilk iki mağaza
+      h+=`<h2>Məhsul-məhsul</h2><table class="bk-t"><thead><tr><th>Məhsul</th>${top.map(x=>`<th>${esc(x.s)}</th>`).join("")}</tr></thead><tbody>`+
+        ok.map(({f,g})=>{ const ps=top.map(x=>g.offers[x.s]?g.offers[x.s].p*f.q:null), lo=Math.min(...ps.filter(v=>v!=null));
+          return `<tr><td>${esc(g.name)}${f.q>1?` <small>× ${f.q}${g.a.kg?" kq":""}</small>`:g.a.kg?" <small>1 kq</small>":""}</td>`+
+            ps.map(v=>v==null?`<td class="na">yoxdur</td>`:`<td class="mono${top.length>1&&ps.every(x=>x!=null)&&v===lo?" lo":""}">${fmt(v)}</td>`).join("")+`</tr>`; }).join("")+
+        `</tbody><tfoot><tr><td>Cəmi</td>${top.map(x=>`<td class="mono">${fmt(x.t)}</td>`).join("")}</tr></tfoot></table>`;
+    }
+    const rest=full.slice(2), rp=full.length?part:part.slice(2);
+    if(rest.length||rp.length) h+=`<h2>Digər mağazalar</h2>`+rest.map(x=>`<div class="bk-r"><span>${dot(x.s)}${esc(x.s)}</span><b class="mono">${fmt(x.t)} <small>+${fmt(x.t-full[0].t)}</small></b></div>`).join("")+
+      rp.map(x=>`<div class="bk-r"><span>${dot(x.s)}<span>${esc(x.s)} <small>${x.h}/${n} məhsul · yoxdur: ${x.miss.map(esc).join(", ")}</small></span></span></div>`).join("");
+    const bf=full[0]; if(n>1&&bf&&bf.t-ideal>.005) h+=`<p class="bk-note">Hər məhsulu ən ucuz olduğu mağazadan alsan: <b class="mono">${fmt(ideal)}</b> (−${fmt(bf.t-ideal)})</p>`;
+  }
+  $("favSum").innerHTML=h;
+  $("favList").innerHTML=`<h2>Səbətdəki məhsullar (${FAV.length})</h2>`+rs.map(({f,g})=>g?`<div class="bk-i"><span class="ic">${iconOf(g)}</span>
+    <button class="nm" data-go="#/c/${g.t}/${g.id}"><b>${esc(g.name)}</b><small>ən ucuz: ${esc(Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0][0])} <span style="white-space:nowrap">${fmt(g.min)}${unit(g)}</span></small></button>
+    <div class="qty"><button data-bq="-1" data-k="${esc(f.k)}" aria-label="Azalt">−</button><b>${f.q}</b><button data-bq="1" data-k="${esc(f.k)}" aria-label="Artır">+</button></div>
+    <button class="x" data-del="${esc(f.k)}" aria-label="Səbətdən çıxar">✕</button></div>`
+    :`<div class="bk-i"><span class="nm"><b>${esc(f.n)}</b><small>Bu məhsul artıq tapılmadı</small></span><button class="x" data-del="${esc(f.k)}" aria-label="Sil">✕</button></div>`).join("")+
+    `<div class="btns"><button class="btn" id="favCopy">📋 Kopyala</button><button class="btn" id="favClear">🗑 Təmizlə</button></div>`;
 }
 function favText(){
+  const {full}=basket();
   return FAV.map(f=>{ const g=GM[f.t]?groups(f.t).find(g=>favKey(g)===f.k):null; if(!g) return "• "+f.n+" × "+f.q;
-    const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0]; return `• ${g.name} × ${f.q} — ${e[0]} ${fmt(e[1].p)}`; }).join("\n");
+    const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0]; return `• ${g.name} × ${f.q} — ${e[0]} ${fmt(e[1].p)}`; }).join("\n")+
+    (full.length?"\n\nSəbətin cəmi: "+full.slice(0,2).map(x=>`${x.s} ${fmt(x.t)}`).join(", "):"");
 }
 
 /* ─────────── routing (hash): #/c/<qrup>[/<pNN məhsul | alt növ>] ─────────── */
@@ -1193,8 +1270,8 @@ function hit(){
 }
 function route(){
   if(!DB) return;
-  hit();
-  if(location.hash==="#/list"){ $("homeView").hidden=true; $("catView").hidden=true; $("listView").hidden=false; renderList(); window.scrollTo(0,0); return; }
+  hit(); $("toast").hidden=true;
+  if(location.hash==="#/sebet"||location.hash==="#/list"){ $("homeView").hidden=true; $("catView").hidden=true; $("listView").hidden=false; renderList(); window.scrollTo(0,0); return; }
   $("listView").hidden=true;
   const mq=location.hash.match(/\?q=(.*)$/); let qv=""; try{ qv=mq?decodeURIComponent(mq[1]):""; }catch(e){}
   const m=location.hash.match(/^#\/c\/([\w-]+)(?:\/([\w-]+))?/), p=m&&/^p\d+$/.test(m[2]||"")?m[2]:null;
@@ -1211,16 +1288,20 @@ const go=h=>{ location.hash===h?route():(location.hash=h); };
 /* ─────────── events ─────────── */
 const goHome=()=>{ $("q").value=""; $("results").innerHTML=""; go("#/"); };
 $("home").onclick=$("home2").onclick=goHome;
-$("favBtn").onclick=()=>go("#/list"); $("back2").onclick=()=>go("#/"); saveFav();
+$("favBtn").onclick=$("toastGo").onclick=()=>{ $("toast").hidden=true; go("#/sebet"); }; $("back2").onclick=()=>go("#/"); saveFav();
 $("drops").onclick=e=>{ const b=e.target.closest(".drop"); if(b) go("#/c/"+b.dataset.g+"?q="+encodeURIComponent(b.dataset.q)); };
+let toastT=0;
 const cardOf=el=>{ const a=el.closest(".item"); return a&&a.dataset.t?{a,g:(GROUPS[a.dataset.t]||[]).find(x=>x.id===a.dataset.id)}:{}; };
 document.addEventListener("click",async e=>{
   const fb=e.target.closest(".fav");
-  if(fb){ const {g}=cardOf(fb); if(!g) return; toggleFav(g); if(!$("listView").hidden) renderList(); else { const on=isFav(g); fb.classList.toggle("on",on); fb.textContent=on?"♥":"♡"; } return; }
-  const qb=e.target.closest(".qty button");
-  if(qb){ const {g}=cardOf(qb); const f=g&&FAV.find(x=>x.k===favKey(g)); if(f){ f.q=Math.max(1,Math.min(99,f.q+ +qb.dataset.q)); saveFav(); renderList(); } return; }
+  if(fb){ const {g}=cardOf(fb); if(!g) return; toggleFav(g); const on=isFav(g);
+    fb.classList.toggle("on",on); fb.textContent=on?"✓":"+"; fb.setAttribute("aria-pressed",on); fb.setAttribute("aria-label",on?"Səbətdən çıxar":"Səbətə əlavə et");
+    clearTimeout(toastT); $("toast").hidden=!on; if(on) toastT=setTimeout(()=>{$("toast").hidden=true;},3500); return; }
+  const qb=e.target.closest("[data-bq]");
+  if(qb){ const f=FAV.find(x=>x.k===qb.dataset.k); if(f){ f.q=Math.max(1,Math.min(99,f.q+ +qb.dataset.bq)); saveFav(); renderList(); } return; }
+  const gb=e.target.closest("#favList [data-go]"); if(gb){ go(gb.dataset.go); return; }
   const db=e.target.closest("[data-del]"); if(db){ FAV=FAV.filter(f=>f.k!==db.dataset.del); saveFav(); renderList(); return; }
-  if(e.target.closest("#favClear")){ if(confirm("Siyahı təmizlənsin?")){ FAV=[]; saveFav(); renderList(); } return; }
+  if(e.target.closest("#favClear")){ if(confirm("Səbət təmizlənsin?")){ FAV=[]; saveFav(); renderList(); } return; }
   if(e.target.closest("#favCopy")){ const t=favText(); try{ await navigator.clipboard.writeText(t); e.target.textContent="✓ Kopyalandı"; }catch(x){ prompt("Kopyala:",t); } return; }
   const ob=e.target.closest(".o");   // mağaza sətri: qiymət tarixçəsi
   if(ob){ const nx=ob.nextElementSibling; if(nx&&nx.classList.contains("o-h")){ nx.remove(); return; }

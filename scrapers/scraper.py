@@ -950,21 +950,40 @@ def empty_data():
         }
     }
 
+# ── Məhsul şəkli: mağazanın ÖZ saytındakı şəkil (2026-10-19 qərarı; Wolt şəkli götürülmür) ───────────────
+# "ph" = "<mağaza kodu>:<faylın yolu>", sayt tam linki index.html-dəki PH_BASE ilə qurur. Mağaza etiraz etsə: PH_OFF-a kodunu yaz.
+PH_PREFIX = {"o": "https://obafiles.blob.core.windows.net/oba-plus/",
+             "a": "https://b7x9kq.arazmarket.az/storage/products/",
+             "b": "https://bazarstore.az/images/thumbs/"}
+PH_OFF = set()   # məs. {"o"}: həmin mağazanın şəkilləri yazılmır
+_PH_RX = re.compile(r"[A-Za-z0-9][\w/.%-]*\.(?:png|jpe?g|webp)", re.I)
+
+def store_photo(code, url):
+    """Mağaza saytındakı şəkil linkini qısa "ph" dəyərinə çevirir; tanınmayan/placeholder link -> None."""
+    pre = PH_PREFIX.get(code)
+    if code in PH_OFF or not pre or not isinstance(url, str) or not url.startswith(pre): return None
+    rest = url[len(pre):]
+    if ".." in rest or any(x in rest.lower() for x in ("logoba", "default-image")) or not _PH_RX.fullmatch(rest):
+        return None   # OBA loqosu / Bazarstore-un "şəkil yoxdur" faylı
+    return f"{code}:{rest}"
+
 # ── OBA ──────────────────────────────────────────────────────────────────
 
+_OBA_IMG = re.compile(r'<img[^>]+src="([^"]+)"')
 _OBA_CARD = re.compile(
     r'<h3[^>]*>([^<]+)</h3>.*?<p class="color-mako[^>]*>([^<]*)</p>.*?'
     r'<span class="fs-lg-24 fs-20 lh-24 fw-400">([\d.,]+)</span>', re.S)
 OBA_STEP = 24
 
 def _oba_cards(html):
-    """(ad, kateqoriya, qiymət) — kart "<!-- Product card -->" ilə ayrılır."""
+    """(ad, kateqoriya, qiymət, şəkil linki) — kart "<!-- Product card -->" ilə ayrılır."""
     from html import unescape
     out = []
     for chunk in html.split("<!-- Product card -->")[1:]:
         m = _OBA_CARD.search(chunk)
         if not m: continue
-        out.append((unescape(m.group(1)).strip(), unescape(m.group(2)).strip(), m.group(3)))
+        im = _OBA_IMG.search(chunk)
+        out.append((unescape(m.group(1)).strip(), unescape(m.group(2)).strip(), m.group(3), unescape(im.group(1)) if im else ""))
     return out
 
 def scrape_oba():
@@ -989,13 +1008,17 @@ def scrape_oba():
             offsets = [start + i * OBA_STEP for i in range(8)]
             new_in_batch = 0
             for cards in ex.map(page, offsets):
-                for name, ocat, raw in cards:
+                for name, ocat, raw, img in cards:
                     price = clean_price(raw)
                     key = (name.lower(), price)
                     if not name or price is None or key in seen: continue
                     seen.add(key); total += 1; new_in_batch += 1
                     cat = classify(name, ocat)
-                    if cat: results[cat].append({"name": name, "price": price})
+                    if cat:
+                        e = {"name": name, "price": price}
+                        ph = store_photo("o", img)
+                        if ph: e["ph"] = ph
+                        results[cat].append(e)
             if new_in_batch == 0: empty += 1
             start += 8 * OBA_STEP
             print(f" {total}", end="", flush=True)
@@ -1053,6 +1076,8 @@ def scrape_araz():
                 seen.add(pid)
                 cat = classify(name, f"{title} > {p.get('category_title') or ''}")
                 e = {"name": name, "price": price}
+                ph = store_photo("a", (p.get("images") or [""])[0])
+                if ph: e["ph"] = ph
                 rp = clean_price(p.get("sales_price"))
                 if p.get("is_discount") and rp and rp > price: e["rp"] = rp   # adi qiymət (yalnız birləşdirmə üçün, yazılmır)
                 results[cat].append(e)
@@ -1064,6 +1089,11 @@ def scrape_araz():
 def _title(name):
     """"ALISHAAN BASMATI DÜYÜ 2 KQ" -> "Alishaan Basmati Düyü 2 Kq" (İ/I düzgün)."""
     return " ".join(w[:1].upper() + _low(w[1:]) if w[:1].isalpha() else _low(w) for w in name.split())
+
+def _bazar_photo(body):
+    """Məhsul kartındakı şəkil (lazy-load: data-lazyloadsrc, 360 px)."""
+    m = re.search(r'data-lazyloadsrc="([^"]+)"', body)
+    return store_photo("b", m.group(1)) if m else None
 
 def scrape_bazarstore_flat():
     """"Ehtiyat üsul: "Bütün məhsullar" siyahısı (1 səhifə = 10 məhsul), orderby=5 (ada görə) ilə sabit sıralama."""
@@ -1102,7 +1132,10 @@ def scrape_bazarstore_flat():
             price = clean_price(d.get("price"))
             if not name or price is None or name.replace(" ", "").isdigit(): continue   # adı yalnız kod olan məhsullar
             seen.add(pid); n += 1
-            results[classify(name, d.get("item_category") or "")].append({"name": _title(name), "price": price})
+            e = {"name": _title(name), "price": price}
+            ph = _bazar_photo(body)
+            if ph: e["ph"] = ph
+            results[classify(name, d.get("item_category") or "")].append(e)
         return n
     ingest(first)
     with ThreadPoolExecutor(max_workers=16) as ex:
@@ -1188,7 +1221,10 @@ def scrape_bazarstore():
             price = clean_price(d.get("price"))
             if not name or price is None or name.replace(" ", "").isdigit(): continue
             seen.add(pid); new += 1
-            results[classify(name, path)].append({"name": _title(name), "price": price})
+            e = {"name": _title(name), "price": price}
+            ph = _bazar_photo(body)
+            if ph: e["ph"] = ph
+            results[classify(name, path)].append(e)
         return new
     # kateqoriyalar çox üst-üstə düşür: növbəti səhifə yalnız əvvəlki səhifə yeni məhsul verən kateqoriyalar üçün çəkilir
     with ThreadPoolExecutor(max_workers=24) as ex:
@@ -1518,6 +1554,7 @@ def merge_own_wolt(own_list, wolt_list):
     merged = []
     for i, item in enumerate(own_list):
         entry = {"name": item["name"], "price": item["price"]}
+        if item.get("ph"): entry["ph"] = item["ph"]
         j = match.get(i)
         if j is not None:
             w = wolt_list[j]

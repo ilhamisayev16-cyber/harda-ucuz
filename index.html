@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-S+S5+JMht6LwsjQdaq1fTqSFdLeJUly+98+mXXg3ElY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-P66BwaBtJJWsleMfTR1Bp2Uwg4yXxOGeYQo68hAuC7Q='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -120,6 +120,7 @@ details.more-f summary::-webkit-details-marker{display:none}
 .head{display:flex;gap:12px;align-items:center}
 .logo-p{flex:none;width:60px;height:60px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:36px;overflow:hidden}
 img.ph{width:100%;height:100%;object-fit:contain;background:var(--soft);padding:4px;box-sizing:border-box}   /* məhsul şəkli (Open Food Facts) */
+img.ph.c{object-fit:cover;padding:0;background:#fff}   /* mağaza şəkli: kənarlarda çox boşluq var (Araz 16:9), mərkəz doldurur */
 .head>div{min-width:0}
 .item h3{margin:0;font-size:15px;line-height:1.3;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .meta{font-size:12px;color:var(--mute);margin-top:2px}
@@ -316,7 +317,7 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
     <p class="note" id="srcNote"></p>
     <p class="note">Qiymətlər mağazaların açıq saytlarından avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
       Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları öz sahiblərinə məxsusdur. Sayt cookie istifadə etmir, ziyarət sayı anonim hesablanır;
-      səbət yalnız sizin brauzerinizdə saxlanır. Məhsul şəkilləri: <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" style="color:inherit">Open Food Facts</a>
+      səbət yalnız sizin brauzerinizdə saxlanır. Məhsul şəkilləri: OBA, Araz və Bazarstore-un öz saytları və <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" style="color:inherit">Open Food Facts</a>
       iştirakçıları, <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.az" rel="noopener noreferrer" style="color:inherit">CC BY-SA 3.0</a>. <a href="qiymetler/" style="color:inherit">Bütün qiymətlər (kateqoriyalar üzrə siyahı)</a> ·
       <a href="haqqinda.html" style="color:inherit">Haqqında, şərtlər və məxfilik</a></p>
   </section>
@@ -441,11 +442,18 @@ const core=n=>{ const o=[]; let m=false; for(const x of n.split(/\s+/)){ const b
 const icon1=(L,s)=>{ for(const [r,e] of L) if(r.test(s)) return e; };
 const iconOf=g=>g.em||(g.em=(()=>{ const n=nrm(g.name), c=core(n), L=ICONS[g.t]||ICON_ALL;
   return (c!==n&&icon1(L,c))||icon1(L,n)||(ICON_MIX.has(g.c)&&icon1(ICON_FOOD,c))||EMOJI[g.c]||"📦"; })());
-/* məhsul şəkli: Open Food Facts (açıq baza, CC BY-SA), ştrix-koda görə (scrapers/off_images.py); mağazanın şəkli deyil.
-   Yoxdursa və ya yüklənməsə ikon göstərilir (aşağıdakı "error" dinləyicisi) */
+/* məhsul şəkli: mağazanın öz saytındakı şəkil (ph), yoxdursa Open Food Facts (açıq baza, CC BY-SA, ştrix-koda görə,
+   scrapers/off_images.py). Wolt şəkli istifadə olunmur. Heç biri yoxdursa və ya yüklənməsə ikon (aşağıdakı "error" dinləyicisi) */
 const OFF_IMG="https://images.openfoodfacts.org/images/products/", IM_RX=/^\d{3}\/\d{3}\/\d{3}\/\d+\/front_[a-z]{2,3}\.\d+$/;
-const picOf=g=>{ const em=iconOf(g); for(const s of stores){ const o=g.offers[s];
-    if(o&&o.im&&IM_RX.test(o.im)) return `<img class="ph" src="${OFF_IMG}${o.im}.200.jpg" alt="" loading="lazy" decoding="async" data-em="${esc(em)}">`; }
+/* mağazanın öz saytındakı şəkil ("ph" = "o|a|b:<fayl>", scraper.py store_photo); Open Food Facts-dən əvvəl gəlir */
+const PH_BASE={o:"https://obafiles.blob.core.windows.net/oba-plus/",b:"https://bazarstore.az/images/thumbs/"},
+  PH_RX=/^([oab]):([A-Za-z0-9][\w\/.%-]*\.(?:png|jpe?g|webp))$/i;
+const phUrl=ph=>{ const m=PH_RX.exec(ph||""); if(!m||m[2].includes("..")) return "";
+  return m[1]==="a"?"https://arazmarket.az/_next/image?url="+encodeURIComponent("https://b7x9kq.arazmarket.az/storage/products/"+m[2])+"&w=256&q=75"   // Arazın öz kiçildilmiş şəkli (orijinal ~500 KB)
+    :PH_BASE[m[1]]+m[2]; };
+const picOf=g=>{ const em=iconOf(g), img=(u,c)=>`<img class="ph${c?" c":""}" src="${esc(u)}" alt="" loading="lazy" decoding="async" data-em="${esc(em)}">`;
+  for(const s of stores){ const o=g.offers[s], u=o&&phUrl(o.ph); if(u) return img(u,1); }
+  for(const s of stores){ const o=g.offers[s]; if(o&&o.im&&IM_RX.test(o.im)) return img(`${OFF_IMG}${o.im}.200.jpg`); }
   return em; };
 /* ingiliscə ad / axtarış: ana kateqoriya adları və söz uyğunluqları (+ azərbaycanca ümumi sözlər) */
 const GEN={saglam:"healthy diet protein gluten free diabetic fitness pehriz",geyim:"clothes clothing shoes socks textile towel",konserv:"canned pickles olives",tutun:"tobacco cigarettes siqaret",meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
@@ -1058,7 +1066,7 @@ function usePre(it,pre){
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
-  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||""};
+  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",ph:it.ph||""};
 }
 
 /* ─────────── state ─────────── */

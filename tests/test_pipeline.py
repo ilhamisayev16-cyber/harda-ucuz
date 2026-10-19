@@ -544,3 +544,39 @@ def test_fluent_icon_list_matches_files_and_license():
     assert fl == files and len(fl) > 150
     assert fl <= {p.stem for p in (ROOT / "assets" / "twemoji").glob("*.svg")}   # Fluent yüklənməsə Twemoji-yə düşür
     assert "MIT License" in (ROOT / "assets" / "fluent" / "LICENSE").read_text(encoding="utf-8")
+
+
+# ── mağazanın öz saytındakı şəkil (OBA, Araz, Bazarstore; Wolt yox) ──
+def test_store_photo_short_form():
+    assert S.store_photo("o", "https://obafiles.blob.core.windows.net/oba-plus/catalog/3c43_002943.png") == "o:catalog/3c43_002943.png"
+    assert S.store_photo("a", "https://b7x9kq.arazmarket.az/storage/products/1000012609.png") == "a:1000012609.png"
+    assert S.store_photo("b", "https://bazarstore.az/images/thumbs/0000921_1-may-kq_360.jpeg") == "b:0000921_1-may-kq_360.jpeg"
+    for code, url in (("o", "https://obafiles.blob.core.windows.net/oba-plus/Logoba_20260420.png"),   # OBA-nın "şəkil yoxdur" loqosu
+                      ("b", "https://bazarstore.az/images/thumbs/default-image_360.png"),
+                      ("o", "https://evil.example/x.png"), ("b", "https://bazarstore.az/images/thumbs/../x.png"),
+                      ("b", "https://bazarstore.az/images/thumbs/x.svg"), ("w", "https://x/y.png"), ("a", None)):
+        assert S.store_photo(code, url) is None
+
+
+def test_merge_keeps_own_photo():
+    out = S.merge_own_wolt([{"name": "Süd 1 L", "price": 1.0, "ph": "a:1.png"}], [])
+    assert out == [{"name": "Süd 1 L", "price": 1.0, "ph": "a:1.png"}]
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_card_prefers_store_photo_then_open_food_facts(tmp_path):
+    db = {"stores": ["Araz", "Bravo"], "groups": [{"id": "sud", "name": "Süd", "cats": ["sud"]}],
+          "categories": {"sud": {"name": "Süd", "stores": {
+              "Araz": [{"name": "Azərsüd Süd 3.2% 1 l", "price": 2.8, "ph": "a:1000012609.png"},
+                       {"name": "Milla Süd 3.2% 1 l", "price": 2.7, "ph": "a:../x.png"}],
+              "Bravo": [{"name": "Azərsüd Süd 3.2% 1l", "wolt_price": 2.89, "im": "476/009/510/1025/front_az.3"},
+                        {"name": "Milla Süd 3.2% 1l", "wolt_price": 2.79, "im": "476/008/160/0037/front_ru.3"}]}}}}
+    f = tmp_path / "db.json"; f.write_text(json.dumps(db, ensure_ascii=False))
+    js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
+api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
+console.log(JSON.stringify(api.groups('sud').map(g=>[g.name.split(' ')[0],api.picOf(g)])));"""
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr[-500:]
+    got = dict(json.loads(r.stdout.strip()))
+    assert 'src="https://arazmarket.az/_next/image?url=https%3A%2F%2Fb7x9kq.arazmarket.az%2Fstorage%2Fproducts%2F1000012609.png&amp;w=256&amp;q=75"' in got["Azərsüd"]
+    assert "images.openfoodfacts.org/images/products/476/008/160/0037/front_ru.3.200.jpg" in got["Milla"]   # səhv "ph" keçilir

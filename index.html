@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-I3Qj369XIgw9bolS9WxpVvZNBq31/okXW9JjfJYPC6U='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3ZQ/wwsxYPsxzIpJZ4geDo5TTlhwhuf6JoTHDqAYqYU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -23,6 +23,10 @@
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Harda Ucuz">
 <style>
 :root{
   --bg:#faf6ee; --card:#fff; --ink:#281505; --mute:#6b5a46; --line:#eedcc4; --soft:#f6efe2;
@@ -72,6 +76,14 @@ button{cursor:pointer}
 /* home */
 h1.hero{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;line-height:1.15}
 .sub-h{margin:0 0 16px;color:var(--mute);font-size:14px}
+/* tətbiq kimi quraşdırma (PWA) və oflayn zolağı */
+.inst{display:flex;align-items:center;gap:10px;margin:0 0 16px;padding:10px 12px;background:var(--brand-soft);border:1px solid var(--line);border-radius:14px;font-size:14px}
+.inst[hidden],.offl[hidden]{display:none}
+.inst>span{flex:1;min-width:0}
+.inst small{display:block;color:var(--mute);font-size:12px}
+.inst .go{border:0;border-radius:10px;background:var(--brand);color:#fff;font-weight:700;padding:8px 12px;white-space:nowrap}
+.inst .x{border:0;background:none;color:var(--mute);font-size:18px;padding:4px 6px}
+.offl{margin:10px 0 0;padding:8px 12px;border-radius:12px;background:var(--soft);color:var(--mute);font-size:13px;text-align:center}
 .grid{display:grid;grid-template-columns:1fr;gap:8px}
 .cat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;text-align:left;
   display:flex;align-items:center;gap:12px;min-height:64px;min-width:0;box-shadow:0 1px 2px rgba(60,30,0,.05)}
@@ -306,6 +318,7 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
 </div></header>
 
 <main class="wrap">
+  <div class="offl" id="offl" hidden>📴 İnternet yoxdur: son saxlanmış qiymətlər göstərilir</div>
   <noscript><p>Sayt JavaScript tələb edir. Qiymətlərin sadə siyahısı: <a href="qiymetler/">Bütün qiymətlər</a>.</p></noscript>
   <div id="loading">
     <div class="skel" style="height:30px;width:70%;margin:18px 0 16px"></div>
@@ -320,6 +333,8 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
 
   <section id="homeView" hidden>
     <h1 class="hero">Ən sərfəli hardan almaq olar?</h1>
+    <div class="inst" id="inst" hidden><span>📲 <b>Telefona tətbiq kimi quraşdır</b><small id="instTxt">Ana ekrandan bir toxunuşla açılır, internetsiz də son qiymətlər görünür.</small></span>
+      <button class="go" id="instGo" type="button" hidden>Quraşdır</button><button class="x" id="instX" type="button" aria-label="Bağla">✕</button></div>
     <p class="sub-h">Bravo, OBA, Araz, Neptun, Tamstore, Rahat, Bazarstore və SPAR qiymətləri bir yerdə. Kateqoriya seç:</p>
     <div class="drops" id="drops" hidden></div>
     <div class="grid" id="catGrid"></div>
@@ -1554,6 +1569,21 @@ function warm(){ if(warmed||!DB) return; warmed=true; let i=0; const step=()=>{ 
 $("q").addEventListener("focus",warm,{once:true});
 $("results").onclick=e=>{const b=e.target.closest("[data-go]"); if(!b)return; $("results").innerHTML=""; $("q").value=""; go(b.dataset.go);};
 addEventListener("keydown",e=>{ if(e.key==="Escape"){$("results").innerHTML="";$("q").blur();zoomOff();} });
+/* ─────────── tətbiq (PWA): sw.js internetsiz açılış üçün saytın faylları və son datanı saxlayır ─────────── */
+if(typeof navigator==="object"&&typeof matchMedia==="function"){   // yalnız brauzerdə (build_site.js və testlər skripti node-da işlədir)
+if("serviceWorker" in navigator) addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
+const offl=()=>{ $("offl").hidden=navigator.onLine!==false; };
+addEventListener("online",offl); addEventListener("offline",offl); offl();
+/* quraşdırma təklifi: Android/Chrome-da sistem pəncərəsi, iPhone-da "Paylaş → Ana ekrana əlavə et" izahı; bağlansa bir daha göstərilmir */
+let instEv=null; const instOff=()=>{ try{return localStorage.getItem("instX")==="1";}catch(e){return false;} };
+const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+if(!standalone&&!instOff()&&/iPhone|iPad|iPod/.test(navigator.userAgent)){
+  $("instTxt").textContent="Safari-də aşağıdakı Paylaş düyməsinə (□↑), sonra “Ana ekrana əlavə et”-ə toxun."; $("inst").hidden=false; }
+addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); instEv=e; if(standalone||instOff()) return; $("instGo").hidden=false; $("inst").hidden=false; });
+$("instGo").onclick=async()=>{ if(!instEv) return; instEv.prompt(); try{ await instEv.userChoice; }catch(e){} instEv=null; $("inst").hidden=true; };
+$("instX").onclick=()=>{ $("inst").hidden=true; try{localStorage.setItem("instX","1");}catch(e){} };
+addEventListener("appinstalled",()=>{ $("inst").hidden=true; });
+}
 addEventListener("click",e=>{ if(!e.target.closest(".search")) $("results").innerHTML=""; });
 
 

@@ -601,3 +601,26 @@ console.log(JSON.stringify({{p:api.groups('sud').map(g=>[g.name.split(' ')[0],ap
     assert 'title="Foto: Open Food Facts"' in got["Atena"]
     assert out["b"] == ["https://arazmarket.az/_next/image?url=https%3A%2F%2Fb7x9kq.arazmarket.az%2Fstorage%2Fproducts%2F1.png&w=640&q=75",
                         "https://bazarstore.az/images/thumbs/1_x_360.jpeg"]   # böyük baxış: Araz 640 px, digərləri olduğu kimi
+
+
+def test_pwa_manifest_icons_and_service_worker():
+    m = json.loads((ROOT / "manifest.webmanifest").read_text(encoding="utf-8"))
+    assert m["display"] == "standalone" and m["start_url"] == "./" and m["scope"] == "./" and m["short_name"]
+    import struct
+    sizes = set()
+    for ic in m["icons"]:
+        b = (ROOT / ic["src"]).read_bytes()
+        assert b[:8] == b"\x89PNG\r\n\x1a\n", ic["src"]
+        w, h = struct.unpack(">II", b[16:24])   # IHDR: en, hündürlük
+        assert f"{w}x{h}" == ic["sizes"], ic["src"]
+        sizes.add((ic["sizes"], ic.get("purpose", "any")))
+    assert {("192x192", "any"), ("512x512", "any"), ("512x512", "maskable")} <= sizes   # Play Store / Chrome tələbi
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+    assert '<link rel="manifest" href="manifest.webmanifest">' in html and 'register("sw.js")' in html
+    sw = (ROOT / "sw.js").read_text(encoding="utf-8")
+    for f in re.search(r"const PRE = \[([^\]]*)\]", sw).group(1).replace("\n", " ").split(","):   # əvvəlcədən keşlənən fayllar mövcuddur
+        f = f.strip().strip('"')
+        assert f == "./" or (ROOT / f).exists(), f
+    if shutil.which("node"):
+        r = subprocess.run(["node", "--check", str(ROOT / "sw.js")], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr

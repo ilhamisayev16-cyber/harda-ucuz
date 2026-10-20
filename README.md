@@ -67,6 +67,11 @@ Scraper hər gün avtomatik işləyəcək.
 - "Wolta Özəl" kimi yalnız Wolt-a aid endirim kateqoriyalarındakı məhsullar götürülmür (bu endirim mağazanın rəfində yoxdur). Təxmini çevirmə (məs. Wolt qiymətindən faiz çıxmaq) edilmir.
 - Öz saytı yoxlanılıb, qiymətli kataloq tapılmayıb (2026-10): neptun.az (boş cavab), bravosupermarket.az, tamstore.az, rahatmarket.az (yalnız kampaniyalar). Bunlar üçün yeganə mənbə Wolt-dur.
 
+## Tətbiq (PWA)
+- `manifest.webmanifest` (ad, ikonlar `assets/icons/icon-*.png`) və `sw.js` (service worker): sayt telefona "tətbiq" kimi quraşdırılır, internetsiz son saxlanmış qiymətlərlə açılır.
+- `sw.js`: səhifələr və `data/*.json` əvvəlcə şəbəkədən (təzə qiymət), alınmasa keşdən; `assets/` əvvəlcə keşdən. Keş strukturu dəyişəndə `VER`-i artırın.
+- Play Store üçün: öz domen lazımdır (`/.well-known/assetlinks.json` domen kökündə olmalıdır), sonra PWABuilder (TWA) ilə paket.
+
 ## Mağazalar
 - **Bravo** → Wolt (bir neçə filial)
 - **Neptun** → Wolt (bir neçə filial)

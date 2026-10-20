@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-P66BwaBtJJWsleMfTR1Bp2Uwg4yXxOGeYQo68hAuC7Q='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-I3Qj369XIgw9bolS9WxpVvZNBq31/okXW9JjfJYPC6U='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -65,6 +65,9 @@ button{cursor:pointer}
 .res .lo{color:var(--good);font-weight:700}
 .cat-hit{background:var(--brand-soft)}
 .res strong{display:block;font-size:15px}
+.res.rp{display:flex;align-items:center;gap:10px}
+.res.rp>span:last-child{min-width:0}
+.res .rt{flex:none;width:52px;height:52px;border-radius:10px;background:var(--soft);display:grid;place-items:center;font-size:30px;overflow:hidden}
 
 /* home */
 h1.hero{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;line-height:1.15}
@@ -118,7 +121,13 @@ details.more-f summary::-webkit-details-marker{display:none}
 .item{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(60,30,0,.06)}
 .item.hl{background:var(--brand-soft);border-color:var(--brand)}
 .head{display:flex;gap:12px;align-items:center}
-.logo-p{flex:none;width:60px;height:60px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:36px;overflow:hidden}
+.logo-p{flex:none;width:92px;height:92px;border-radius:14px;background:var(--soft);display:grid;place-items:center;font-size:44px;overflow:hidden}
+.logo-p img.ph{cursor:zoom-in}
+.zoom{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.72);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;cursor:zoom-out}
+.zoom[hidden]{display:none}
+.zoom img{width:min(92vw,520px);max-height:70vh;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:18px;padding:12px}
+.zoom b{color:#fff;font-size:15px;text-align:center;max-width:520px}
+.zoom small{color:#ddd;font-size:12px}
 img.ph{width:100%;height:100%;object-fit:contain;background:var(--soft);padding:4px;box-sizing:border-box}   /* məhsul şəkli (Open Food Facts) */
 img.ph.c{object-fit:cover;padding:0;background:#fff}   /* mağaza şəkli: kənarlarda çox boşluq var (Araz 16:9), mərkəz doldurur */
 .head>div{min-width:0}
@@ -210,7 +219,7 @@ img.ph.c{object-fit:cover;padding:0;background:#fff}   /* mağaza şəkli: kəna
 .bk-r b{white-space:nowrap}
 .bk-note{font-size:13px;color:var(--mute);margin:8px 0 0}
 .bk-i{display:flex;align-items:center;gap:10px;padding:10px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
-.bk-i .ic{flex:none;width:40px;height:40px;border-radius:10px;background:var(--soft);display:grid;place-items:center;font-size:28px;overflow:hidden}
+.bk-i .ic{flex:none;width:56px;height:56px;border-radius:10px;background:var(--soft);display:grid;place-items:center;font-size:34px;overflow:hidden}
 .bk-i .nm{flex:1;min-width:0;text-align:left;border:0;background:none;padding:0}
 .bk-i .nm b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px;font-weight:600;line-height:1.3}
 .bk-i .nm small{color:var(--mute);font-size:12px}
@@ -260,7 +269,7 @@ img.ph.c{object-fit:cover;padding:0;background:#fff}   /* mağaza şəkli: kəna
 .drops{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:0 0 16px}
 .drops h2{grid-column:1/-1;margin:0;font-size:17px}
 .drop{display:flex;flex-direction:column;gap:3px;min-width:0;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:7px 6px}
-.drop .em{font-size:20px;line-height:1}
+.drop .em{font-size:28px;line-height:1;height:56px;display:grid;place-items:center;border-radius:8px;overflow:hidden;background:var(--soft)}
 .drop b.n{font-size:11.5px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:3.75em;overflow-wrap:anywhere}
 .drop small{display:flex;align-items:center;gap:3px;min-width:0;color:var(--mute);font-size:11px;white-space:nowrap;overflow:hidden}
 .drop .pr{display:flex;flex-direction:column;align-items:flex-start;gap:1px;margin-top:auto;line-height:1.2}
@@ -270,7 +279,7 @@ img.ph.c{object-fit:cover;padding:0;background:#fff}   /* mağaza şəkli: kəna
 @media (min-width:600px){
   .drops{gap:8px}
   .drop{gap:4px;padding:10px;border-radius:14px}
-  .drop .em{font-size:22px}
+  .drop .em{font-size:34px;height:84px}
   .drop b.n{font-size:13px;-webkit-line-clamp:2;min-height:2.6em}
   .drop small{font-size:12px}
   .drop .pr{flex-direction:row;flex-wrap:wrap;align-items:baseline;gap:2px 6px}
@@ -361,6 +370,7 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
     <p class="note"><b style="color:var(--good)">Yaşıl</b> — ən ucuz, <b style="color:var(--bad)">qırmızı</b> — ən baha.
       <sup>W</sup> — qiymət Wolt-dan götürülüb, rəf qiymətindən bir qədər yüksək ola bilər.</p>
   </section>
+  <div class="zoom" id="zoom" hidden role="dialog" aria-label="Məhsul fotosu"><img id="zoomImg" alt=""><b id="zoomN"></b><small id="zoomBy"></small></div>
   <div class="toast" id="toast" hidden><span>Səbətə əlavə olundu</span><button type="button" id="toastGo">Səbətə bax →</button></div>
 </main>
 
@@ -451,10 +461,13 @@ const PH_BASE={o:"https://obafiles.blob.core.windows.net/oba-plus/",b:"https://b
 const phUrl=ph=>{ const m=PH_RX.exec(ph||""); if(!m||m[2].includes("..")) return "";
   return m[1]==="a"?"https://arazmarket.az/_next/image?url="+encodeURIComponent("https://b7x9kq.arazmarket.az/storage/products/"+m[2])+"&w=256&q=75"   // Arazın öz kiçildilmiş şəkli (orijinal ~500 KB)
     :PH_BASE[m[1]]+m[2]; };
-const picOf=g=>{ const em=iconOf(g), img=(u,c)=>`<img class="ph${c?" c":""}" src="${esc(u)}" alt="" loading="lazy" decoding="async" data-em="${esc(em)}">`;
-  for(const s of stores){ const o=g.offers[s], u=o&&phUrl(o.ph); if(u) return img(u,1); }
-  for(const s of stores){ const o=g.offers[s]; if(o&&o.im&&IM_RX.test(o.im)) return img(`${OFF_IMG}${o.im}.200.jpg`); }
+const imgTag=(u,by,c,em)=>`<img class="ph${c?" c":""}" src="${esc(u)}" alt="" title="Foto: ${esc(by)}" loading="lazy" decoding="async" data-em="${esc(em)}">`;
+const picOf=g=>{ const em=iconOf(g);
+  for(const s of stores){ const o=g.offers[s], u=o&&phUrl(o.ph); if(u) return imgTag(u,s,1,em); }
+  for(const s of stores){ const o=g.offers[s]; if(o&&o.im&&IM_RX.test(o.im)) return imgTag(`${OFF_IMG}${o.im}.200.jpg`,"Open Food Facts",0,em); }
   return em; };
+/* böyük baxış üçün: Arazın kiçildilmiş şəklinin 640 px variantı (~18 KB); digərləri olduğu kimi */
+const bigUrl=u=>u.replace(/([?&]w=)256(?=&|$)/,"$1640");
 /* ingiliscə ad / axtarış: ana kateqoriya adları və söz uyğunluqları (+ azərbaycanca ümumi sözlər) */
 const GEN={saglam:"healthy diet protein gluten free diabetic fitness pehriz",geyim:"clothes clothing shoes socks textile towel",konserv:"canned pickles olives",tutun:"tobacco cigarettes siqaret",meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
   corek:"bread bakery",bakaliya:"grains rice pasta flour cereal",sirniyyat:"sweets chocolate biscuits candy dessert honey",
@@ -1150,12 +1163,12 @@ function renderDrops(){
   for(const [cid,c] of Object.entries(DB.categories)) for(const [s,l] of Object.entries(c.stores)) for(const it of l){
     if(!it.pp||!it.pd) continue; const p=it.price??it.wolt_price; if(p==null||p<.3) continue;
     const d=(it.pp-p)/it.pp; if(d<.08||d>.6||(Date.now()-new Date(it.pd))/864e5>7) continue;
-    const k=fold(it.name); if(seen.has(k)) continue; seen.add(k); out.push({s,g:g2[cid],c:cid,n:it.name,p,pp:it.pp,d});
+    const k=fold(it.name); if(seen.has(k)) continue; seen.add(k); out.push({s,g:g2[cid],c:cid,n:it.name,p,pp:it.pp,d,ph:it.ph});
   }
   out.sort((a,b)=>b.d-a.d); const top=out.slice(0,4);
   $("drops").hidden=top.length<3;
   $("drops").innerHTML=top.length<3?"":`<h2>🔥 Son günlərdə ucuzlayanlar</h2>`+top.map(x=>
-    `<button class="drop" data-g="${x.g}" data-q="${esc(x.n)}"><span class="em">${iconOf({name:x.n,t:x.g,c:x.c})}</span><b class="n">${esc(x.n)}</b>
+    `<button class="drop" data-g="${x.g}" data-q="${esc(x.n)}"><span class="em">${(em=>{ const u=phUrl(x.ph); return u?imgTag(u,x.s,1,em):em; })(iconOf({name:x.n,t:x.g,c:x.c}))}</span><b class="n">${esc(x.n)}</b>
      <small><i class="dot" style="--c:var(--${x.s})"></i>${x.s}</small>
      <span class="pr"><s>${fmt(x.pp)}</s><b class="mono" style="color:var(--good)">${fmt(x.p)}</b><em class="chg dn">↓ ${Math.round(x.d*100)}%</em></span></button>`).join("");
 }
@@ -1478,7 +1491,11 @@ let toastT=0;
 const cardOf=el=>{ const a=el.closest(".item"); return a&&a.dataset.t?{a,g:(GROUPS[a.dataset.t]||[]).find(x=>x.id===a.dataset.id)}:{}; };
 document.addEventListener("error",e=>{ const t=e.target;   // məhsul şəkli yüklənmədi: ikon
   if(t&&t.classList&&t.classList.contains("ph")) t.replaceWith(document.createTextNode(t.dataset.em||"📦")); },true);
+const zoomOff=()=>{ $("zoom").hidden=true; $("zoomImg").removeAttribute("src"); };
+$("zoom").onclick=zoomOff;
 document.addEventListener("click",async e=>{
+  const zi=e.target.closest(".logo-p img.ph");   // kartdakı foto: böyük göstər
+  if(zi){ const {g}=cardOf(zi); $("zoomImg").src=bigUrl(zi.src); $("zoomN").textContent=g?g.name:""; $("zoomBy").textContent=zi.title||""; $("zoom").hidden=false; return; }
   const fb=e.target.closest(".fav");
   if(fb){ const {g}=cardOf(fb); if(!g) return; toggleFav(g); const on=isFav(g);
     fb.classList.toggle("on",on); fb.textContent=on?"✓":"+"; fb.setAttribute("aria-pressed",on); fb.setAttribute("aria-label",on?"Səbətdən çıxar":"Səbətə əlavə et");
@@ -1527,8 +1544,8 @@ $("q").oninput=debounce(e=>{
     ?`<button class="res cat-hit" data-go="#/c/${c.id}/${c.c}"><strong>${EMOJI[c.c]||"📦"} ${esc(catName(c.c))}</strong><small>${esc(GM[c.id].name)} · alt növə keç</small></button>`
     :`<button class="res cat-hit" data-go="#/c/${c.id}"><strong>${EMOJI[c.id]||"📦"} ${esc(GM[c.id].name)}</strong><small>${esc(GEN_NAME[c.id]||"")} · kateqoriyaya keç</small></button>`).join("");
   box.innerHTML=chips+r.res.map(([id,g])=>
-    `<button class="res" data-go="#/c/${id}/${g.id}"><small>${EMOJI[g.c]||"📦"} ${esc(catName(g.c))}</small>
-     <strong>${esc(g.name)}</strong><small class="mono">${offs(g)}</small></button>`).join("")
+    `<button class="res rp" data-go="#/c/${id}/${g.id}"><span class="rt">${picOf(g)}</span><span><small>${esc(catName(g.c))}</small>
+     <strong>${esc(g.name)}</strong><small class="mono">${offs(g)}</small></span></button>`).join("")
      ||'<div class="res"><small>Heç nə tapılmadı</small></div>';
 },150);
 /* qrupları əvvəlcədən hazırla (bir-bir, səhifəni dondurmadan): axtarış qutusuna toxunanda, hazır kartlar varsa yüklənən kimi */
@@ -1536,7 +1553,7 @@ let warmed=false;
 function warm(){ if(warmed||!DB) return; warmed=true; let i=0; const step=()=>{ if(i>=GL.length) return; groups(GL[i++].id); setTimeout(step,0); }; step(); }
 $("q").addEventListener("focus",warm,{once:true});
 $("results").onclick=e=>{const b=e.target.closest("[data-go]"); if(!b)return; $("results").innerHTML=""; $("q").value=""; go(b.dataset.go);};
-addEventListener("keydown",e=>{ if(e.key==="Escape"){$("results").innerHTML="";$("q").blur();} });
+addEventListener("keydown",e=>{ if(e.key==="Escape"){$("results").innerHTML="";$("q").blur();zoomOff();} });
 addEventListener("click",e=>{ if(!e.target.closest(".search")) $("results").innerHTML=""; });
 
 

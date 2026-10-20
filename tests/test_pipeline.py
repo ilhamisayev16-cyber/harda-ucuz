@@ -580,3 +580,24 @@ console.log(JSON.stringify(api.groups('sud').map(g=>[g.name.split(' ')[0],api.pi
     got = dict(json.loads(r.stdout.strip()))
     assert 'src="https://arazmarket.az/_next/image?url=https%3A%2F%2Fb7x9kq.arazmarket.az%2Fstorage%2Fproducts%2F1000012609.png&amp;w=256&amp;q=75"' in got["Azərsüd"]
     assert "images.openfoodfacts.org/images/products/476/008/160/0037/front_ru.3.200.jpg" in got["Milla"]   # səhv "ph" keçilir
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_card_photo_names_its_source_and_zooms_larger(tmp_path):
+    db = {"stores": ["Araz", "Bazarstore", "Bravo"], "groups": [{"id": "sud", "name": "Süd", "cats": ["sud"]}],
+          "categories": {"sud": {"name": "Süd", "stores": {
+              "Araz": [{"name": "Azərsüd Süd 3.2% 1 l", "price": 2.8, "ph": "a:1000012609.png"}],
+              "Bazarstore": [{"name": "Milla Süd 3.2% 1 L", "price": 2.7, "ph": "b:0026498_milla_360.jpeg"}],
+              "Bravo": [{"name": "Atena Süd 3.2% 1l", "wolt_price": 2.79, "im": "476/008/160/0037/front_ru.3"}]}}}}
+    f = tmp_path / "db.json"; f.write_text(json.dumps(db, ensure_ascii=False))
+    js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
+api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
+const u='https://arazmarket.az/_next/image?url=https%3A%2F%2Fb7x9kq.arazmarket.az%2Fstorage%2Fproducts%2F1.png&w=256&q=75';
+console.log(JSON.stringify({{p:api.groups('sud').map(g=>[g.name.split(' ')[0],api.picOf(g)]),b:[api.bigUrl(u),api.bigUrl('https://bazarstore.az/images/thumbs/1_x_360.jpeg')]}}));"""
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr[-500:]
+    out = json.loads(r.stdout.strip()); got = dict(out["p"])
+    assert 'title="Foto: Araz"' in got["Azərsüd"] and 'title="Foto: Bazarstore"' in got["Milla"]
+    assert 'title="Foto: Open Food Facts"' in got["Atena"]
+    assert out["b"] == ["https://arazmarket.az/_next/image?url=https%3A%2F%2Fb7x9kq.arazmarket.az%2Fstorage%2Fproducts%2F1.png&w=640&q=75",
+                        "https://bazarstore.az/images/thumbs/1_x_360.jpeg"]   # böyük baxış: Araz 640 px, digərləri olduğu kimi

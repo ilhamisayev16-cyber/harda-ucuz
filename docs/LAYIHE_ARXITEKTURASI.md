@@ -147,7 +147,7 @@ Mağaza eyni məhsulu başqa kateqoriyada da veribsə, "diger"-dəki nüsxə sil
 }
 ```
 
-Sahələr: `price` = mağazanın öz qiyməti, `wolt_price` = Wolt qiyməti, `wt` = Wolt-un təxmini parça çəkisi (qram) yalnız çəkiyə görə satılanlarda, `pp`/`pd` = əvvəlki qiymət və dəyişmə tarixi. **Məhsul id-si yoxdur**: məhsul = mağaza + ad. Kateqoriya "yarpaq" səviyyəsindədir (`categories[cid]`), `groups` isə saytdakı ana qrupları sadalayır.
+Sahələr: `u` = məhsulun mağaza saytındakı səhifəsinin slug-ı (Araz: `arazmarket.az/az/products/<u>`, Bazarstore: `bazarstore.az/<u>`; yalnız `[a-z0-9-]` və `%XX`), `price` = mağazanın öz qiyməti, `wolt_price` = Wolt qiyməti, `wt` = Wolt-un təxmini parça çəkisi (qram) yalnız çəkiyə görə satılanlarda, `pp`/`pd` = əvvəlki qiymət və dəyişmə tarixi. **Məhsul id-si yoxdur**: məhsul = mağaza + ad. Kateqoriya "yarpaq" səviyyəsindədir (`categories[cid]`), `groups` isə saytdakı ana qrupları sadalayır.
 
 Vaxtlar (`last_updated`, `meta.updated`, `pd`) **Bakı vaxtı** ilə yazılır (`sources.now()`, UTC+4): GitHub serveri UTC-dədir.
 Şəkil linkləri (`img`) 2026-10-dan toplanmır: sayt şəkil göstərmir, onlar isə datanın ~60%-i idi (gzip 2.1 MB → 0.8 MB).
@@ -214,6 +214,15 @@ Kartda ♡; siyahı `localStorage`-da saxlanır (hər element: qrup + adın norm
 ### 7.5 Görünüş və təhlükəsizlik
 - Telefon-first: tək sütun, böyük toxunma sahələri; kompüterdə (≥1000 px) CSS `zoom` ilə 1.25–1.7× böyüdülür, məzmun ortada dar sütundadır.
 - Məhsul **şəkilləri saytda göstərilmir** (müəllif hüququ riski): əvəzində kateqoriya ikonları (emoji). Şəkil linkləri datada da yoxdur.
+
+- **Mağazanın saytında bax (↗)**: qiymət sətrində və tarixçə panelində; link yalnız `SHOP`-dakı sabit ünvanlardan qurulur (Araz/Bazarstore: məhsul səhifəsi `u`,
+  OBA: `oba.az/products/?search=<ad>`, Bravo/Tamstore: kampaniya səhifəsi, SPAR: SPAR International Azərbaycan səhifəsi). **Wolt-a link verilmir.**
+  Neptun (neptun.az boş səhifə) və Rahat (rahatmarket.az HTTP 500) üçün link yoxdur — saytları işləyəndə `SHOP`-a əlavə edin.
+- **Təhlükəsizlik (2026-10-25)**: `sane()` prices.json-u göstərməzdən əvvəl yoxlayır (mağaza adı `ST_RX`, id `ID_RX`, rəqəmlər, `FIELD` siyahısındakı sahələr; qalanı atılır) —
+  scraper-ə yeni sahə əlavə edəndə `FIELD`-ə də yazın. Səbət (localStorage, eyni github.io domenindəki başqa səhifələrlə ortaqdır) oxunanda yoxlanır (`okFav`).
+  `GM` prototipsiz obyektdir (`#/c/toString` kimi ünvan sınmır). Başqa saytın iframe-ində açılanda səhifə gizlənir (clickjacking; GitHub Pages X-Frame-Options vermir).
+  Statik səhifələrdə və haqqinda.html-də `script-src 'none'`. CI: action-lar commit SHA ilə, `persist-credentials: false` (yazma tokeni yalnız son yükləmə addımında),
+  `pip install --require-hashes` (`requirements.in` → `pip-compile --generate-hashes`).
 
 ### 7.6 Hazır kartlar (`data/groups.json`) və statik səhifələr
 - `scripts/build_site.js` scrape-dən sonra `index.html`-in **öz** `group()` funksiyasını Node-da işlədir və hər qrup üçün 2+ üzvlü kartların

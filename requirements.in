@@ -1,0 +1,5 @@
+# Birbaşa asılılıqlar. requirements.txt bundan yaradılır (bütün alt asılılıqlar + sha256 hash: dəyişdirilmiş paket CI-da quraşdırılmır):
+#   pip install pip-tools && pip-compile --generate-hashes --allow-unsafe --strip-extras requirements.in
+requests==2.34.2
+beautifulsoup4==4.15.0
+lxml==6.1.3

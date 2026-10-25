@@ -21,17 +21,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1 (commit SHA ilə: teq dəyişdirilsə də başqa kod işləmir; Dependabot yeniləyir)
         with:
+          persist-credentials: false   # token .git/config-da qalmasın (aşağıda yalnız yükləmə addımına verilir)
           ref: ${{ github.ref_name }}   # işə düşdüyü andakı commit yox, ən son vəziyyət: növbədə gözləyəndən sonra köhnə kod/data ilə qurmasın
 
       - name: Saytı qur
         run: node scripts/build_site.js
 
       - name: GitHub-a yüklə
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # yazma tokeni yalnız bu addımda: qurma addımı onu görmür
         run: |
           git config user.name "Price Bot"
           git config user.email "bot@qiymet.az"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           for f in data/groups.json sitemap.xml qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
           git diff --staged --quiet || git commit -m "Sayt yenidən quruldu"
           git pull --rebase origin "$GITHUB_REF_NAME"

@@ -91,6 +91,12 @@ Scraper hər gün avtomatik işləyəcək.
 - **Qiymət dəyişikliyi**: scraper hər mağaza üçün əvvəlki qiymətlə müqayisə edir; dəyişən məhsulda `pp` (əvvəlki qiymət) və `pd` (tarix) yazılır — kartda ↓/↑ nişanı, ana səhifədə "ucuzlayanlar". Tam tarixçə `data/history.json`-dadır (açar: `hk(mağaza|ad)`, scraper və index.html-də eyni; 90 gün).
 - **Vahid qiymət**: çəkili qablaşdırma 1 kq-a, həcmli 1 L-ə görə (>5 kq/L göstərilmir); "Vahid qiymət" sıralaması.
 
+## Mağazanın saytında bax (↗) və təhlükəsizlik
+- Qiymət sətrindəki ↗ məhsulu **mağazanın öz saytında** açır: Araz və Bazarstore-da məhsulun səhifəsi (`u` sahəsi, scraper yazır), OBA-da saytdakı axtarış,
+  Bravo/Tamstore/SPAR-da kampaniya / rəsmi səhifə. Wolt-a link verilmir. Linklər `index.html`-dəki `SHOP`-dan qurulur.
+- `index.html` prices.json-u `sane()` ilə yoxlayır (yeni sahə → `FIELD`), səbəti `okFav` ilə; statik səhifələrdə JavaScript qadağandır (CSP `script-src 'none'`).
+- Asılılıqlar hash ilə: `requirements.in`-i dəyişin, sonra `pip install pip-tools && pip-compile --generate-hashes --allow-unsafe --strip-extras requirements.in`.
+
 ## Wolt söndürmə açarı və təhlükəsiz yazma
 - `WOLT_ENABLED=0` (və ya `python scrapers/scraper.py --no-wolt`): Wolt-a heç bir sorğu göndərilmir. GitHub-da: Settings → Variables → `WOLT_ENABLED`.
 - Köhnə Wolt qiymətləri silinmir; `stale: true` ("arxiv qiymət") işarələnir, ən ucuz/qənaət hesabına girmir; `meta[mağaza]`-da `source_type`, `auto_update`, `last_success`.

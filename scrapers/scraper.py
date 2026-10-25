@@ -967,6 +967,14 @@ def store_photo(code, url):
         return None   # OBA loqosu / Bazarstore-un "şəkil yoxdur" faylı
     return f"{code}:{rest}"
 
+# ── Məhsulun mağaza saytındakı səhifəsi: "u" = slug (Araz: arazmarket.az/az/products/<u>, Bazarstore: bazarstore.az/<u>).
+# Sayt linki index.html-dəki SHOP ilə qurur; Wolt linki yazılmır. OBA-da məhsul səhifəsi yoxdur (sayt oba.az axtarışına keçid verir).
+_U_RX = re.compile(r"(?:[a-z0-9-]|%[0-9A-Fa-f]{2}){1,250}")
+
+def store_slug(s):
+    """Yalnız kiçik latın hərfi, rəqəm, "-" və %XX kodlu simvol: başqa dəyər (tam link, "../", boşluq) -> None."""
+    return s if isinstance(s, str) and _U_RX.fullmatch(s) else None
+
 # ── OBA ──────────────────────────────────────────────────────────────────
 
 _OBA_IMG = re.compile(r'<img[^>]+src="([^"]+)"')
@@ -1078,6 +1086,8 @@ def scrape_araz():
                 e = {"name": name, "price": price}
                 ph = store_photo("a", (p.get("images") or [""])[0])
                 if ph: e["ph"] = ph
+                u = store_slug(p.get("slug"))
+                if u: e["u"] = u
                 rp = clean_price(p.get("sales_price"))
                 if p.get("is_discount") and rp and rp > price: e["rp"] = rp   # adi qiymət (yalnız birləşdirmə üçün, yazılmır)
                 results[cat].append(e)
@@ -1094,6 +1104,11 @@ def _bazar_photo(body):
     """Məhsul kartındakı şəkil (lazy-load: data-lazyloadsrc, 360 px)."""
     m = re.search(r'data-lazyloadsrc="([^"]+)"', body)
     return store_photo("b", m.group(1)) if m else None
+
+def _bazar_url(body):
+    """Məhsul kartındakı səhifə linki: <h2 class="product-title"><a href="/<slug>"> -> slug."""
+    m = re.search(r'class="product-title">\s*<a href="/([^"?#/]+)"', body)
+    return store_slug(m.group(1)) if m else None
 
 def scrape_bazarstore_flat():
     """"Ehtiyat üsul: "Bütün məhsullar" siyahısı (1 səhifə = 10 məhsul), orderby=5 (ada görə) ilə sabit sıralama."""
@@ -1135,6 +1150,8 @@ def scrape_bazarstore_flat():
             e = {"name": _title(name), "price": price}
             ph = _bazar_photo(body)
             if ph: e["ph"] = ph
+            u = _bazar_url(body)
+            if u: e["u"] = u
             results[classify(name, d.get("item_category") or "")].append(e)
         return n
     ingest(first)
@@ -1224,6 +1241,8 @@ def scrape_bazarstore():
             e = {"name": _title(name), "price": price}
             ph = _bazar_photo(body)
             if ph: e["ph"] = ph
+            u = _bazar_url(body)
+            if u: e["u"] = u
             results[classify(name, path)].append(e)
         return new
     # kateqoriyalar çox üst-üstə düşür: növbəti səhifə yalnız əvvəlki səhifə yeni məhsul verən kateqoriyalar üçün çəkilir
@@ -1555,6 +1574,7 @@ def merge_own_wolt(own_list, wolt_list):
     for i, item in enumerate(own_list):
         entry = {"name": item["name"], "price": item["price"]}
         if item.get("ph"): entry["ph"] = item["ph"]
+        if item.get("u"): entry["u"] = item["u"]
         j = match.get(i)
         if j is not None:
             w = wolt_list[j]

@@ -5,7 +5,7 @@ məs. "476/009/510/1025/front_az.3" (sayt https://images.openfoodfacts.org/image
 "gtin" silinir. OFF-da şəkli olmayan məhsulda "im" yoxdur, sayt ikon göstərir. Mağazanın/Wolt-un şəkli istifadə olunmur.
 
 Keş: data/off_images.json {gtin: [yol və ya "", "YYYY-MM-DD"]}. Tapılmayanlar RECHECK_DAYS gündən sonra yenidən soruşulur.
-Bir şəkli saytdan götürmək lazım olsa (etiraz): həmin gtin-i ["", "9999-12-31"] et, bir daha soruşulmur və göstərilmir.
+Bir şəkli saytdan götürmək lazım olsa (pis şəkil, etiraz): onun yolunu data/overrides.json-da "hide_photo"-ya yaz (sayt da göstərmir).
 """
 import json, os, re, sys, time
 from datetime import date, timedelta
@@ -15,6 +15,7 @@ import requests
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PRICES = os.path.join(ROOT, "data", "prices.json")
 CACHE = os.path.join(ROOT, "data", "off_images.json")
+OVERRIDES = os.path.join(ROOT, "data", "overrides.json")   # sahibin əl ilə yazdığı fayl: "hide_photo" siyahısındakı şəkil yazılmır
 API = "https://search.openfoodfacts.org/search"
 UA = "harda-ucuz/1.0 (https://github.com/ilhamisayev16-cyber/harda-ucuz)"
 BATCH = 100
@@ -83,6 +84,10 @@ def run():
         for c, im in res.items(): cache[c] = [im, today]
         done += len(res)
         time.sleep(1)
+    try:
+        with open(OVERRIDES, encoding="utf-8") as f: hide = set(json.load(f).get("hide_photo") or [])
+    except (OSError, ValueError, AttributeError):
+        hide = set()
     n = 0
     for c in data["categories"].values():
         for l in c["stores"].values():
@@ -90,7 +95,7 @@ def run():
                 g = it.pop("gtin", None)
                 if g is None: continue
                 im = (cache.get(g) or [""])[0]
-                if im: it["im"] = im; n += 1
+                if im and im not in hide: it["im"] = im; n += 1
                 else: it.pop("im", None)
     with open(PRICES + ".tmp", "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))   # scraper.py ilə eyni format

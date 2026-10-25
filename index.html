@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-VKedh2vfuGh9gWvO+uiBjSb9aZbQw6dnJO5rYb6TarQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-nltHBIW2YgEMgQFm5inkgEcI4B42OrCz23CxuTqY+Qw='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -509,9 +509,12 @@ const phUrl=ph=>{ const m=PH_RX.exec(ph||""); if(!m||m[2].includes("..")) return
   return m[1]==="a"?"https://arazmarket.az/_next/image?url="+encodeURIComponent("https://b7x9kq.arazmarket.az/storage/products/"+m[2])+"&w=256&q=75"   // Arazın öz kiçildilmiş şəkli (orijinal ~500 KB)
     :PH_BASE[m[1]]+m[2]; };
 const imgTag=(u,by,c,em)=>`<img class="ph${c?" c":""}" src="${esc(u)}" alt="" title="Foto: ${esc(by)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-em="${esc(em)}">`;
+/* sahibin gizlətdiyi şəkillər (data/overrides.json "hide_photo": datadakı dəyər, məs. "460/700/177/7199/front_en.4", və ya tam link) */
+let HIDE=new Set();
+const hid=(v,u)=>HIDE.has(v)||HIDE.has(u);
 const picOf=g=>{ const em=iconOf(g);
-  for(const s of stores){ const o=g.offers[s], u=o&&phUrl(o.ph); if(u) return imgTag(u,s,1,em); }
-  for(const s of stores){ const o=g.offers[s]; if(o&&o.im&&IM_RX.test(o.im)) return imgTag(`${OFF_IMG}${o.im}.200.jpg`,"Open Food Facts",0,em); }
+  for(const s of stores){ const o=g.offers[s], u=o&&phUrl(o.ph); if(u&&!hid(o.ph,u)) return imgTag(u,s,1,em); }
+  for(const s of stores){ const o=g.offers[s], u=o&&o.im&&IM_RX.test(o.im)&&`${OFF_IMG}${o.im}.200.jpg`; if(u&&!hid(o.im,u)) return imgTag(u,"Open Food Facts",0,em); }
   return em; };
 /* böyük baxış üçün: Arazın kiçildilmiş şəklinin 640 px variantı (~18 KB); digərləri olduğu kimi */
 const bigUrl=u=>u.replace(/([?&]w=)256(?=&|$)/,"$1640");
@@ -1223,10 +1226,13 @@ async function load(){
   $("loading").hidden=false; $("error").hidden=true;
   try{
     const pj=fetch("data/groups.json").then(r=>r.ok?r.json():null).catch(()=>null);   // serverdə hazırlanmış kartlar (paralel)
+    const po=fetch("data/overrides.json").then(r=>r.ok?r.json():null).catch(()=>null);   // sahibin əl ilə düzəlişləri (kiçik fayl)
     const r=await fetch("data/prices.json"); if(!r.ok) throw new Error("HTTP "+r.status);
     DB=sane(await r.json()); stores=DB.stores;
     GL=DB.groups||Object.entries(DB.categories).map(([id,c])=>({id,name:c.name,cats:[id]}));
     GM=Object.assign(Object.create(null),Object.fromEntries(GL.map(g=>[g.id,g])));   // ünvandan gələn açar (#/c/toString) obyektin öz xassəsinə düşməsin
+    const ov=await Promise.race([po,new Promise(r=>setTimeout(()=>r(null),1500))]);
+    if(ov&&Array.isArray(ov.hide_photo)) HIDE=new Set(ov.hide_photo.filter(x=>typeof x==="string"&&x.length<=400).slice(0,5000));
     renderHome();
     const P=await Promise.race([pj,new Promise(r=>setTimeout(()=>r(null),3000))]);   // yalnız eyni data və eyni sayt kodu üçün hazırlanıbsa; gecikərsə gözlənilmir
     PRE=P&&P.v===DB.last_updated&&P.s===siteHash()?P.g:null;
@@ -1263,7 +1269,7 @@ function renderDrops(){
   out.sort((a,b)=>b.d-a.d); const top=out.slice(0,4);
   $("drops").hidden=top.length<3;
   $("drops").innerHTML=top.length<3?"":`<h2>🔥 Son günlərdə ucuzlayanlar</h2>`+top.map(x=>
-    `<button class="drop" data-g="${esc(x.g)}" data-q="${esc(x.n)}"><span class="em">${(em=>{ const u=phUrl(x.ph); return u?imgTag(u,x.s,1,em):em; })(iconOf({name:x.n,t:x.g,c:x.c}))}</span><b class="n">${esc(x.n)}</b>
+    `<button class="drop" data-g="${esc(x.g)}" data-q="${esc(x.n)}"><span class="em">${(em=>{ const u=phUrl(x.ph); return u&&!hid(x.ph,u)?imgTag(u,x.s,1,em):em; })(iconOf({name:x.n,t:x.g,c:x.c}))}</span><b class="n">${esc(x.n)}</b>
      <small><i class="dot" style="--c:var(--${esc(x.s)})"></i>${esc(x.s)}</small>
      <span class="pr"><s>${fmt(x.pp)}</s><b class="mono" style="color:var(--good)">${fmt(x.p)}</b><em class="chg dn">↓ ${Math.round(x.d*100)}%</em></span></button>`).join("");
 }

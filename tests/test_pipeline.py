@@ -715,3 +715,11 @@ def test_no_wolt_links_and_safe_external_links_in_pages():
             assert 'rel="noopener noreferrer"' in a, a
         csp = re.search(r'http-equiv="Content-Security-Policy" content="([^"]+)"', html).group(1)
         assert "object-src 'none'" in csp and "base-uri 'none'" in csp and "frame-src 'none'" in csp and "unsafe-eval" not in csp
+
+
+def test_overrides_file_hides_photos():
+    ov = json.loads((ROOT / "data" / "overrides.json").read_text(encoding="utf-8"))
+    assert isinstance(ov.get("hide_photo"), list) and all(isinstance(x, str) for x in ov["hide_photo"])
+    html = (ROOT / "index.html").read_text(encoding="utf-8")
+    assert 'fetch("data/overrides.json")' in html and "hid(o.im,u)" in html and "hid(o.ph,u)" in html
+    assert "hide_photo" in (ROOT / "scrapers" / "off_images.py").read_text(encoding="utf-8")

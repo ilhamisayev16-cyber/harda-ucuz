@@ -69,10 +69,16 @@ function main() {
   console.log(`groups.json: ${Object.keys(pre).length}/${S.GL().length} qrup, ${nCards} kart, qruplaşdırma ${t1 - t0} ms`);
 
   // Persist aliases, so reordering, new stores and display-name changes keep existing URLs.
+  const assigned=new Map();
   for(const cards of Object.values(CARDS)) for(const c of cards){
     const aliases=S.aliases(c), known=aliases.map(k=>registry[k]).filter(x=>/^s[a-f0-9]{16}$/.test(x||""));
-    c.pid=known[0]||c.pid;
-    for(const k of aliases) if(!registry[k]) registry[k]=c.pid;
+    c.pid=known[0]||c.pid; let split=false;
+    const codes=aliases.filter(k=>k.startsWith("gtin:")), previous=assigned.get(c.pid);
+    if(previous&&((codes.length&&previous.codes.size&&!codes.some(k=>previous.codes.has(k)))||!aliases.some(k=>previous.aliases.has(k))))
+      { c.pid="s"+S.hash("product-split",c.t+"|"+aliases.slice().sort().join("|")); split=true; }
+    const current=assigned.get(c.pid)||{aliases:new Set(),codes:new Set()};
+    aliases.forEach(k=>current.aliases.add(k));codes.forEach(k=>current.codes.add(k));assigned.set(c.pid,current);
+    for(const k of aliases) if(split||!registry[k]) registry[k]=c.pid;
   }
   db.product_ids=registry; S.setIds(registry);
   writeAtomic(path.join(OUT,"data","product_ids.json"),JSON.stringify(registry));
@@ -192,7 +198,7 @@ function buildPages(db, S, CARDS) {
 function buildProducts(db,CARDS,S){
   const dir=path.join(OUT,"mehsullar"), tmp=dir+".tmp"; fs.rmSync(tmp,{recursive:true,force:true}); fs.mkdirSync(tmp,{recursive:true});
   let history={};try{history=JSON.parse(fs.readFileSync(path.join(path.dirname(PRICES),"history.json"),"utf8")).h||{};}catch(e){}
-  const urls=[], seen=new Set();
+  const urls=[], seen=new Set(), activeIds=new Set(Object.values(CARDS).flatMap(cs=>cs.map(c=>c.pid)));
   for(const cards of Object.values(CARDS)) for(const c of cards){
     if(seen.has(c.pid))continue;seen.add(c.pid);
     const rel=`mehsullar/${c.pid}.html`, offers=Object.entries(c.offers).sort((a,b)=>a[1].p-b[1].p);
@@ -203,7 +209,15 @@ function buildProducts(db,CARDS,S){
     const html=page({depth:1,path:rel,title:c.name+" — qiymət müqayisəsi",desc:`${c.name}: ${offers.map(([s,o])=>s+" "+fmt(o.p)).join(", ")}. Mənbələr və qeydə alınmış qiymət tarixçəsi.`,upd:db.last_updated,crumbs:[["../","Ana səhifə"],[`../qiymetler/${c.t}/`,"Kateqoriya"]],h1:esc(c.name),lead:`${offers.length} mağazada qiymət məlumatı · ${c.a.kg?"1 kq üçün":"qablaşdırma üçün"}`,app:`../#/c/${c.t}/${c.pid}`,body});
     fs.writeFileSync(path.join(tmp,c.pid+".html"),html);urls.push(rel);
     // Old ids remain valid when two previously separate cards are merged.
-    for(const k of S.aliases(c)){ const old=db.product_ids[k]; if(old&&old!==c.pid&&!seen.has(old)){fs.writeFileSync(path.join(tmp,old+".html"),html);seen.add(old);} }
+    for(const k of S.aliases(c)){ const old=db.product_ids[k]; if(old&&old!==c.pid&&!seen.has(old)&&!activeIds.has(old)){fs.writeFileSync(path.join(tmp,old+".html"),html);seen.add(old);} }
+  }
+  // When a GTIN correction splits an old identity, keep its URL without publishing stale prices.
+  if(fs.existsSync(dir)) for(const file of fs.readdirSync(dir)){
+    if(!/^s[a-f0-9]{16}\.html$/.test(file)||fs.existsSync(path.join(tmp,file)))continue;
+    const old=fs.readFileSync(path.join(dir,file),"utf8"), match=/<h1>(.*?)<\/h1>/.exec(old), group=/#\/c\/([a-z0-9_]+)/.exec(old);
+    const name=(match?match[1]:"Məhsul").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+    const html=page({depth:1,path:"mehsullar/"+file,title:name,desc:"Məhsul uyğunluğu yenilənib. Aktual qiymət üçün məhsulu yenidən seçin.",upd:db.last_updated,crumbs:[["../","Ana səhifə"]],h1:esc(name),lead:"Bu məhsulun əvvəlki müqayisə qrupu dəyişib.",app:group?"../#/c/"+group[1]:"../",body:"<p>Köhnə qiymət göstərilmir. Aktual müqayisə üçün kateqoriyadan uyğun məhsulu yenidən seçin.</p>"}).replace("<head>",'<head><meta name="robots" content="noindex,follow">');
+    fs.writeFileSync(path.join(tmp,file),html);
   }
   fs.rmSync(dir,{recursive:true,force:true});fs.renameSync(tmp,dir);
   const parts=[];
@@ -233,7 +247,7 @@ function items(list) {
     const u = c.a && c.a.kg ? "/kq" : "";
     const offs = Object.entries(c.offers).sort((a, b) => a[1].p - b[1].p);
     const cheap = c.n > 1 ? offs.find(([, o]) => !o.st && o.p === c.min) : null;
-    const lbl = ([s, o]) => `${esc(s)} ${fmt(o.p)}${u}${o.w ? "<sup>W</sup>" : ""}`;
+    const lbl = ([s, o]) => `${esc(s)} ${fmt(o.p)}${u}${o.w ? "<sup>W</sup>" : " (onlayn)"}${o.wp ? " · Wolt: " + fmt(o.wp) : ""}`;
     const rest = offs.filter(x => x !== cheap).map(lbl).join(" · ");
     return `<li><b><a href="${esc(SITE)}mehsullar/${c.pid}.html">${esc(c.name)}</a></b>` +
       (cheap ? `<span class="best"><i style="background:var(--${esc(cheap[0])})"></i>Ən ucuz: ${lbl(cheap)}</span>` : "") +

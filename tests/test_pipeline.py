@@ -278,12 +278,12 @@ def test_build_site(tmp_path):
 
 
 # ── böyük aksiya (50%+): Wolt qiyməti varsa o göstərilir ──
-def test_big_own_discount_falls_back_to_wolt_price():
+def test_big_own_discount_preserves_both_observed_online_and_wolt_prices():
     own = [{"name": "Avokado əd", "price": 0.99, "rp": 3.49}, {"name": "Banan kq", "price": 2.0, "rp": 2.5},
            {"name": "Kivi kq", "price": 1.0, "rp": 4.0}]
     wolt = [{"name": "Avokado əd", "wolt_price": 1.99}, {"name": "Banan kq", "wolt_price": 2.2}]
     out = {i["name"]: i for i in S.merge_own_wolt(own, wolt)}
-    assert out["Avokado əd"] == {"name": "Avokado əd", "wolt_price": 1.99}      # 72% aksiya → Wolt
+    assert out["Avokado əd"] == {"name": "Avokado əd", "price": 0.99, "wolt_price": 1.99, "online_offer": True}      # 72% aksiya → Wolt
     assert out["Banan kq"] == {"name": "Banan kq", "price": 2.0, "wolt_price": 2.2}   # kiçik aksiya: öz qiymət
     assert out["Kivi kq"] == {"name": "Kivi kq", "price": 1.0}                  # Wolt yoxdur: öz qiymət qalır
     assert len(out) == 3 and all("rp" not in i for i in out.values())
@@ -586,7 +586,7 @@ def test_card_prefers_store_photo_then_open_food_facts(tmp_path):
                         {"name": "Milla Süd 3.2% 1l", "wolt_price": 2.79, "im": "476/008/160/0037/front_ru.3"}]}}}}
     f = tmp_path / "db.json"; f.write_text(json.dumps(db, ensure_ascii=False))
     js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
-api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
+api.setPhotoSources(["o","a","b"]); api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
 console.log(JSON.stringify(api.groups('sud').map(g=>[g.name.split(' ')[0],api.picOf(g)])));"""
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
     assert r.returncode == 0, r.stderr[-500:]
@@ -604,7 +604,7 @@ def test_card_photo_names_its_source_and_zooms_larger(tmp_path):
               "Bravo": [{"name": "Atena Süd 3.2% 1l", "wolt_price": 2.79, "im": "476/008/160/0037/front_ru.3"}]}}}}
     f = tmp_path / "db.json"; f.write_text(json.dumps(db, ensure_ascii=False))
     js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
-api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
+api.setPhotoSources(["o","a","b"]); api.setDB(JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8')));
 const u='https://arazmarket.az/_next/image?url=https%3A%2F%2Fb7x9kq.arazmarket.az%2Fstorage%2Fproducts%2F1.png&w=256&q=75';
 console.log(JSON.stringify({{p:api.groups('sud').map(g=>[g.name.split(' ')[0],api.picOf(g)]),b:[api.bigUrl(u),api.bigUrl('https://bazarstore.az/images/thumbs/1_x_360.jpeg')]}}));"""
     r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
@@ -778,3 +778,76 @@ api.setDB(raw);const next=api.groups('sud').find(g=>g.name==='Milla Süd 1 L');
 console.log(JSON.stringify({id,next:next.pid}));
 """)
     assert out['id'] == out['next'] and re.fullmatch(r's[a-f0-9]{16}', out['id'])
+
+
+def test_off_reuses_only_unambiguous_same_packaged_product():
+    import off_images as O
+    image = '476/009/510/1025/front_az.3'
+    a = {'name': 'Milla Süd 1 L', 'im': image, 'gtin': '4760095101025'}
+    same = {'name': 'Milla Süd 1L'}
+    small = {'name': 'Milla Süd 0.5 L'}
+    different_code = {'name': 'Milla Süd 1 L', 'gtin': '4760095101026'}
+    d = {'categories': {'sud': {'stores': {'A': [a], 'B': [same, small, different_code]}}}}
+    O.enrich(d, {})
+    assert same['im'] == image and same['im_match'] == 'exact_name'
+    assert 'im' not in small and 'im' not in different_code and 'gtin' not in same
+    O.enrich(d, {'4760095101025': [image, '2026-10-25']})
+    assert 'gtin' not in same  # sharing an image must not create a confirmed barcode
+    same.pop('im')
+    a2 = {'name': 'Milla Süd 1 L', 'im': '476/009/510/1026/front_az.1'}
+    d['categories']['sud']['stores']['A'].append(a2)
+    O.enrich(d, {})
+    assert 'im' not in same  # conflicting product folders block reuse
+
+
+def test_merge_rejects_different_known_gtins_and_keeps_wolt_products():
+    out = S.merge_own_wolt([{'name': 'Milla Süd 1 L', 'price': 2, 'gtin': '4760095101025'}],
+                          [{'name': 'Milla Süd 1 L', 'wolt_price': 2.1, 'gtin': '4760095101026'}])
+    assert len(out) == 2
+    assert out[0]['price'] == 2 and out[1]['wolt_price'] == 2.1
+
+
+def test_unapproved_store_photo_uses_licensed_fallback(tmp_path):
+    db = {'stores': ['Araz'], 'groups': [{'id': 'sud', 'name': 'Süd', 'cats': ['sud']}],
+          'categories': {'sud': {'name': 'Süd', 'stores': {'Araz': [
+              {'name': 'Milla Süd 1 L', 'price': 2, 'ph': 'a:1.png', 'im': '476/009/510/1025/front_az.3'}]}}}}
+    out = _run_site(tmp_path, db, """api.setDB(raw);const g=api.groups('sud')[0],before=api.picOf(g);
+api.setPhotoSources(['a']);const after=api.picOf(g);console.log(JSON.stringify({before,after}));""")
+    assert 'images.openfoodfacts.org' in out['before'] and 'arazmarket.az' not in out['before']
+    assert 'arazmarket.az' in out['after']
+
+
+def test_site_does_not_compare_conflicting_barcodes(tmp_path):
+    db = {'stores': ['Araz', 'Bravo'], 'groups': [{'id': 'sud', 'name': 'Süd', 'cats': ['sud']}],
+          'categories': {'sud': {'name': 'Süd', 'stores': {
+              'Araz': [{'name': 'Milla Süd 1 L', 'price': 2, 'gtin': '4760095101025'}],
+              'Bravo': [{'name': 'Milla Süd 1 L', 'wolt_price': 2.1, 'gtin': '4760095101026'}]}}}}
+    out = _run_site(tmp_path, db, """api.setDB(raw);console.log(JSON.stringify(api.groups('sud').map(g=>g.n)));""")
+    assert out == [1, 1]
+
+
+def test_build_splits_old_shared_id_for_conflicting_gtins(tmp_path):
+    db = {'stores': ['Araz', 'Bravo'], 'groups': [{'id': 'sud', 'name': 'Süd', 'cats': ['sud']}],
+          'categories': {'sud': {'name': 'Süd', 'stores': {
+              'Araz': [{'name': 'Milla Süd 1 L', 'price': 2, 'gtin': '4760095101025'}],
+              'Bravo': [{'name': 'Milla Süd 1 L', 'wolt_price': 2.1, 'gtin': '4760095101026'}]}}}}
+    src = tmp_path / 'prices.json'; src.write_text(json.dumps(db))
+    target = tmp_path / 'site'; (target / 'data').mkdir(parents=True)
+    registry = {k: 's1234567890abcdef' for k in ['gtin:4760095101025', 'gtin:4760095101026',
+                S._hk('Araz', 'Milla Süd 1 L'), S._hk('Bravo', 'Milla Süd 1 L')]}
+    (target / 'data/product_ids.json').write_text(json.dumps(registry))
+    (target / 'mehsullar').mkdir()
+    archived = target / 'mehsullar/s0000000000000000.html'
+    archived.write_text('<h1>Köhnə Məhsul</h1><p>999.99 ₼</p>')
+    identities = []
+    for _ in range(2):
+        run = subprocess.run(['node', str(ROOT / 'scripts/build_site.js'), '--prices', str(src), '--out', str(target)],
+                             capture_output=True, text=True, timeout=60)
+        assert run.returncode == 0, run.stderr
+        ids = json.loads((target / 'data/product_ids.json').read_text())
+        pair = [ids['gtin:4760095101025'], ids['gtin:4760095101026']]
+        assert pair[0] != pair[1]
+        assert all((target / 'mehsullar' / (key + '.html')).exists() for key in pair)
+        assert 'noindex,follow' in archived.read_text() and '999.99' not in archived.read_text()
+        identities.append(pair)
+    assert identities[0] == identities[1]

@@ -28,3 +28,13 @@ python -m pytest tests -q
 ```
 
 Workflow-lar kimlik reyestrini, kateqoriya hissələrini, statik məhsul səhifələrini və sitemap-ləri birlikdə commit edir. Hazırkı kataloq təxminən 60 min məhsul səhifəsi yaratdığı üçün build çıxışı böyükdür (təxminən 256 MB disk istifadəsi); ortaq `assets/catalog.css` üslub təkrarını azaldır. Bu ölçü ilə GitHub Pages çıxış həcmini və build müddətini izləmək lazımdır. Dəyişikliklər özlüyündə yerləşdirmə və ya Google indekslənməsi demək deyil.
+
+## Açıq lisenziyalı şəkillər və qiymət mənbələri
+
+`data/photo_rights.json` mağaza şəkilləri üçün icazə qeydləridir. İlkin `stores` boşdur: mağaza şəkilləri göstərilmir, OFF uyğunluğu və ya ikon seçilir. Yalnız həqiqətən yoxlanmış istifadə hüququ olduqda mağaza koduna (`o`, `a`, `b`) `approved: true` və boş olmayan `evidence` qeydi əlavə edilməlidir. İctimai URL və ya robots.txt özlüyündə belə sübut deyil. Bu nəzarət Wolt qiymətlərini söndürmür.
+
+OFF şəkillərində mənbə səhifəsi, CC BY-SA 3.0 keçidi və dəyişdirilmədiyi göstərilir. Yeni API cavablarından varsa uploader müəllifi də saxlanır. Köhnə müsbət keşlər müəllif məlumatı üçün yenidən soruşulur; yeni sorğu alınmadıqda mövcud keş saxlanır. Konkret şəklin hüquq məlumatının düzgünlüyü mənbədən asılıdır; sayt bütün üçüncü tərəf hüquqlarına təminat vermir.
+
+`OFF_OFFLINE=1 python scrapers/off_images.py` şəbəkəyə çıxmadan mövcud keşlə işləyir. GTIN ilə şəkil seçimi üstün tutulur. GTIN yoxdursa, yalnız eyni alt kateqoriyada tam normallaşdırılmış eyni ad və ölçü, tək şəkil qovluğu və ziddiyyətli GTIN olmadığı halda şəkil paylaşılır. Belə uyğunluq `im_match: exact_name` ilə işarələnir və təsdiqlənmiş barkod yaratmır. Əl ilə gizlədilmiş şəkillər yayılmır.
+
+Böyük onlayn endirim artıq avtomatik Wolt qiyməti ilə əvəz edilmir. Hər iki müşahidə edilmiş qiymət saxlanır, onlayn qiymət açıq işarələnir. Bu qayda növbəti uğurlu scrape-də tətbiq edilir; əvvəl silinmiş qiymətlər uydurularaq bərpa olunmur. Fərqli məlum GTIN-li məhsullar scraper və brauzer müqayisəsində ayrılır; buna görə əvvəl birləşmiş kartlar bölünə bilər. Qiymətin daha tez və ya kassadakı qiymətlə eyni olduğunu bu dəyişikliklər təmin etmir.

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qOoOJJbBU2Q/JYqn39nme3yI4bPeYshQherJoEX81Ls='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-HZY6xypHc+1z0ei3D8rn7zMZVRK+R9j/aBXWKpJ82Oc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -335,6 +335,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 
 /* Planning workspace: calm surfaces, clear hierarchy and large touch targets. */
 .intro{padding:32px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(125deg,var(--brand-soft),var(--card));margin:10px 0 28px}.eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--brand)}.intro .hero{font-size:clamp(28px,5vw,44px);line-height:1.13;max-width:680px;margin:14px 0}.intro p{color:var(--mute);max-width:540px}.intro .btn{color:var(--ink);display:inline-flex;text-decoration:none;margin:8px 8px 0 0;min-height:44px;align-items:center}.intro .btn.primary{color:#fff}.intro-steps{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;color:var(--mute);font-size:13px}.planner{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}.planner h2{margin-top:0}.planner label{display:block;font-size:14px;font-weight:600;margin:8px 0}.planner textarea{display:block;width:100%;padding:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;border-radius:10px;resize:vertical;margin:8px 0 12px}.planner input{width:120px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}.plan-row{padding:14px 0;border-bottom:1px solid var(--line)}.plan-row select{display:block;width:100%;padding:10px;margin:8px 0;background:var(--bg);border:1px solid var(--line);border-radius:8px}.product-tools{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.product-tools a,.product-tools button{font-size:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);color:var(--ink);background:var(--card);text-decoration:none;cursor:pointer}.watch-card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:12px 0;padding:18px}.watch-card.reached{border-color:var(--good);background:var(--good-soft)}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--brand);outline-offset:3px}@media(max-width:560px){.intro{padding:22px}.intro-steps{gap:10px;font-size:12px}.planner{padding:16px}}
+.photo-credit{display:block;color:var(--mute);font-size:11px;margin:8px 0}.photo-credit a{color:inherit}
 </style>
 </head>
 <body>
@@ -373,7 +374,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
     <p class="note" id="srcNote"></p>
     <p class="note">Qiymətlər mağazaların açıq saytlarından avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
       Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları öz sahiblərinə məxsusdur. Sayt cookie istifadə etmir, ziyarət sayı anonim hesablanır;
-      səbət yalnız sizin brauzerinizdə saxlanır. Məhsul şəkilləri: OBA, Araz və Bazarstore-un öz saytları və <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" style="color:inherit">Open Food Facts</a>
+      səbət yalnız sizin brauzerinizdə saxlanır. Məhsul şəkilləri: icazə qeydi olan mənbələr və <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" style="color:inherit">Open Food Facts</a>
       iştirakçıları, <a href="https://creativecommons.org/licenses/by-sa/3.0/deed.az" rel="noopener noreferrer" style="color:inherit">CC BY-SA 3.0</a>. <a href="qiymetler/" style="color:inherit">Bütün qiymətlər (kateqoriyalar üzrə siyahı)</a> ·
       <a href="haqqinda.html" style="color:inherit">Haqqında, şərtlər və məxfilik</a></p>
   </section>
@@ -509,7 +510,8 @@ const OFF_IMG="https://images.openfoodfacts.org/images/products/", IM_RX=/^\d{3}
 /* mağazanın öz saytındakı şəkil ("ph" = "o|a|b:<fayl>", scraper.py store_photo); Open Food Facts-dən əvvəl gəlir */
 const PH_BASE={o:"https://obafiles.blob.core.windows.net/oba-plus/",b:"https://bazarstore.az/images/thumbs/"},
   PH_RX=/^([oab]):([A-Za-z0-9][\w\/.%-]*\.(?:png|jpe?g|webp))$/i;
-const phUrl=ph=>{ const m=PH_RX.exec(ph||""); if(!m||m[2].includes("..")) return "";
+let PHOTO_SOURCES=new Set();
+const phUrl=ph=>{ const m=PH_RX.exec(ph||""); if(!m||!PHOTO_SOURCES.has(m[1])||m[2].includes("..")) return "";
   return m[1]==="a"?"https://arazmarket.az/_next/image?url="+encodeURIComponent("https://b7x9kq.arazmarket.az/storage/products/"+m[2])+"&w=256&q=75"   // Arazın öz kiçildilmiş şəkli (orijinal ~500 KB)
     :PH_BASE[m[1]]+m[2]; };
 const imgTag=(u,by,c,em)=>`<img class="ph${c?" c":""}" src="${esc(u)}" alt="" title="Foto: ${esc(by)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-em="${esc(em)}">`;
@@ -520,6 +522,12 @@ const picOf=g=>{ const em=iconOf(g);
   for(const s of stores){ const o=g.offers[s], u=o&&phUrl(o.ph); if(u&&!hid(o.ph,u)) return imgTag(u,s,1,em); }
   for(const s of stores){ const o=g.offers[s], u=o&&o.im&&IM_RX.test(o.im)&&`${OFF_IMG}${o.im}.200.jpg`; if(u&&!hid(o.im,u)) return imgTag(u,"Open Food Facts",0,em); }
   return em; };
+function photoCredit(g){
+  if(stores.some(s=>g.offers[s]&&phUrl(g.offers[s].ph))) return "";
+  const o=stores.map(s=>g.offers[s]).find(o=>o&&IM_RX.test(o.im)&&!hid(o.im,OFF_IMG+o.im+".200.jpg"));
+  if(!o)return ""; const code=o.im.split("/front_")[0].replace(/\//g,"");
+  return `<small class="photo-credit">Foto: <a href="https://world.openfoodfacts.org/product/${code}" target="_blank" rel="noopener noreferrer">${esc(o.im_by||"Open Food Facts iştirakçıları")}</a> · <a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener noreferrer">CC BY-SA 3.0</a> · dəyişdirilməyib${o.im_match==="exact_name"?" · dəqiq ada uyğunlaşdırılıb":""}</small>`;
+}
 /* böyük baxış üçün: Arazın kiçildilmiş şəklinin 640 px variantı (~18 KB); digərləri olduğu kimi */
 const bigUrl=u=>u.replace(/([?&]w=)256(?=&|$)/,"$1640");
 /* mağazanın öz saytında bax (Wolt linki verilmir): öz saytdan gələn məhsulda məhsulun səhifəsi ("u" = scraper.py-ın yazdığı slug)
@@ -1054,6 +1062,7 @@ function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (da
   const cut=(P,Q,c)=>{ const i=c?P.indexOf(c):-1; if(i<0) return null;   // yarımçıq son söz (c): o biri adda onunla başlayan söz varsa uyğundur
     for(let j=0;j<Q.length;j++){ const u=Q[j]; if(u.length>c.length&&u.startsWith(c)){ P.splice(i,1); Q.splice(j,1); return [W.get(c),W.get(u)]; } } return null; };
   const sim=(e,x,need)=>{
+    if(e.x.gtin&&x.x.gtin&&e.x.gtin!==x.x.gtin) return 0;
     const xi=x.ids, ei=e.ids, nx=xi.length, ne=ei.length; let i=0, j=0, sh=0, na=0, nb=0, b1=0, b2=0, b3=0;
     while(i<nx||j<ne){ const a=i<nx?xi[i]:1e9, b=j<ne?ei[j]:1e9;         // artan id-lərin birləşdirilməsi: ortaq çəki, qarşılıqsız sayı, B-nin ən ağır 3 sözü
       if(a===b){ sh+=WI[a]; i++; j++; } else if(a<b){ na++; i++; } else { nb++; const w=WI[b]; if(w>b1){b3=b2;b2=b1;b1=w;} else if(w>b2){b3=b2;b2=w;} else if(w>b3) b3=w; j++; } }
@@ -1096,7 +1105,7 @@ function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (da
       if(pw>.5*x.w) break; pw+=WI[t];                                   // qalan sözlər .5 həddinə çatdıra bilməz
       for(const m of ms) for(const e of m.get(t)||[]){ if(e.st===st) continue; e.st=st;
         if(e.w<.5*x.w||x.w<.5*e.w) continue;
-        if(e.store===x.store){ if(e.key===x.key&&compat(e.a,x.a)) E.push([1,e,x]); continue; }   // eyni mağaza: yalnız eyni ad və ölçü/faiz (dublikat)
+        if(e.store===x.store){ if(e.key===x.key&&(!e.x.gtin||!x.x.gtin||e.x.gtin===x.x.gtin)&&compat(e.a,x.a)) E.push([1,e,x]); continue; }   // eyni mağaza: yalnız eyni ad və ölçü/faiz (dublikat)
         if(x.p>0&&e.p>0&&(x.p>e.p*3||e.p>x.p*3)||!compat(e.a,x.a)) continue;   // qiymət 3 dəfədən çox fərqli
         const s=sim(e,x,.5); if(s>=.5) E.push([s,e,x]); }
     }
@@ -1109,7 +1118,7 @@ function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (da
     const A=a.C, B=b.C; if(A===B||Math.max(A.hi,B.hi)>3*Math.min(A.lo,B.lo)) continue;
     let ok=true;
     for(const y of A.m){ for(const z of B.m){
-        if(y.store===z.store){ if(y.key!==z.key||!compat(y.a,z.a)){ok=false;break;} continue; }
+        if(y.store===z.store){ if(y.key!==z.key||y.x.gtin&&z.x.gtin&&y.x.gtin!==z.x.gtin||!compat(y.a,z.a)){ok=false;break;} continue; }
         if(y===a&&z===b||y===b&&z===a) continue;
         if(!compat(y.a,z.a)||sim(y,z,0)<=OPT.LINK){ok=false;break;} }
       if(!ok) break; }
@@ -1155,7 +1164,7 @@ function usePre(it,pre){
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
-  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",ph:it.ph||"",u:it.u||"",gtin:it.gtin||""};
+  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",im_match:it.im_match||"",im_by:it.im_by||"",ph:it.ph||"",u:it.u||"",gtin:it.gtin||"",wp:own?it.wolt_price||0:0,online:!!it.online_offer};
 }
 
 /* ─────────── state ─────────── */
@@ -1213,7 +1222,7 @@ function hk(s,n){ let h1=0x811c9dc5,h2=5381; for(const b of new TextEncoder().en
 const okP=v=>typeof v==="number"&&v>0&&v<1e5, okS=(v,rx)=>typeof v==="string"&&rx.test(v);
 const FIELD=new Map(Object.entries({name:v=>typeof v==="string"&&v.length>0&&v.length<=300, price:okP, wolt_price:okP, pp:okP,
   wt:v=>Number.isInteger(v)&&v>0&&v<1e5, pd:v=>okS(v,/^\d{4}-\d\d-\d\d$/), stale:v=>v===true,
-  gtin:v=>okS(v,/^\d{8,14}$/), im:v=>okS(v,IM_RX), ph:v=>okS(v,PH_RX), u:v=>okS(v,U_RX)}));
+  im_by:v=>typeof v==="string"&&v.length<=120, online_offer:v=>v===true, im_match:v=>v==="exact_name", gtin:v=>okS(v,/^\d{8,14}$/), im:v=>okS(v,IM_RX), ph:v=>okS(v,PH_RX), u:v=>okS(v,U_RX)}));
 function sane(d){
   if(!d||typeof d!=="object"||!d.categories||typeof d.categories!=="object") throw new Error("data formatı tanınmadı");
   const stores=(Array.isArray(d.stores)?d.stores:[]).filter(s=>okS(s,ST_RX)), SS=new Set(stores), cats=Object.create(null);
@@ -1248,6 +1257,7 @@ async function ensureAll(){ if(CATALOG) { for(let i=0;i<GL.length;i+=4) await Pr
 async function load(){
   $("loading").hidden=false; $("error").hidden=true;
   try{
+    const rights=fetch("data/photo_rights.json").then(r=>r.ok?r.json():null).catch(()=>null);
     const pj=fetch("data/groups.json").then(r=>r.ok?r.json():null).catch(()=>null);   // serverdə hazırlanmış kartlar (paralel)
     const po=fetch("data/overrides.json").then(r=>r.ok?r.json():null).catch(()=>null);   // sahibin əl ilə düzəlişləri (kiçik fayl)
     CATALOG=null; loadedGroups.clear(); pendingGroups.clear(); for(const k in GROUPS) delete GROUPS[k];
@@ -1256,6 +1266,8 @@ async function load(){
     stores=DB.stores;
     GL=DB.groups||Object.entries(DB.categories).map(([id,c])=>({id,name:c.name,cats:[id]}));
     GM=Object.assign(Object.create(null),Object.fromEntries(GL.map(g=>[g.id,g])));   // ünvandan gələn açar (#/c/toString) obyektin öz xassəsinə düşməsin
+    const grants=await Promise.race([rights,new Promise(r=>setTimeout(()=>r(null),1500))]);
+    PHOTO_SOURCES=new Set(Object.entries(grants&&grants.stores||{}).filter(([k,v])=>/^[oab]$/.test(k)&&v&&v.approved===true&&typeof v.evidence==="string"&&v.evidence.length>0).map(([k])=>k));
     const ov=await Promise.race([po,new Promise(r=>setTimeout(()=>r(null),1500))]);
     if(ov&&Array.isArray(ov.hide_photo)) HIDE=new Set(ov.hide_photo.filter(x=>typeof x==="string"&&x.length<=400).slice(0,5000));
     renderHome();
@@ -1372,7 +1384,7 @@ function offer(g,s){
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
-  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
+  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
 function bestOf(g){
   const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0];
@@ -1437,7 +1449,7 @@ function card(g,o={}){
     <button class="fav${on?" on":""}" data-fav="1" aria-label="${on?"Səbətdən çıxar":"Səbətə əlavə et"}" aria-pressed="${on}">${on?"✓":"+"}</button>
     <div class="head"><div class="logo-p">${em}</div>
     <div><h3>${esc(g.name)}</h3><div class="meta">${metaOf(g)}</div></div></div>
-    ${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div>
+    ${photoCredit(g)}${bestOf(g)}<div class="offers${a.kg?" kg":""}">${stores.filter(s=>g.offers[s]).sort((x,y)=>g.offers[x].p-g.offers[y].p).map(s=>offer(g,s)).join("")}</div>
     <div class="product-tools"><a href="mehsullar/${g.pid}.html">Məhsul və tarixçə ↗</a><button type="button" data-track="1">♡ Qiyməti izlə</button></div>
     ${o.qty?`<div class="qty"><button data-q="-1" aria-label="Azalt">−</button><b>${o.qty}</b><button data-q="1" aria-label="Artır">+</button><span>${a.kg?"kq":"ədəd"}</span></div>`:""}</article>`;
 }

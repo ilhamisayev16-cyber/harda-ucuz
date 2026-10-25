@@ -13,7 +13,7 @@ const html=fs.readFileSync(process.argv[1],'utf8');
 const js=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]).pop();
 const els={}, mkEl=()=>({classList:{toggle(){},add(){},remove(){},contains(){return false}},style:{},dataset:{},setAttribute(){},
   addEventListener(){},querySelectorAll:()=>[],querySelector:()=>mkEl(),scrollIntoView(){},blur(){},innerHTML:"",textContent:"",hidden:false});
-const ctx={console,document:{addEventListener(){},getElementById:id=>els[id]||(els[id]=mkEl()),querySelector:mkEl,querySelectorAll:()=>[]},
+const ctx={console,TextEncoder,document:{addEventListener(){},getElementById:id=>els[id]||(els[id]=mkEl()),querySelector:mkEl,querySelectorAll:()=>[]},
   localStorage:{getItem:()=>null,setItem(){}},addEventListener(){},fetch:async()=>({ok:false,status:0}),setTimeout:()=>0,clearTimeout(){},
   location:{hash:''},window:{scrollTo(){}},innerWidth:390,performance};
 vm.createContext(ctx);

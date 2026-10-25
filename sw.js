@@ -1,17 +1,17 @@
 // Service worker: sayt telefona "tətbiq" kimi quraşdırılanda internetsiz də açılsın (index.html qeydiyyatdan keçirir).
 // Yalnız öz saytımızın faylları keşlənir; mağaza / Open Food Facts şəkilləri və statistika olduğu kimi şəbəkədən gedir.
-// - səhifələr, data/*.json, skriptlər (.js) və manifest: əvvəlcə şəbəkə (təzə qiymət / kod), alınmasa, server xətası verərsə (5xx)
+// - səhifələr, data/*.json (data/catalog/ da), skriptlər, stillər (.js, .css) və manifest: əvvəlcə şəbəkə (təzə qiymət / kod), alınmasa, server xətası verərsə (5xx)
 //   və ya çox gecikərsə son saxlanmış nüsxə. Skript index.html ilə birlikdə dəyişir: köhnəsi keşdən gəlsə yeni səhifə ilə uyuşmaz
 // - şəkillər, ikonlar (assets/): əvvəlcə keş (adı dəyişmir), yoxdursa şəbəkə
 // - keşdə olmayan səhifə internetsiz açılanda brauzerin xəta səhifəsi əvəzinə qısa izah və ana səhifəyə link
 // Keşin strukturu dəyişəndə VER-i artırın: köhnə keş activate-də silinir.
-const VER = "v1", SHELL = "hu-shell-" + VER, DATA = "hu-data-" + VER;
+const VER = "v2", SHELL = "hu-shell-" + VER, DATA = "hu-data-" + VER;
 const PRE = ["./", "index.html", "haqqinda.html", "manifest.webmanifest", "assets/twemoji.js",
   "assets/icons/icon-192.png", "assets/icons/favicon.svg"];
 
 self.addEventListener("install", e => {
   // data da ilk açılışdan saxlanır (brauzer onu adətən elə indi yükləyib, HTTP keşdən gəlir); alınmasa quraşdırma pozulmur
-  const data = caches.open(DATA).then(c => c.addAll(["data/prices.json", "data/groups.json"])).catch(() => {});
+  const data = caches.open(DATA).then(c => c.addAll(["data/catalog.json", "data/groups.json"])).catch(() => {});
   e.waitUntil(Promise.all([caches.open(SHELL).then(c => c.addAll(PRE)), data]).then(() => self.skipWaiting()));
 });
 
@@ -54,8 +54,8 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET" || url.origin !== location.origin) return;   // xarici şəkillər, statistika: toxunulmur
   const path = url.pathname;
   if (req.mode === "navigate") { e.respondWith(netFirst(e, SHELL, 3000, offline)); return; }
-  if (/\/data\/[\w-]+\.json$/.test(path)) { e.respondWith(netFirst(e, DATA, 8000)); return; }
-  if (/\.(?:js|webmanifest)$/.test(path)) { e.respondWith(netFirst(e, SHELL, 3000)); return; }
+  if (/\/data\/(?:catalog\/)?[\w-]+\.json$/.test(path)) { e.respondWith(netFirst(e, DATA, 8000)); return; }
+  if (/\.(?:js|css|webmanifest)$/.test(path)) { e.respondWith(netFirst(e, SHELL, 3000)); return; }   // assets/catalog.css da adı dəyişmədən yenilənir
   if (/\/assets\//.test(path)) {
     e.respondWith(caches.match(req).then(r => r || fetch(req).then(n => { if (n.ok) e.waitUntil(save(SHELL, req, n)); return n; })));
   }

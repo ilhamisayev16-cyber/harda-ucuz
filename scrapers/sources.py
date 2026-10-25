@@ -95,7 +95,3 @@ BAKU = timezone(timedelta(hours=4))
 
 def now():
     return datetime.now(BAKU)
-
-
-def now_iso():
-    return now().strftime("%Y-%m-%dT%H:%M:%S")

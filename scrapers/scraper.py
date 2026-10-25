@@ -640,10 +640,6 @@ def _path_info(path):
             return (up[-1][0] if up else pc), True, frozenset(gen)
     return None, False, frozenset()
 
-def cat_from_path(path):
-    """(alt növ, ümumi?) və ya (None, False)."""
-    return _path_info(path)[:2]
-
 # Mağazanın çox ümumi (üst səviyyə) kateqoriyaları, məs. OBA: "Şirniyyat", "Spirtli içkilər" — alt növü ad üzrə təyin olunur
 _COARSE = {_f(x) for x in ["Şirniyyat","Təmizlik","Spirtli içkilər","Konserva və dəniz məhsulları","Heyvan qidaları",
                            "Un məmulatları","Kosmetika","Ev əşyaları","İçkilər","Süd məhsulları","Meyvə-tərəvəz"]}
@@ -1388,7 +1384,7 @@ def _wolt_entry(item, path=""):
     e = {"name": name, "wolt_price": price}
     wt = _wolt_weight(item)
     if wt: e["wt"] = wt
-    g = item.get("barcode_gtin")   # ştrix-kod: yalnız məhsul şəkli üçün (scrapers/off_images.py "im"-ə çevirir və silir)
+    g = item.get("barcode_gtin")   # ştrix-kod: məhsul kimliyi və şəkli üçün saxlanır
     if isinstance(g, str) and re.fullmatch(r"\d{8,14}", g): e["gtin"] = g
     return classify(name, path), e
 
@@ -1601,9 +1597,8 @@ def merge_own_wolt(own_list, wolt_list):
     çəkili ad oxşarlığı >= 0.6 (ölçü yalnız bir adda: >= 0.8, heç birində: >= 0.7). Söz çəkisi = log(1 + N / tezlik):
     "Prezident", "Chivas" kimi nadir sözlər "yağ", "süd"-dən ağırdır. Hər Wolt məhsulu ən çox bir öz məhsula bağlanır
     (ən oxşar cütlər əvvəl). Əvvəllər ölçü yoxlanmırdı: "Süd 1 L" Wolt-un "Süd 0.5 L"-i ilə birləşir, o Wolt məhsulu siyahıdan düşürdü.
-    Böyük aksiya (öz qiymət adi qiymətin `rp` yarısı və ya daha az): mağaza saytındakı aksiya çox vaxt onlayn sifarişə aiddir,
-    rəfdə qiymət fərqli olur (Araz "Avokado əd": saytda 3.49 → 0.99, kassada 1.99). Eyni məhsulun Wolt qiyməti varsa
-    öz qiymət götürülmür, yalnız Wolt qiyməti qalır (saytda W ilə). Qiymət yoxlaması adi qiymətlə də aparılır."""
+    Böyük onlayn aksiya da onlayn qiymət kimi saxlanır; rəf qiyməti barədə nəticə çıxarılmır.
+    Wolt qiyməti ayrıca saxlanır. Fərqli GTIN-li məhsullar birləşdirilmir."""
     import math
     own_p = [_parse(it["name"]) for it in own_list]
     wolt_p = [_parse(w["name"]) for w in wolt_list]
@@ -1623,6 +1618,8 @@ def merge_own_wolt(own_list, wolt_list):
         for j in cand:
             q = wolt_list[j]["wolt_price"]
             if p <= 0 or q <= 0 or q > 1.6 * hi or q * 1.6 < p: continue
+            ga, gb = own_list[i].get("gtin"), wolt_list[j].get("gtin")
+            if ga and gb and ga != gb: continue
             s = sim(own_p[i], wolt_p[j], wt)
             osz = wolt_p[j][1]
             need = 0.6 if sz and osz else 0.7 if not sz and not osz else 0.8
@@ -1634,6 +1631,7 @@ def merge_own_wolt(own_list, wolt_list):
     merged = []
     for i, item in enumerate(own_list):
         entry = {"name": item["name"], "price": item["price"]}
+        if item.get("gtin"): entry["gtin"] = item["gtin"]
         if item.get("ph"): entry["ph"] = item["ph"]
         if item.get("u"): entry["u"] = item["u"]
         j = match.get(i)
@@ -1642,8 +1640,8 @@ def merge_own_wolt(own_list, wolt_list):
             if abs(w["wolt_price"] - item["price"]) > 0.005: entry["wolt_price"] = w["wolt_price"]
             if w.get("wt"): entry["wt"] = w["wt"]
             if w.get("gtin"): entry["gtin"] = w["gtin"]
-            if item.get("rp") and item["price"] <= 0.5 * item["rp"] and "wolt_price" in entry:
-                del entry["price"]   # 50%+ aksiya: Wolt qiyməti göstərilir
+            if item.get("rp") and item["price"] <= 0.5 * item["rp"]:
+                entry["online_offer"] = True
         merged.append(entry)
     for j, w in enumerate(wolt_list):   # yalnız Wolt-da olanlar
         if j not in used:

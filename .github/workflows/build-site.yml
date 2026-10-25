@@ -6,7 +6,7 @@ name: Build Site
 on:
   push:
     branches: [main]
-    paths: ['index.html', 'scripts/**']
+    paths: ['index.html', 'scripts/**', 'assets/catalog.css', 'sw.js']
   workflow_dispatch:
 
 permissions:
@@ -36,7 +36,7 @@ jobs:
           git config user.name "Price Bot"
           git config user.email "bot@qiymet.az"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          for f in data/groups.json sitemap.xml qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
+          for f in data/groups.json data/product_ids.json data/catalog.json data/catalog sitemap.xml sitemap-products*.xml robots.txt mehsullar qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
           git diff --staged --quiet || git commit -m "Sayt yenidən quruldu"
           git pull --rebase origin "$GITHUB_REF_NAME"
           git push

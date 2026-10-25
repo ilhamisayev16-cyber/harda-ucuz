@@ -26,7 +26,7 @@ def _build(tmp_path, db):
 
 def _file(out, rel):
     """saytdakı ünvan → fayl: qurulan fayllar --out-da, qalanı (index.html, haqqinda.html, assets/) repoda"""
-    base = out if rel.startswith("qiymetler/") or rel in ("sitemap.xml", "data/groups.json") else ROOT
+    base = out if rel.startswith(("qiymetler/", "mehsullar/")) or rel in ("sitemap.xml", "data/groups.json") else ROOT
     f = base / rel
     return f / "index.html" if rel == "" or rel.endswith("/") else f
 
@@ -128,10 +128,10 @@ def _db():
 def test_cheapest_label_ties_prices_and_grammar(tmp_path):
     out = _build(tmp_path, _db())
     html = (out / "qiymetler" / "sud" / "sud.html").read_text(encoding="utf-8")
-    li = {re.search(r"<b>([^<]+)</b>", x)[1]: x for x in re.findall(r"<li><b>.*?</li>", html)}
+    li = {re.search(r"<b>(?:<a [^>]*>)?([^<]+)", x)[1]: x for x in re.findall(r"<li><b>.*?</li>", html)}   # ad məhsul səhifəsinə linkdir
     assert "3 mağazada eyni qiymət: <span>2.80\u00a0₼</span>" in li["Azərsüd Süd 3.2% 1 l"] and "Ən ucuz" not in li["Azərsüd Süd 3.2% 1 l"]
     assert "Ən ucuz: <span>Araz</span>, <span>Bravo<sup>W</sup></span> — <span>2.50\u00a0₼</span>" in li["Milla Süd 2.5% 1 l"]
-    assert "<span>OBA 2.90\u00a0₼</span>" in li["Milla Süd 2.5% 1 l"]
+    assert "<span>OBA 2.90\u00a0₼ (onlayn)</span>" in li["Milla Süd 2.5% 1 l"]   # Wolt olmayan qiymət onlayn qiymət kimi işarələnir
     assert "Ən ucuz: <span>Bravo 2.70\u00a0₼<sup>W</sup></span>" in li["Atena Süd 3.2% 0.5 l"]
     assert "5.40\u00a0₼/L" in li["Atena Süd 3.2% 0.5 l"]   # vahid qiymət (0.5 l → 1 L)
     # hər qiymət iki onluq rəqəmlə və ₼-dan əvvəl bölünməz boşluqla (₼ ayrı sətrə keçmir)

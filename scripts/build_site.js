@@ -11,6 +11,7 @@
 "use strict";
 const fs = require("fs"), path = require("path"), vm = require("vm");
 
+const crypto = require("crypto");
 const ROOT = path.resolve(__dirname, "..");
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const PRICES = path.resolve(arg("--prices", path.join(ROOT, "data", "prices.json")));
@@ -33,7 +34,7 @@ function loadSite() {
   vm.runInContext(js + `;globalThis.__site={
     setDB(d){DB=sane(d);stores=DB.stores;GL=DB.groups;GM=Object.fromEntries(GL.map(g=>[g.id,g]));PRE=null;for(const k in GROUPS)delete GROUPS[k];return DB;},
     setPre(p){PRE=p;for(const k in GROUPS)delete GROUPS[k];},
-    groups:(gid,rec)=>groups(gid,rec), GL:()=>GL, catName:c=>catName(c), EMOJI, siteHash:()=>siteHash(),
+    setIds(ids){DB.product_ids=ids;}, aliases:g=>aliases(g), hash:(s,n)=>hk(s,n), groups:(gid,rec)=>groups(gid,rec), GL:()=>GL, catName:c=>catName(c), EMOJI, siteHash:()=>siteHash(),
     upr:typeof upr==="function"?upr:null};`, ctx);   // upr (vahid qiymət) olmasa səhifələr onsuz qurulur
   return ctx.__site;
 }
@@ -48,7 +49,9 @@ const cardJSON = cards => JSON.stringify(cards.map(g => { const { mi, ...r } = g
 
 function main() {
   const S = loadSite();
-  const db = S.setDB(JSON.parse(fs.readFileSync(PRICES, "utf8")));   // saytın öz yoxlaması (sane): brauzerlə eyni data, səhifələrə yalnız düzgün format düşür
+  let registry={}; try{ registry=JSON.parse(fs.readFileSync(path.join(OUT,"data","product_ids.json"),"utf8")); }catch(e){ if(e.code!=="ENOENT") throw e; }
+  const raw=JSON.parse(fs.readFileSync(PRICES,"utf8")); raw.product_ids=registry;
+  const db = S.setDB(raw);   // saytın öz yoxlaması (sane): brauzerlə eyni data, səhifələrə yalnız düzgün format düşür
 
   /* 1. kartlar + hazır üzv siyahısı; yoxlama: hazır siyahı ilə qurulan kartlar brauzerin hesabladığı ilə eyni olmalıdır */
   const t0 = Date.now(), pre = {}, CARDS = {};
@@ -70,9 +73,50 @@ function main() {
   const nCards = Object.values(CARDS).reduce((a, c) => a + c.length, 0);
   console.log(`groups.json: ${Object.keys(pre).length}/${S.GL().length} qrup, ${nCards} kart, qruplaşdırma ${t1 - t0} ms`);
 
+  // Persist aliases, so reordering, new stores and display-name changes keep existing URLs.
+  const assigned=new Map();
+  for(const cards of Object.values(CARDS)) for(const c of cards){
+    const aliases=S.aliases(c), known=aliases.map(k=>registry[k]).filter(x=>/^s[a-f0-9]{16}$/.test(x||""));
+    c.pid=known[0]||c.pid; let split=false;
+    const codes=aliases.filter(k=>k.startsWith("gtin:")), previous=assigned.get(c.pid);
+    if(previous&&((codes.length&&previous.codes.size&&!codes.some(k=>previous.codes.has(k)))||!aliases.some(k=>previous.aliases.has(k))))
+      { c.pid="s"+S.hash("product-split",c.t+"|"+aliases.slice().sort().join("|")); split=true; }
+    const current=assigned.get(c.pid)||{aliases:new Set(),codes:new Set()};
+    aliases.forEach(k=>current.aliases.add(k));codes.forEach(k=>current.codes.add(k));assigned.set(c.pid,current);
+    for(const k of aliases) if(split||!registry[k]) registry[k]=c.pid;
+  }
+  db.product_ids=registry; S.setIds(registry);
+  writeAtomic(path.join(OUT,"data","product_ids.json"),JSON.stringify(registry));
+  const catalog={version:1,last_updated:db.last_updated,stores:db.stores,groups:db.groups,
+    highlights:{},categoryCounts:{},categories:Object.fromEntries(Object.entries(db.categories).map(([k,c])=>[k,{name:c.name,stores:{}}])),counts:{},files:{}};
+  const highlights=[];
+  for(const [cid,c] of Object.entries(db.categories)){
+    catalog.categoryCounts[cid]=Math.max(0,...Object.values(c.stores).map(l=>l.length));
+    for(const [store,items] of Object.entries(c.stores)) for(const it of items){
+      const p=it.price??it.wolt_price, ratio=it.pp?(it.pp-p)/it.pp:0;
+      if(it.pd&&!it.stale&&p>=.3&&ratio>=.08&&ratio<=.6&&(Date.now()-new Date(it.pd))/864e5<=7) highlights.push({cid,store,it,ratio});
+    }
+  }
+  for(const {cid,store,it} of highlights.sort((a,b)=>b.ratio-a.ratio).slice(0,40)){
+    const c=catalog.highlights[cid]||(catalog.highlights[cid]={name:db.categories[cid].name,stores:{}});
+    (c.stores[store]||(c.stores[store]=[])).push(it);
+  }
+  for(const g of db.groups){
+    const categories=Object.fromEntries(g.cats.map(k=>[k,db.categories[k]])), ids={};
+    for(const c of CARDS[g.id]) for(const k of S.aliases(c)) ids[k]=registry[k];
+    const payload=JSON.stringify({last_updated:db.last_updated,stores:db.stores,groups:[g],categories,product_ids:ids});
+    const digest=crypto.createHash("sha256").update(payload).digest("hex").slice(0,16), file=`catalog/${g.id}-${digest}.json`;
+    catalog.counts[g.id]=Object.values(categories).reduce((n,c)=>n+Object.values(c.stores).reduce((m,l)=>m+l.length,0),0);
+    catalog.files[g.id]=file; writeAtomic(path.join(OUT,"data",file),payload);
+  }
+  // Retain only the current snapshot; a version mismatch asks the browser to refresh.
+  const shardDir=path.join(OUT,"data","catalog"), keep=new Set(Object.values(catalog.files).map(f=>path.basename(f)));
+  for(const f of fs.readdirSync(shardDir)) if(/^[a-z0-9_-]+\.json$/.test(f)&&!keep.has(f)) fs.unlinkSync(path.join(shardDir,f));
+  writeAtomic(path.join(OUT,"data","catalog.json"),JSON.stringify(catalog));
   /* 2. statik səhifələr */
   const pages = buildPages(db, S, CARDS);
   console.log(`qiymetler/: ${pages.length} səhifə`);
+  buildProducts(db,CARDS,S,new Set(pages));   // alt növ səhifəsi qurulmayıbsa (az məhsul, tək alt növ) məhsul səhifəsi qrup səhifəsinə keçid verir
 
   /* 3. sitemap.xml — lastmod: data səhifələri üçün qiymət tarixi, haqqinda.html üçün səhifədəki "Son yenilənmə" (hər gün dəyişmir) */
   const day = isoDay(db.last_updated);
@@ -155,6 +199,38 @@ function buildPages(db, S, CARDS) {
   return written.sort();
 }
 
+function buildProducts(db,CARDS,S,built){
+  const dir=path.join(OUT,"mehsullar"), tmp=dir+".tmp"; fs.rmSync(tmp,{recursive:true,force:true}); fs.mkdirSync(tmp,{recursive:true});
+  let history={};try{history=JSON.parse(fs.readFileSync(path.join(path.dirname(PRICES),"history.json"),"utf8")).h||{};}catch(e){}
+  const urls=[], seen=new Set(), activeIds=new Set(Object.values(CARDS).flatMap(cs=>cs.map(c=>c.pid)));
+  for(const cards of Object.values(CARDS)) for(const c of cards){
+    if(seen.has(c.pid))continue;seen.add(c.pid);
+    const rel=`mehsullar/${c.pid}.html`, offers=Object.entries(c.offers).sort((a,b)=>a[1].p-b[1].p);
+    const body=`<h2>Mağazalar üzrə qiymətlər</h2>`+items([c],S)+`<h2>Qiymət tarixçəsi</h2>`+offers.map(([store,o])=>{
+      const h=history[S.hash(store,o.n)]||[], rows=h.slice(-30);
+      return `<details><summary>${esc(store)} · ${o.w?"Wolt":"Mağazanın onlayn qiyməti"}${o.st?" · köhnə məlumat":""}</summary><p class="mute">Qeydə alınmış qiymət dəyişiklikləri; gündəlik stok göstəricisi deyil.</p>`+(rows.length?`<ul>${rows.map(([d,p])=>`<li>${esc(d)} — ${fmt(p)}</li>`).join("")}</ul>`:`<p>Hələ qiymət dəyişikliyi qeydə alınmayıb.</p>`)+`</details>`;
+    }).join("")+`<h2>Oxşar məhsulları araşdır</h2>`+(built.has(`qiymetler/${c.t}/${c.c}.html`)?`<a href="../qiymetler/${c.t}/${c.c}.html">${esc(S.catName(c.c))} qiymətləri</a>`:`<a href="../qiymetler/${c.t}/">${esc((db.groups.find(g=>g.id===c.t)||{}).name||"Kateqoriya")} qiymətləri</a>`);
+    const html=page({path:rel,title:c.name+" — qiymət müqayisəsi",desc:`${c.name}: ${offers.map(([s,o])=>s+" "+fmt(o.p)).join(", ")}. Mənbələr və qeydə alınmış qiymət tarixçəsi.`,upd:db.last_updated,crumbs:[["","Ana səhifə"],[`qiymetler/${c.t}/`,"Kateqoriya"]],h1:esc(c.name),lead:`${offers.length} mağazada qiymət məlumatı · ${c.a.kg?"1 kq üçün":"qablaşdırma üçün"}`,app:`#/c/${c.t}/${c.pid}`,body});
+    fs.writeFileSync(path.join(tmp,c.pid+".html"),html);urls.push(rel);
+    // Old ids remain valid when two previously separate cards are merged.
+    for(const k of S.aliases(c)){ const old=db.product_ids[k]; if(old&&old!==c.pid&&!seen.has(old)&&!activeIds.has(old)){fs.writeFileSync(path.join(tmp,old+".html"),html);seen.add(old);} }
+  }
+  // When a GTIN correction splits an old identity, keep its URL without publishing stale prices.
+  if(fs.existsSync(dir)) for(const file of fs.readdirSync(dir)){
+    if(!/^s[a-f0-9]{16}\.html$/.test(file)||fs.existsSync(path.join(tmp,file)))continue;
+    const old=fs.readFileSync(path.join(dir,file),"utf8"), match=/<h1>(.*?)<\/h1>/.exec(old), group=/#\/c\/([a-z0-9_]+)/.exec(old);
+    const name=(match?match[1]:"Məhsul").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");
+    const html=page({path:"mehsullar/"+file,title:name,desc:"Məhsul uyğunluğu yenilənib. Aktual qiymət üçün məhsulu yenidən seçin.",upd:db.last_updated,crumbs:[["","Ana səhifə"]],h1:esc(name),lead:"Bu məhsulun əvvəlki müqayisə qrupu dəyişib.",app:group?"#/c/"+group[1]:"",body:"<p>Köhnə qiymət göstərilmir. Aktual müqayisə üçün kateqoriyadan uyğun məhsulu yenidən seçin.</p>"}).replace("<head>",'<head><meta name="robots" content="noindex,follow">');
+    fs.writeFileSync(path.join(tmp,file),html);
+  }
+  fs.rmSync(dir,{recursive:true,force:true});fs.renameSync(tmp,dir);
+  const parts=[];
+  for(let i=0;i<urls.length;i+=40000){const file=`sitemap-products-${parts.length+1}.xml`;parts.push(file);writeAtomic(path.join(OUT,file),`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+urls.slice(i,i+40000).map(p=>`<url><loc>${esc(SITE+p)}</loc></url>`).join("")+`</urlset>`);}
+  writeAtomic(path.join(OUT,"sitemap-products.xml"),`<?xml version="1.0" encoding="UTF-8"?><sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">`+parts.map(p=>`<sitemap><loc>${esc(SITE+p)}</loc></sitemap>`).join("")+`</sitemapindex>`);
+  writeAtomic(path.join(OUT,"robots.txt"),`User-agent: *\nAllow: /\nSitemap: ${SITE}sitemap.xml\nSitemap: ${SITE}sitemap-products.xml\n`);
+  console.log(`mehsullar/: ${urls.length} sabit məhsul səhifəsi`);
+}
+
 /* bir neçə mağazada olanlar əvvəl (çox mağaza, sonra böyük qənaət), sonra tək mağazalılar (ada görə) */
 function pick(cards) {
   const multi = cards.filter(c => c.n > 1).sort((a, b) => b.n - a.n || b.save - a.save || a.name.localeCompare(b.name, "az"));
@@ -177,14 +253,14 @@ function items(list, S, save) {
     const u = c.a && c.a.kg ? "/kq" : "", W = o => o.w ? "<sup>W</sup>" : "";
     const offs = Object.entries(c.offers).sort((a, b) => a[1].p - b[1].p), live = offs.filter(([, o]) => !o.st);
     const low = c.n > 1 ? live.filter(([, o]) => o.p === c.min) : [], same = low.length > 1 && low.length === live.length;
-    const lbl = ([s, o]) => `<span>${esc(s)} ${fmt(o.p)}${u}${W(o)}${o.st ? " (arxiv)" : ""}</span>`, name = ([s, o]) => `<span>${esc(s)}${W(o)}</span>`;
+    const lbl = ([s, o]) => `<span>${esc(s)} ${fmt(o.p)}${u}${o.w ? W(o) : " (onlayn)"}${o.wp ? " · Wolt: " + fmt(o.wp) : ""}${o.st ? " (arxiv)" : ""}</span>`, name = ([s, o]) => `<span>${esc(s)}${W(o)}</span>`;
     const head = !low.length ? "" : low.length === 1 ? `<i style="background:var(--${esc(low[0][0])})"></i>Ən ucuz: ${lbl(low[0])}`
       : same ? `${low.length} mağazada eyni qiymət: <span>${fmt(c.min)}${u}</span>` : `Ən ucuz: ${low.map(name).join(", ")} — <span>${fmt(c.min)}${u}</span>`;
     const first = (low[0] || live[0] || offs[0] || [])[1], up = S.upr && first ? S.upr(c, first.p) : null;   // vahid qiymət (₼/kq, ₼/L), saytdakı kimi
     const extra = (up && isFinite(up.v) && Math.abs(up.v - first.p) >= .005 ? ` <span class="u">· ${fmt(up.v)}/${esc(up.u)}</span>` : "") +   // 1 kq / 1 L qablaşdırmada təkrar olmasın
       (save && !same && c.save > 0 ? ` <span class="u">· ${fmt(c.save)} qənaət</span>` : "");
     const tail = (same ? low.map(name) : []).concat(offs.filter(x => !low.includes(x)).map(lbl)).join(" · ");
-    return `<li><b>${esc(c.name)}</b>` + (head ? `<span class="best">${head}${extra}</span>` : "") +
+    return `<li><b><a href="${esc(SITE)}mehsullar/${c.pid}.html">${esc(c.name)}</a></b>` + (head ? `<span class="best">${head}${extra}</span>` : "") +
       (tail || !head && extra ? `<small>${tail}${head ? "" : extra}</small>` : "") + `</li>`;
   }).join("\n") + `\n</ul>`;
 }
@@ -196,7 +272,7 @@ function page({ path: p, title, desc, upd, crumbs, h1, lead, app, body }) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:${STATS ? " " + new URL(STATS).origin : ""}; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:${STATS ? " " + new URL(STATS).origin : ""}; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${esc(full)}</title>
 <meta name="description" content="${esc(desc.slice(0, 300))}">
@@ -215,36 +291,7 @@ function page({ path: p, title, desc, upd, crumbs, h1, lead, app, body }) {
 <link rel="icon" href="${up}favicon.ico" sizes="48x48">
 <link rel="icon" href="${up}assets/icons/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="${up}assets/icons/apple-touch-icon.png">
-<style>
-:root{--bg:#faf6ee;--card:#fff;--ink:#281505;--mute:#6b5a46;--line:#eedcc4;--brand:#bf4800;--on-brand:#fff;--good:#0b8043;--good-soft:#e6f6ee;
---Bravo:#d93025;--OBA:#0b79d0;--Araz:#8e44ad;--Neptun:#0f9d58;--Tamstore:#e6a100;--Rahat:#c2185b;--Bazarstore:#00897b;--SPAR:#7cb342}
-@media (prefers-color-scheme:dark){:root{--bg:#151009;--card:#1f1810;--ink:#f5ebdc;--mute:#b4a58f;--line:#3a2e20;--brand:#ff7a2f;--on-brand:#151009;--good:#3ddc84;--good-soft:#12301f}}
-/* mətn rəngləri WCAG AA (4.5:1): link #bf4800, yaşıl #0b8043; qaranlıq rejimdə narıncı düymədə tünd yazı */
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
-main{max-width:760px;margin:0 auto;padding:16px 16px 48px}
-a{color:var(--brand)}
-nav ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;font-size:14px;color:var(--mute)}
-nav li+li::before{content:"›";margin:0 6px}
-nav a{display:inline-block;padding:4px 0;text-decoration:none}
-h1{font-size:24px;line-height:1.2;margin:6px 0 4px}
-h2{font-size:18px;margin:26px 0 8px}
-h2 small,.subs small{color:var(--mute);font-weight:400;font-size:13px}
-.mute{color:var(--mute);font-size:14px}
-.go{display:inline-block;margin:12px 0 4px;background:var(--brand);color:var(--on-brand);text-decoration:none;font-weight:600;border-radius:12px;padding:10px 16px}
-.subs{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}
-.subs li{background:var(--card);border:1px solid var(--line);border-radius:999px}
-.subs a{display:block;padding:6px 12px;text-decoration:none;color:var(--ink);font-weight:600}
-.items{list-style:none;padding:0;margin:12px 0}
-.items li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px}
-.items b{display:block;font-size:15px}
-.items .best{display:block;color:var(--good);font-weight:600;font-size:14px;margin-top:2px;font-variant-numeric:tabular-nums}
-.items .best i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-.items .u{color:var(--mute);font-weight:400}
-.items small{display:block;color:var(--mute);font-size:13px;margin-top:2px;font-variant-numeric:tabular-nums}
-.items small span,.items .best span{white-space:nowrap}
-footer{margin-top:28px;color:var(--mute);font-size:12.5px;line-height:1.6}
-</style>
+<link rel="stylesheet" href="${up}assets/catalog.css">
 </head>
 <body>
 <main>

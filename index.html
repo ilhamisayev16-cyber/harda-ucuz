@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-3ZQ/wwsxYPsxzIpJZ4geDo5TTlhwhuf6JoTHDqAYqYU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-VKedh2vfuGh9gWvO+uiBjSb9aZbQw6dnJO5rYb6TarQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -303,6 +303,35 @@ img.ph.c{object-fit:cover;padding:0;background:#fff}   /* mağaza şəkli: kəna
 @media (min-width:1700px){ body{zoom:1.7} }
 
 img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin:0 .04em;pointer-events:none}
+
+/* incə görünüş: mağaza linki, toxunuş / siçan vəziyyətləri, klaviatura fokusu (əsas düzülüş dəyişmir) */
+:root{color-scheme:light dark}
+body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::selection{background:var(--brand);color:#fff}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.search input:focus,.tools input:focus,.fx input:focus{box-shadow:0 0 0 3px var(--brand-soft)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){
+  .top{background:color-mix(in srgb,var(--bg) 86%,transparent);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px)}
+}
+.top{box-shadow:0 1px 0 rgba(60,30,0,.03),0 6px 18px -14px rgba(60,30,0,.35)}
+.cat,.item,.drop,.btn,.pill,.res,.o,.fav,.favbtn,.bk-i,.bk-d{transition:background-color .15s,border-color .15s,box-shadow .15s,transform .15s,color .15s}
+.best{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--good) 18%,transparent)}
+.item h3{letter-spacing:-.01em}
+.o a.ext{display:inline-grid;place-items:center;width:26px;height:26px;margin:-4px 0;border-radius:8px;background:var(--soft);color:var(--mute);
+  font-size:13px;font-weight:800;line-height:1;text-decoration:none;flex:none}
+.o-h a.ext{display:inline-block;margin-top:4px;color:var(--brand);font-weight:700;text-decoration:none;border-bottom:1px dashed currentColor}
+@media (hover:hover){
+  .cat:hover,.drop:hover{border-color:var(--brand);box-shadow:0 6px 18px -10px rgba(60,30,0,.35);transform:translateY(-1px)}
+  .item:hover{box-shadow:0 8px 24px -14px rgba(60,30,0,.4)}
+  .btn:hover,.pill:hover,.favbtn:hover{border-color:var(--brand)}
+  .pill:not(.on):hover{color:var(--ink)}
+  .res:hover,.o:hover{background:var(--soft)}
+  .o.min:hover{background:var(--good-soft)}
+  .fav:not(.on):hover{background:var(--brand-soft)}
+  .o a.ext:hover{background:var(--brand-soft);color:var(--brand)}
+  .o-h a.ext:hover{border-bottom-style:solid}
+}
+@media (prefers-reduced-motion:reduce){ *,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important} }
 </style>
 </head>
 <body>
@@ -391,6 +420,9 @@ img.emoji{width:1em;height:1em;vertical-align:-.12em;display:inline-block;margin
 
 <script>
 "use strict";
+/* başqa sayt bu səhifəni öz içində (iframe) göstərib üstündən aldadıcı düymə qoymasın (clickjacking):
+   GitHub Pages X-Frame-Options / frame-ancestors başlığı göndərmir, CSP <meta>-da isə frame-ancestors işləmir */
+if(typeof window==="object"&&window.top&&window.top!==window.self){ try{ window.top.location.replace(location.href); }catch(e){} document.documentElement.hidden=true; }
 /* ─────────── constants ─────────── */
 const EMOJI={sud:"🥛",yumurta:"🥚",kere_yagi:"🧈",pendir:"🧀",qatiq:"🥣",xama:"🥄",kefir:"🥛",ayran:"🥤",
   kartof:"🥔",pomidor:"🍅",xiyar:"🥒",soyan:"🧅",kelem:"🥬",yerkoyu:"🥕",cuqundur:"🟣",badimcan:"🍆",biber:"🌶️",
@@ -476,13 +508,32 @@ const PH_BASE={o:"https://obafiles.blob.core.windows.net/oba-plus/",b:"https://b
 const phUrl=ph=>{ const m=PH_RX.exec(ph||""); if(!m||m[2].includes("..")) return "";
   return m[1]==="a"?"https://arazmarket.az/_next/image?url="+encodeURIComponent("https://b7x9kq.arazmarket.az/storage/products/"+m[2])+"&w=256&q=75"   // Arazın öz kiçildilmiş şəkli (orijinal ~500 KB)
     :PH_BASE[m[1]]+m[2]; };
-const imgTag=(u,by,c,em)=>`<img class="ph${c?" c":""}" src="${esc(u)}" alt="" title="Foto: ${esc(by)}" loading="lazy" decoding="async" data-em="${esc(em)}">`;
+const imgTag=(u,by,c,em)=>`<img class="ph${c?" c":""}" src="${esc(u)}" alt="" title="Foto: ${esc(by)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-em="${esc(em)}">`;
 const picOf=g=>{ const em=iconOf(g);
   for(const s of stores){ const o=g.offers[s], u=o&&phUrl(o.ph); if(u) return imgTag(u,s,1,em); }
   for(const s of stores){ const o=g.offers[s]; if(o&&o.im&&IM_RX.test(o.im)) return imgTag(`${OFF_IMG}${o.im}.200.jpg`,"Open Food Facts",0,em); }
   return em; };
 /* böyük baxış üçün: Arazın kiçildilmiş şəklinin 640 px variantı (~18 KB); digərləri olduğu kimi */
 const bigUrl=u=>u.replace(/([?&]w=)256(?=&|$)/,"$1640");
+/* mağazanın öz saytında bax (Wolt linki verilmir): öz saytdan gələn məhsulda məhsulun səhifəsi ("u" = scraper.py-ın yazdığı slug)
+   və ya mağaza saytında axtarış; öz kataloqu olmayan mağazada saytının kampaniya / əsas səhifəsi.
+   Link yalnız bu sabit ünvanlardan qurulur; datadan yalnız formatı yoxlanmış slug və ya kodlanmış (encodeURIComponent) ad qoşulur */
+const SHOP={
+  Araz:{p:"https://arazmarket.az/az/products/",h:"https://arazmarket.az/az/products"},
+  Bazarstore:{p:"https://bazarstore.az/",q:"https://bazarstore.az/search?q=",w:4,up:1},   // axtarış BÖYÜK hərflə (adlar orada "ASSORTİ" kimidir)
+  OBA:{q:"https://oba.az/products/?search=",h:"https://oba.az/products/",w:6},   // məhsul səhifəsi yoxdur: ad (vergüldən əvvəl) ilə axtarış
+  Bravo:{h:"https://bravosupermarket.az/special-offers/",t:"kampaniyalar"},
+  Tamstore:{h:"https://www.tamstore.az/az/kampaniyalar",t:"kampaniyalar"},
+  SPAR:{h:"https://spar-international.com/country/azerbaijan-2/"}};   // spar.az açılmır; Azərbaycanda SPAR-ı Araz idarə edir
+/* Neptun, Rahat: link yoxdur — 2026-10-25 yoxlanılıb: neptun.az boş səhifə, rahatmarket.az HTTP 500 / boş nginx səhifəsi. Sayt işləyəndə h əlavə edin */
+const U_RX=/^(?:[a-z0-9-]|%[0-9A-Fa-f]{2}){1,250}$/;
+/* {u: link, x: 1 = bu məhsulun səhifəsi / axtarışı, 0 = mağazanın ümumi səhifəsi, t: səhifənin adı} */
+function shopLink(s,o){ const S=Object.hasOwn(SHOP,s)&&SHOP[s]; if(!S) return null;
+  if(S.p&&U_RX.test(o.u||"")) return {u:S.p+o.u,x:1};
+  if(S.q&&!o.w){ let q=o.n.split(",")[0].trim().split(/\s+/).slice(0,S.w).join(" ").slice(0,60); if(S.up) q=q.toLocaleUpperCase("az");
+    if(q) return {u:S.q+encodeURIComponent(q),x:1}; }
+  return S.h?{u:S.h,x:0,t:S.t}:null; }
+const extA=(l,s,txt)=>`<a class="ext" href="${esc(l.u)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(s)} saytında bax">${txt}</a>`;
 /* ingiliscə ad / axtarış: ana kateqoriya adları və söz uyğunluqları (+ azərbaycanca ümumi sözlər) */
 const GEN={saglam:"healthy diet protein gluten free diabetic fitness pehriz",geyim:"clothes clothing shoes socks textile towel",konserv:"canned pickles olives",tutun:"tobacco cigarettes siqaret",meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
   corek:"bread bakery",bakaliya:"grains rice pasta flour cereal",sirniyyat:"sweets chocolate biscuits candy dessert honey",
@@ -531,6 +582,9 @@ const PAGE=60;
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fmt=n=>n.toFixed(2)+" ₼";
+/* datadan gələn id-lər və mağaza adları HTML atributlarına, CSS dəyişəninə (--Bravo) və linklərə düşür: yalnız bu formatda qəbul olunur
+   (hərflə başlayır: "__proto__" kimi açarlar keçmir) */
+const ID_RX=/^[a-z][a-z0-9_]{0,39}$/, ST_RX=/^[A-Z][A-Za-z0-9]{0,19}$/;
 
 /* ─────────── mətn normallaşdırma: axtarış da, uyğunlaşdırma da yalnız bunları işlədir ─────────── */
 /* fold: hərflər (İ/I/ı -> i, ə ç ş ğ ö ü é ä ... -> latın; "İ".toLowerCase() = "i"+U+0307 -> nöqtə silinir), apostrof silinir,
@@ -1094,7 +1148,7 @@ function usePre(it,pre){
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
-  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",ph:it.ph||""};
+  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",ph:it.ph||"",u:it.u||""};
 }
 
 /* ─────────── state ─────────── */
@@ -1123,9 +1177,12 @@ const uk=g=>g.a.kg?{v:g.min,u:"kq"}:upr(g,g.min);
 /* qiymət dəyişikliyi nişanı (son 14 gün, ≥2%) */
 function chg(o){ if(!o.pp||!o.pd||o.pp===o.p) return ""; const d=(o.pp-o.p)/o.pp;
   if(Math.abs(d)<.02||(Date.now()-new Date(o.pd))/864e5>14) return "";
-  return `<em class="chg ${d>0?"dn":"up"}" title="əvvəl ${fmt(o.pp)} · ${o.pd}">${d>0?"↓":"↑"} ${Math.round(Math.abs(d)*100)}%</em>`; }
+  return `<em class="chg ${d>0?"dn":"up"}" title="əvvəl ${fmt(o.pp)} · ${esc(o.pd)}">${d>0?"↓":"↑"} ${Math.round(Math.abs(d)*100)}%</em>`; }
 /* səbət (köhnə adı sevimlilər, açar "fav" qalır ki, əvvəlki siyahılar itməsin): brauzerdə saxlanır; məhsul = qrup + ad (data yenilənəndə kart nömrəsi dəyişir) */
-let FAV=[]; try{FAV=JSON.parse(localStorage.getItem("fav")||"[]");}catch(e){}
+/* localStorage eyni domendəki (github.io/<istifadəçi>) başqa səhifələrlə ortaqdır: oxunan hər element yoxlanır, uyğun olmayan atılır */
+const okFav=f=>f&&typeof f==="object"&&typeof f.k==="string"&&f.k.length<=400&&typeof f.t==="string"&&ID_RX.test(f.t)
+  &&typeof f.n==="string"&&f.n.length<=300&&Number.isInteger(f.q)&&f.q>=1&&f.q<=99;
+let FAV=[]; try{ const v=JSON.parse(localStorage.getItem("fav")||"[]"); if(Array.isArray(v)) FAV=v.filter(okFav).slice(0,300); }catch(e){}
 const favKey=g=>g.t+"|"+g.fd;
 const isFav=g=>FAV.some(f=>f.k===favKey(g));
 function saveFav(){ try{localStorage.setItem("fav",JSON.stringify(FAV));}catch(e){} $("favN").textContent=FAV.length||""; }
@@ -1139,14 +1196,37 @@ function hk(s,n){ let h1=0x811c9dc5,h2=5381; for(const b of new TextEncoder().en
   return h1.toString(16).padStart(8,"0")+h2.toString(16).padStart(8,"0"); }
 
 /* ─────────── load ─────────── */
+/* prices.json başqa saytlardan avtomatik yığılır: səhifəyə düşməzdən əvvəl formatı yoxlanır. Etibarsız mağaza / kateqoriya adı,
+   rəqəm olmayan qiymət, tanınmayan sahə atılır (scraper-ə yeni sahə əlavə edəndə FIELD-ə də yazın). Düzgün data olduğu kimi qalır:
+   hazır kartlar (groups.json) eyni nəticə verir; məhsul atılsa say uyğun gəlmir və kartlar brauzerdə hesablanır */
+const okP=v=>typeof v==="number"&&v>0&&v<1e5, okS=(v,rx)=>typeof v==="string"&&rx.test(v);
+const FIELD=new Map(Object.entries({name:v=>typeof v==="string"&&v.length>0&&v.length<=300, price:okP, wolt_price:okP, pp:okP,
+  wt:v=>Number.isInteger(v)&&v>0&&v<1e5, pd:v=>okS(v,/^\d{4}-\d\d-\d\d$/), stale:v=>v===true,
+  im:v=>okS(v,IM_RX), ph:v=>okS(v,PH_RX), u:v=>okS(v,U_RX)}));
+function sane(d){
+  if(!d||typeof d!=="object"||!d.categories||typeof d.categories!=="object") throw new Error("data formatı tanınmadı");
+  const stores=(Array.isArray(d.stores)?d.stores:[]).filter(s=>okS(s,ST_RX)), SS=new Set(stores), cats=Object.create(null);
+  for(const [cid,c] of Object.entries(d.categories)){
+    if(!ID_RX.test(cid)||!c||typeof c!=="object"||!c.stores||typeof c.stores!=="object") continue;
+    const st={};
+    for(const [s,l] of Object.entries(c.stores)){ if(!SS.has(s)||!Array.isArray(l)) continue;
+      st[s]=l.filter(it=>{ if(!it||typeof it!=="object") return false;
+        for(const k of Object.keys(it)){ const f=FIELD.get(k); if(!f||!f(it[k])) delete it[k]; }
+        return it.name&&(it.price!=null||it.wolt_price!=null); }); }
+    cats[cid]={name:typeof c.name==="string"&&c.name?c.name.slice(0,80):cid,stores:st};
+  }
+  const groups=Array.isArray(d.groups)?d.groups.filter(g=>g&&okS(g.id,ID_RX)&&typeof g.name==="string"&&Array.isArray(g.cats))
+    .map(g=>({id:g.id,name:g.name.slice(0,80),cats:g.cats.filter(c=>typeof c==="string"&&cats[c])})):null;
+  return {last_updated:typeof d.last_updated==="string"?d.last_updated.slice(0,20):"",stores,categories:cats,groups};
+}
 async function load(){
   $("loading").hidden=false; $("error").hidden=true;
   try{
     const pj=fetch("data/groups.json").then(r=>r.ok?r.json():null).catch(()=>null);   // serverdə hazırlanmış kartlar (paralel)
     const r=await fetch("data/prices.json"); if(!r.ok) throw new Error("HTTP "+r.status);
-    DB=await r.json(); stores=DB.stores||[];
+    DB=sane(await r.json()); stores=DB.stores;
     GL=DB.groups||Object.entries(DB.categories).map(([id,c])=>({id,name:c.name,cats:[id]}));
-    GM=Object.fromEntries(GL.map(g=>[g.id,g]));
+    GM=Object.assign(Object.create(null),Object.fromEntries(GL.map(g=>[g.id,g])));   // ünvandan gələn açar (#/c/toString) obyektin öz xassəsinə düşməsin
     renderHome();
     const P=await Promise.race([pj,new Promise(r=>setTimeout(()=>r(null),3000))]);   // yalnız eyni data və eyni sayt kodu üçün hazırlanıbsa; gecikərsə gözlənilmir
     PRE=P&&P.v===DB.last_updated&&P.s===siteHash()?P.g:null;
@@ -1183,8 +1263,8 @@ function renderDrops(){
   out.sort((a,b)=>b.d-a.d); const top=out.slice(0,4);
   $("drops").hidden=top.length<3;
   $("drops").innerHTML=top.length<3?"":`<h2>🔥 Son günlərdə ucuzlayanlar</h2>`+top.map(x=>
-    `<button class="drop" data-g="${x.g}" data-q="${esc(x.n)}"><span class="em">${(em=>{ const u=phUrl(x.ph); return u?imgTag(u,x.s,1,em):em; })(iconOf({name:x.n,t:x.g,c:x.c}))}</span><b class="n">${esc(x.n)}</b>
-     <small><i class="dot" style="--c:var(--${x.s})"></i>${x.s}</small>
+    `<button class="drop" data-g="${esc(x.g)}" data-q="${esc(x.n)}"><span class="em">${(em=>{ const u=phUrl(x.ph); return u?imgTag(u,x.s,1,em):em; })(iconOf({name:x.n,t:x.g,c:x.c}))}</span><b class="n">${esc(x.n)}</b>
+     <small><i class="dot" style="--c:var(--${esc(x.s)})"></i>${esc(x.s)}</small>
      <span class="pr"><s>${fmt(x.pp)}</s><b class="mono" style="color:var(--good)">${fmt(x.p)}</b><em class="chg dn">↓ ${Math.round(x.d*100)}%</em></span></button>`).join("");
 }
 
@@ -1256,16 +1336,16 @@ function apply(){
   filtered=l; shown=Math.max(shown,PAGE); render();
 }
 function offer(g,s){
-  const o=g.offers[s], c0=`<i class="dot" style="--c:var(--${s})"></i>${s}`;
+  const o=g.offers[s], l=o&&shopLink(s,o), c0=`<i class="dot" style="--c:var(--${esc(s)})"></i>${esc(s)}${l&&l.x?extA(l,s,"↗"):""}`;
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
-  return `<div class="o${c}" data-s="${s}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
+  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
 function bestOf(g){
   const e=Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0];
   const sv=g.n>1?`<small>${fmt(g.save)} qənaət (ən bahadan)</small>`:`<small>yalnız bu mağazada</small>`;
-  return `<div class="best"><span><i class="dot" style="--c:var(--${e[0]})"></i><span style="display:block">Ən ucuz: ${e[0]}${sv}</span></span><b class="mono">${fmt(e[1].p)}${unit(g)}</b></div>`;
+  return `<div class="best"><span><i class="dot" style="--c:var(--${esc(e[0])})"></i><span style="display:block">Ən ucuz: ${esc(e[0])}${sv}</span></span><b class="mono">${fmt(e[1].p)}${unit(g)}</b></div>`;
 }
 /* növ etiketi: ad məhsulun nə olduğunu demirsə ("Merci Storck Knusper 250qr"), adın altında, ölçüdən əvvəl alt növ yazılır: "Şokolad · 250 q".
    Alt növ scraper-də mağazanın öz kateqoriyası + ad üzrə təyin olunub, amma səhvsiz deyil; ona görə etiket yalnız etibarlı olanda çıxır:
@@ -1321,7 +1401,7 @@ const metaOf=g=>{ const a=g.a, tp=typeOf(g);
   return `${tp?`<b class="tp">${esc(tp)}</b>${info?" · ":""}`:""}${esc(info||(tp?"":catName(g.c)))}`; };
 function card(g,o={}){
   const a=g.a, em=picOf(g), on=isFav(g);
-  return `<article class="item${hl===g.id&&!o.pre?" hl":""}" id="${o.pre||"r"}-${g.id}" data-t="${g.t}" data-id="${g.id}">
+  return `<article class="item${hl===g.id&&!o.pre?" hl":""}" id="${o.pre||"r"}-${esc(g.id)}" data-t="${esc(g.t)}" data-id="${esc(g.id)}">
     <button class="fav${on?" on":""}" data-fav="1" aria-label="${on?"Səbətdən çıxar":"Səbətə əlavə et"}" aria-pressed="${on}">${on?"✓":"+"}</button>
     <div class="head"><div class="logo-p">${em}</div>
     <div><h3>${esc(g.name)}</h3><div class="meta">${metaOf(g)}</div></div></div>
@@ -1346,7 +1426,7 @@ function basket(){
   return {rs,ok,n,full,part,ideal:ok.reduce((a,{f,g})=>a+g.min*f.q,0)};
 }
 function renderList(){
-  const {rs,ok,n,full,part,ideal}=basket(), dot=s=>`<i class="dot" style="--c:var(--${s})"></i>`;
+  const {rs,ok,n,full,part,ideal}=basket(), dot=s=>`<i class="dot" style="--c:var(--${esc(s)})"></i>`;
   $("favSum").innerHTML=""; $("favSum").dataset.n=n;
   if(!FAV.length){ $("favList").innerHTML='<div class="empty">Səbət boşdur.<br>Məhsul kartında <b>+</b> düyməsinə basıb əlavə et.</div>'; return; }
   let h="";
@@ -1457,7 +1537,7 @@ function altHtml(ok){
     return `<div class="bk-a"><div class="bk-ah">
       <small>Səbətdə: ${esc(a.g.name)} · ${fmt(a.cur.p)}</small>
       <button class="nm" data-go="#/c/${a.x.t}/${a.x.id}"><b>${esc(a.x.name)}</b></button>
-      <span class="bk-ap"><i class="dot" style="--c:var(--${a.lo.s})"></i>${esc(a.lo.s)} <b class="mono">${fmt(a.lo.p)}</b><span class="bk-sv">−${pct}%</span>${a.sim?`<small>başqa marka</small>`:""}</span>
+      <span class="bk-ap"><i class="dot" style="--c:var(--${esc(a.lo.s)})"></i>${esc(a.lo.s)} <b class="mono">${fmt(a.lo.p)}</b><span class="bk-sv">−${pct}%</span>${a.sim?`<small>başqa marka</small>`:""}</span>
       ${uv}</div>
       <button class="btn" data-swap="${esc(a.f.k)}" data-to="${esc(favKey(a.x))}">Dəyiş</button></div>`; }).join("")+
     (tot>.005?`<p class="bk-note">Hamısını dəyişsən: <b class="mono" style="color:var(--good)">−${fmt(tot)}</b></p>`:"");
@@ -1524,13 +1604,15 @@ document.addEventListener("click",async e=>{
   const db=e.target.closest("[data-del]"); if(db){ FAV=FAV.filter(f=>f.k!==db.dataset.del); saveFav(); renderList(); return; }
   if(e.target.closest("#favClear")){ if(confirm("Səbət təmizlənsin?")){ FAV=[]; saveFav(); renderList(); } return; }
   if(e.target.closest("#favCopy")){ const t=favText(); try{ await navigator.clipboard.writeText(t); e.target.textContent="✓ Kopyalandı"; }catch(x){ prompt("Kopyala:",t); } return; }
+  if(e.target.closest("a.ext")) return;   // mağazanın saytı: link özü açılır, tarixçə açılmır
   const ob=e.target.closest(".o");   // mağaza sətri: qiymət tarixçəsi
   if(ob){ const nx=ob.nextElementSibling; if(nx&&nx.classList.contains("o-h")){ nx.remove(); return; }
     const {g}=cardOf(ob), o=g&&g.offers[ob.dataset.s]; if(!o) return;
     const d=document.createElement("div"); d.className="o-h"; d.textContent="…"; ob.after(d);
     const h=(await hist())[hk(ob.dataset.s,o.n)];
     d.innerHTML=h&&h.length>1?h.map(x=>`${esc(String(x[0]).slice(5).replace("-","."))}: <b>${fmt(+x[1])}</b>`).join(" → "):o.pp?`Əvvəl ${fmt(o.pp)} (${esc(o.pd)}) → indi <b>${fmt(o.p)}</b>`:"Son dəyişiklik qeydə alınmayıb";
-    d.innerHTML+=`<div>${esc(o.n)}</div>`; }
+    const l=shopLink(ob.dataset.s,o);
+    d.innerHTML+=`<div>${esc(o.n)}</div>`+(l?`<div>${extA(l,ob.dataset.s,l.x?`🔗 ${esc(ob.dataset.s)} saytında bax ↗`:`🔗 ${esc(ob.dataset.s)} saytı${l.t?" — "+esc(l.t):""} ↗`)}</div>`:""); }
 });
 $("back").onclick=()=>go("#/");
 $("retry").onclick=load;

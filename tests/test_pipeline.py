@@ -624,3 +624,94 @@ def test_pwa_manifest_icons_and_service_worker():
     if shutil.which("node"):
         r = subprocess.run(["node", "--check", str(ROOT / "sw.js")], capture_output=True, text=True)
         assert r.returncode == 0, r.stderr
+
+
+# ── məhsulun mağaza saytındakı səhifəsi ("u"): yalnız mağazanın öz saytı, Wolt linki yox ──
+def test_store_slug_only_plain_slugs():
+    assert S.store_slug("tac-gilezi-teze-toyuq-aciq-9787") == "tac-gilezi-teze-toyuq-aciq-9787"
+    assert S.store_slug("%C3%A7%C9%99kili-makaron") == "%C3%A7%C9%99kili-makaron"
+    for bad in ("../x", "https://evil.example/x", "a b", "a/b", "javascript:alert(1)", "", None, 12, "x" * 300):
+        assert S.store_slug(bad) is None, bad
+
+
+def test_bazarstore_card_link_and_merge_keeps_it():
+    body = ('<div class="picture"><a href="/101-araq-500-ml" title="x"></a></div><div class="details">'
+            '<h2 class="product-title">\n  <a href="/101-araq-500-ml">101 ARAQ 500 ML</a></h2>')
+    assert S._bazar_url(body) == "101-araq-500-ml"
+    assert S._bazar_url('<h2 class="product-title"><a href="/../../etc">x</a>') is None
+    out = S.merge_own_wolt([{"name": "Süd 1 L", "price": 1.0, "u": "sud-1-l-5"}], [])
+    assert out == [{"name": "Süd 1 L", "price": 1.0, "u": "sud-1-l-5"}]
+
+
+def _run_site(tmp_path, db, body):
+    f = tmp_path / "db.json"; f.write_text(json.dumps(db, ensure_ascii=False))
+    js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
+const raw=JSON.parse(require('fs').readFileSync({json.dumps(str(f))},'utf8'));\n""" + body
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr[-800:]
+    return json.loads(r.stdout.strip())
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_store_links_go_to_store_sites_never_wolt(tmp_path):
+    db = {"stores": ["Araz", "OBA", "Bazarstore", "Bravo", "Neptun"], "groups": [{"id": "sud", "name": "Süd", "cats": ["sud"]}],
+          "categories": {"sud": {"name": "Süd", "stores": {
+              "Araz": [{"name": "Azərsüd Süd 3.2% 1 l", "price": 2.8, "u": "azersud-sud-32-1-l-12"},
+                       {"name": "Pinar Süd 3.2% 1 l", "wolt_price": 3.1}],
+              "OBA": [{"name": "Azersud Sud 3.2%, 1 l", "price": 2.75}],
+              "Bazarstore": [{"name": "Azərsüd Süd 3.2% 1 L Assorti", "price": 2.7}],
+              "Bravo": [{"name": "Azərsüd Süd 3.2% 1l", "wolt_price": 2.89}],
+              "Neptun": [{"name": "Azərsüd Süd 3.2% 1l", "wolt_price": 2.9}]}}}}
+    out = _run_site(tmp_path, db, """const d=api.sane(raw); api.setDB(d);
+const L=(s,o)=>api.shopLink(s,Object.assign({u:"",w:false,n:""},o));
+console.log(JSON.stringify({
+  araz:L("Araz",{u:"azersud-sud-32-1-l-12",n:"Azərsüd Süd"}), arazW:L("Araz",{w:true,n:"Pinar Süd"}),
+  oba:L("OBA",{n:"Azersud Sud 3.2%, 1 l"}), bz:L("Bazarstore",{n:"Azərsüd Süd 3.2% 1 L Assorti"}),
+  bravo:L("Bravo",{w:true,n:"x"}), neptun:L("Neptun",{w:true,n:"x"}), bad:L("Araz",{u:"../../x",w:true,n:"x"}),
+  html:api.groups("sud").map(g=>api.card(g)).join("")}));""")
+    assert out["araz"] == {"u": "https://arazmarket.az/az/products/azersud-sud-32-1-l-12", "x": 1}
+    assert out["arazW"]["u"] == "https://arazmarket.az/az/products" and out["arazW"]["x"] == 0
+    assert out["oba"] == {"u": "https://oba.az/products/?search=Azersud%20Sud%203.2%25", "x": 1}   # vergüldən sonrakı ölçü atılır
+    from urllib.parse import quote
+    assert out["bz"] == {"u": "https://bazarstore.az/search?q=" + quote("AZƏRSÜD SÜD 3.2% 1", safe=""), "x": 1}   # ilk 4 söz, BÖYÜK hərf
+    assert out["bravo"]["u"] == "https://bravosupermarket.az/special-offers/"
+    assert out["neptun"] is None and out["bad"]["u"] == "https://arazmarket.az/az/products"   # saytı işləməyən mağaza: link yoxdur
+    html = out["html"]
+    assert "wolt" not in html.lower()
+    links = re.findall(r'<a class="ext" href="([^"]+)" target="_blank" rel="noopener noreferrer"', html)
+    assert links and all(re.match(r"https://(arazmarket\.az|oba\.az|bazarstore\.az)/", u) for u in links), links
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_hostile_data_is_neutralised(tmp_path):
+    evil = '"><img src=x onerror=alert(1)>'
+    db = {"stores": ["Araz", evil, "Bravo"], "last_updated": "25.10.2026 10:00",
+          "groups": [{"id": "sud", "name": "Süd<script>alert(1)</script>", "cats": ["sud", "__proto__"]}, {"id": "x\"y", "name": "z", "cats": []}],
+          "categories": {"sud": {"name": "Süd", "stores": {
+              "Araz": [{"name": "Azərsüd Süd 3.2% 1 l", "price": 2.8, "u": "https://evil.example/", "onclick": "alert(1)",
+                        "pd": "<script>", "pp": "3", "ph": "a:../x.png"}],
+              evil: [{"name": "Azərsüd Süd 3.2% 1l", "price": 1.0}],
+              "Bravo": [{"name": "Azərsüd Süd 3.2% 1l", "wolt_price": 2.89, "wt": "<b>1</b>"},
+                        {"name": 5, "wolt_price": 1}, {"name": "Boş qiymət", "wolt_price": "1.5"}, None]}},
+              "__proto__": {"name": "x", "stores": {}}}}
+    out = _run_site(tmp_path, db, """const d=api.sane(raw); api.setDB(d);
+console.log(JSON.stringify({stores:d.stores, cats:Object.keys(d.categories), groups:d.groups, items:d.categories.sud.stores,
+  html:api.groups("sud").map(g=>api.card(g)).join(""),
+  fav:[{k:"sud|x",t:"sud",n:"Süd",q:2},{k:"a",t:"sud",n:"b",q:"<img>"},{k:"a",t:"<x>",n:"b",q:1},null,"x"].map(f=>!!api.okFav(f))}));""")
+    assert out["stores"] == ["Araz", "Bravo"] and out["cats"] == ["sud"]
+    assert out["groups"] == [{"id": "sud", "name": "Süd<script>alert(1)</script>", "cats": ["sud"]}]   # ad mətn kimi qalır, esc() ilə göstərilir
+    assert out["items"]["Araz"] == [{"name": "Azərsüd Süd 3.2% 1 l", "price": 2.8}]   # tanınmayan / formatı səhv sahələr atılır
+    assert out["items"]["Bravo"] == [{"name": "Azərsüd Süd 3.2% 1l", "wolt_price": 2.89}]
+    html = out["html"]
+    assert "<img src=x" not in html and "<script" not in html and "onerror" not in html and "evil.example" not in html
+    assert out["fav"] == [True, False, False, False, False]
+
+
+def test_no_wolt_links_and_safe_external_links_in_pages():
+    for p in [ROOT / "index.html", ROOT / "haqqinda.html"]:
+        html = p.read_text(encoding="utf-8")
+        assert not re.search(r'href="https?://[^"]*wolt\.com', html), p
+        for a in re.findall(r"<a [^>]*target=\"_blank\"[^>]*>", html):
+            assert 'rel="noopener noreferrer"' in a, a
+        csp = re.search(r'http-equiv="Content-Security-Policy" content="([^"]+)"', html).group(1)
+        assert "object-src 'none'" in csp and "base-uri 'none'" in csp and "frame-src 'none'" in csp and "unsafe-eval" not in csp

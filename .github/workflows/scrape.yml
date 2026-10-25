@@ -21,18 +21,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 330   # ~50 Wolt filialının kataloqu uzun çəkir (GitHub limiti 360)
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1 (commit SHA ilə: teq dəyişdirilsə də başqa kod işləmir; Dependabot yeniləyir)
         with:
+          persist-credentials: false   # token .git/config-da qalmasın (aşağıda yalnız yükləmə addımına verilir)
           ref: ${{ github.ref_name }}   # işə düşdüyü andakı commit yox, ən son vəziyyət: növbədə gözləyəndən sonra köhnə kod/data ilə qurmasın
 
       - name: Python quraşdır
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0   # v7.1.0
         with:
           python-version: '3.11'
           cache: pip
 
       - name: Asılılıqları yüklə
-        run: pip install -r requirements.txt
+        run: pip install --require-hashes -r requirements.txt   # hash-lər requirements.txt-dədir: dəyişdirilmiş paket quraşdırılmır
 
       - name: Scraper işlət
         timeout-minutes: 300   # aşarsa da hazır olan mağazalar aşağıda commit olunur
@@ -60,9 +61,12 @@ jobs:
 
       - name: Nəticəni GitHub-a yüklə
         if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # yazma tokeni yalnız bu addımda: əvvəlki addımlar (pip paketləri, scraper) onu görmür
         run: |
           git config user.name "Price Bot"
           git config user.email "bot@qiymet.az"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git add data/prices.json data/history.json
           if [ -e data/off_images.json ]; then git add data/off_images.json; fi
           for f in data/groups.json sitemap.xml qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun

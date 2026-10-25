@@ -31,7 +31,7 @@ function loadSite() {
     setTimeout: () => 0, clearTimeout() {} };
   vm.createContext(ctx);
   vm.runInContext(js + `;globalThis.__site={
-    setDB(d){DB=d;stores=DB.stores||[];GL=DB.groups;GM=Object.fromEntries(GL.map(g=>[g.id,g]));PRE=null;for(const k in GROUPS)delete GROUPS[k];},
+    setDB(d){DB=sane(d);stores=DB.stores;GL=DB.groups;GM=Object.fromEntries(GL.map(g=>[g.id,g]));PRE=null;for(const k in GROUPS)delete GROUPS[k];return DB;},
     setPre(p){PRE=p;for(const k in GROUPS)delete GROUPS[k];},
     groups:(gid,rec)=>groups(gid,rec), GL:()=>GL, catName:c=>catName(c), EMOJI, siteHash:()=>siteHash()};`, ctx);
   return ctx.__site;
@@ -42,9 +42,8 @@ const fmt = n => n.toFixed(2) + " ₼";
 const cardJSON = cards => JSON.stringify(cards.map(g => { const { mi, ...r } = g; return r; }));
 
 function main() {
-  const db = JSON.parse(fs.readFileSync(PRICES, "utf8"));
   const S = loadSite();
-  S.setDB(db);
+  const db = S.setDB(JSON.parse(fs.readFileSync(PRICES, "utf8")));   // saytın öz yoxlaması (sane): brauzerlə eyni data, səhifələrə yalnız düzgün format düşür
 
   /* 1. kartlar + hazır üzv siyahısı; yoxlama: hazır siyahı ilə qurulan kartlar brauzerin hesabladığı ilə eyni olmalıdır */
   const t0 = Date.now(), pre = {}, CARDS = {};
@@ -89,7 +88,9 @@ function buildPages(db, S, CARDS) {
   const final = path.join(OUT, "qiymetler"), dir = final + ".tmp";   // əvvəl müvəqqəti qovluğa: skript yarıda dayansa köhnə səhifələr qalır
   fs.rmSync(dir, { recursive: true, force: true });
   const stores = db.stores || [], upd = db.last_updated || "", written = [];
-  const write = (rel, html) => { const f = path.join(dir, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); written.push("qiymetler/" + rel.replace(/index\.html$/, "")); };
+  const write = (rel, html) => {
+    if (!/^(?:[a-z][a-z0-9_]*\/)?[a-z][a-z0-9_]*\.html$/.test(rel)) throw new Error("yanlış səhifə yolu: " + rel);   // qovluqdan kənara yazılmasın
+    const f = path.join(dir, rel); fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f, html); written.push("qiymetler/" + rel.replace(/index\.html$/, "")); };
   const storeList = stores.join(", ");
 
   const groupsInfo = [];
@@ -115,7 +116,7 @@ function buildPages(db, S, CARDS) {
       write(`${g.id}/${sub.id}.html`, page({
         depth: 2, path: `qiymetler/${g.id}/${sub.id}.html`, title, desc, upd,
         crumbs: [["../../", "Ana səhifə"], ["../", "Bütün qiymətlər"], ["./", g.name]],
-        h1: `${S.EMOJI[sub.id] || em} ${title}`,
+        h1: `${S.EMOJI[sub.id] || em} ${esc(title)}`,
         lead: `${sub.cards.length} məhsul${cmp ? ` · ${cmp}-i bir neçə mağazada` : ""}${champ ? ` · ən çox ən ucuz: <b>${esc(champ[0])}</b> (${champ[1]} məhsulda)` : ""}`,
         app: `../../#/c/${g.id}/${sub.id}`,
         body: items(list) + (list.length < sub.cards.length ? `<p class="mute">Burada ${list.length} məhsul göstərilir. Hamısı, süzgəc və axtarış saytdadır.</p>` : ""),
@@ -127,7 +128,7 @@ function buildPages(db, S, CARDS) {
       depth: 1, path: `qiymetler/${g.id}/`, title: `${g.name} — qiymətlər`, upd,
       desc: `${g.name}: ${cards.length} məhsulun qiyməti ${storeList} mağazalarında müqayisə.${champ ? ` Ən çox ən ucuz: ${champ[0]}.` : ""}`,
       crumbs: [["../../", "Ana səhifə"], ["../", "Bütün qiymətlər"]],
-      h1: `${em} ${g.name}`,
+      h1: `${em} ${esc(g.name)}`,
       lead: `${cards.length} məhsul${champ ? ` · ən çox ən ucuz: <b>${esc(champ[0])}</b> (${champ[1]} məhsulda)` : ""}`,
       app: `../../#/c/${g.id}`,
       body: (subs.length ? `<h2>Alt bölmələr</h2><ul class="subs">${subs.map(s => `<li><a href="${s.id}.html">${S.EMOJI[s.id] || em} ${esc(s.name)}</a> <small>${s.cards.length}</small></li>`).join("")}</ul>` : "") +
@@ -184,7 +185,7 @@ function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body })
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; img-src 'self' data:${STATS ? " " + new URL(STATS).origin : ""}; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:${STATS ? " " + new URL(STATS).origin : ""}; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>${esc(full)}</title>
 <meta name="description" content="${esc(desc.slice(0, 300))}">

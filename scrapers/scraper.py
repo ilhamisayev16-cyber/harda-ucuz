@@ -640,10 +640,6 @@ def _path_info(path):
             return (up[-1][0] if up else pc), True, frozenset(gen)
     return None, False, frozenset()
 
-def cat_from_path(path):
-    """(alt növ, ümumi?) və ya (None, False)."""
-    return _path_info(path)[:2]
-
 # Mağazanın çox ümumi (üst səviyyə) kateqoriyaları, məs. OBA: "Şirniyyat", "Spirtli içkilər" — alt növü ad üzrə təyin olunur
 _COARSE = {_f(x) for x in ["Şirniyyat","Təmizlik","Spirtli içkilər","Konserva və dəniz məhsulları","Heyvan qidaları",
                            "Un məmulatları","Kosmetika","Ev əşyaları","İçkilər","Süd məhsulları","Meyvə-tərəvəz"]}
@@ -1335,7 +1331,7 @@ def _wolt_entry(item, path=""):
     e = {"name": name, "wolt_price": price}
     wt = _wolt_weight(item)
     if wt: e["wt"] = wt
-    g = item.get("barcode_gtin")   # ştrix-kod: yalnız məhsul şəkli üçün (scrapers/off_images.py "im"-ə çevirir və silir)
+    g = item.get("barcode_gtin")   # ştrix-kod: məhsul kimliyi və şəkli üçün saxlanır
     if isinstance(g, str) and re.fullmatch(r"\d{8,14}", g): e["gtin"] = g
     return classify(name, path), e
 

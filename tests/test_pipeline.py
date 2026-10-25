@@ -263,6 +263,19 @@ def test_build_site(tmp_path):
     page = (tmp_path / "site" / "qiymetler" / "sud" / "index.html").read_text(encoding="utf-8")
     assert '<link rel="canonical" href="https://example.org/q/qiymetler/sud/">' in page and "#/c/sud" in page and "<script" not in page
 
+    catalog = json.loads((tmp_path / "site/data/catalog.json").read_text())
+    assert catalog["version"] == 1 and "sud" in catalog["files"]
+    shard = json.loads((tmp_path / "site/data" / catalog["files"]["sud"]).read_text())
+    assert shard["groups"][0]["id"] == "sud" and shard["product_ids"]
+    assert set(shard["categories"]) == set(next(g["cats"] for g in d["groups"] if g["id"] == "sud"))
+    product_id = next(iter(shard["product_ids"].values()))
+    product = (tmp_path / "site/mehsullar" / (product_id + ".html")).read_text()
+    assert "Qiymət tarixçəsi" in product and product_id in product
+    assert 'href="../../assets/catalog.css"' in page
+    assert "style-src 'self' 'unsafe-inline';" in page
+    assert "sitemap-products.xml" in (tmp_path / "site/robots.txt").read_text()
+
+
 
 # ── böyük aksiya (50%+): Wolt qiyməti varsa o göstərilir ──
 def test_big_own_discount_falls_back_to_wolt_price():
@@ -510,8 +523,8 @@ def test_off_images_turns_barcode_into_image_and_uses_cache(tmp_path, monkeypatc
     O.run()
     items = json.loads(p.read_text())["categories"]["sud"]["stores"]["Neptun"]
     assert asked == [["4760000000001", "4760095101025"]]
-    assert items == [{"name": "A", "wolt_price": 1.0, "im": "476/009/510/1025/front_az.3"},
-                     {"name": "B", "wolt_price": 1.0}, {"name": "C", "wolt_price": 1.0},
+    assert items == [{"name": "A", "wolt_price": 1.0, "gtin": "4760095101025", "im": "476/009/510/1025/front_az.3"},
+                     {"name": "B", "wolt_price": 1.0, "gtin": "4760000000001"}, {"name": "C", "wolt_price": 1.0, "gtin": "4760000000002"},
                      {"name": "D", "wolt_price": 1.0, "im": "476/000/000/0003/front_az.1"}]
     cache = json.loads(c.read_text())
     assert cache["4760095101025"][0] and cache["4760000000001"][0] == "" and cache["4760000000002"] == ["", "9999-12-31"]
@@ -723,3 +736,45 @@ def test_overrides_file_hides_photos():
     html = (ROOT / "index.html").read_text(encoding="utf-8")
     assert 'fetch("data/overrides.json")' in html and "hid(o.im,u)" in html and "hid(o.ph,u)" in html
     assert "hide_photo" in (ROOT / "scrapers" / "off_images.py").read_text(encoding="utf-8")
+
+
+def test_basket_planning_counts_costs_and_rejects_incomplete_or_stale(tmp_path):
+    out = _run_site(tmp_path, {}, """
+const rows=[{f:{q:2},g:{name:'Süd',offers:{A:{p:2},B:{p:3}}}},
+ {f:{q:1},g:{name:'Düyü',offers:{A:{p:5},B:{p:2}}}}];
+const cheap=api.splitBasket(rows,['A','B'],0)[0];
+const travel=api.splitBasket(rows,['A','B'],4)[0];
+const stale=api.splitBasket([{f:{q:1},g:{name:'X',offers:{A:{p:1,st:1}}}}],['A'],0);
+const missing=api.splitBasket(rows.concat([{f:{q:1},g:null}]),['A','B'],0);
+console.log(JSON.stringify({cheap,travel,stale,missing,parsed:api.parseBasket('2 x süd 1 L\\n1 kq düyü')}));
+""")
+    assert out['cheap']['total'] == 6 and len(out['cheap']['stores']) == 2
+    assert out['travel']['total'] == 12 and out['travel']['stores'] == ['B']
+    assert out['stale'] == [] and out['missing'] == []
+    assert out['parsed'] == [{'q': 2, 'query': 'süd 1 L'}, {'q': 1, 'query': '1 kq düyü'}]
+
+
+def test_price_watch_requires_same_source_and_fresh_price(tmp_path):
+    out = _run_site(tmp_path, {}, """
+const w={store:'A',w:true,target:2};
+console.log(JSON.stringify([
+ api.watchStatus(w,{offers:{A:{p:1.9,w:true}}}),
+ api.watchStatus(w,{offers:{A:{p:2.1,w:true}}}),
+ api.watchStatus(w,{offers:{A:{p:1.5,w:false}}}),
+ api.watchStatus(w,{offers:{A:{p:1.5,w:true,st:1}}}),api.watchStatus(w,null)]));
+""")
+    assert [x['state'] for x in out] == ['reached', 'waiting', 'source', 'missing', 'missing']
+
+
+def test_product_ids_survive_reordering_and_use_persisted_aliases(tmp_path):
+    db = {'stores': ['Araz', 'Bravo'], 'groups': [{'id': 'sud', 'name': 'Süd', 'cats': ['sud']}],
+          'categories': {'sud': {'name': 'Süd', 'stores': {
+              'Araz': [{'name': 'Milla Süd 1 L', 'price': 2}],
+              'Bravo': [{'name': 'Milla Süd 1 L', 'wolt_price': 2.2}]}}}}
+    out = _run_site(tmp_path, db, """
+api.setDB(raw);const g=api.groups('sud')[0],id=g.pid, key=api.aliases(g)[0];
+raw.product_ids={[key]:id};raw.categories.sud.stores.Araz.unshift({name:'Başqa Məhsul',price:3});
+api.setDB(raw);const next=api.groups('sud').find(g=>g.name==='Milla Süd 1 L');
+console.log(JSON.stringify({id,next:next.pid}));
+""")
+    assert out['id'] == out['next'] and re.fullmatch(r's[a-f0-9]{16}', out['id'])

@@ -2,7 +2,7 @@
 
 Scraper Wolt məhsullarına "gtin" (ştrix-kod) yazır. Bu skript onu prices.json-da "im"-ə çevirir: OFF-dakı ön şəklin yolu,
 məs. "476/009/510/1025/front_az.3" (sayt https://images.openfoodfacts.org/images/products/<im>.200.jpg göstərir), sonra
-"gtin" silinir. OFF-da şəkli olmayan məhsulda "im" yoxdur, sayt ikon göstərir. Mağazanın/Wolt-un şəkli istifadə olunmur.
+"gtin" məhsul kimliyi üçün saxlanır. OFF-da şəkli olmayan məhsulda "im" yoxdur, sayt ikon göstərir. Mağazanın/Wolt-un şəkli istifadə olunmur.
 
 Keş: data/off_images.json {gtin: [yol və ya "", "YYYY-MM-DD"]}. Tapılmayanlar RECHECK_DAYS gündən sonra yenidən soruşulur.
 Bir şəkli saytdan götürmək lazım olsa (pis şəkil, etiraz): onun yolunu data/overrides.json-da "hide_photo"-ya yaz (sayt da göstərmir).
@@ -92,7 +92,7 @@ def run():
     for c in data["categories"].values():
         for l in c["stores"].values():
             for it in l:
-                g = it.pop("gtin", None)
+                g = it.get("gtin")
                 if g is None: continue
                 im = (cache.get(g) or [""])[0]
                 if im and im not in hide: it["im"] = im; n += 1

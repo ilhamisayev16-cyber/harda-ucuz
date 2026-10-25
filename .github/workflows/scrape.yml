@@ -69,7 +69,7 @@ jobs:
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git add data/prices.json data/history.json
           if [ -e data/off_images.json ]; then git add data/off_images.json; fi
-          for f in data/groups.json sitemap.xml qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
+          for f in data/groups.json data/product_ids.json data/catalog.json data/catalog sitemap.xml sitemap-products*.xml robots.txt mehsullar qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
           git diff --staged --quiet || git commit -m "Qiymətlər yeniləndi"
           git pull --rebase origin "$GITHUB_REF_NAME"
           git push

@@ -30,7 +30,7 @@ harda-ucuz/
 ├── og.png                      ← link paylaşılanda görünən şəkil (WhatsApp, Telegram, Facebook)
 ├── scrapers/scraper.py         ← bütün scrape + təsnifat məntiqi (~1500 sətir)
 ├── scripts/build_site.js       ← scrape-dən sonra: groups.json, qiymetler/, sitemap.xml
-├── requirements.txt            ← requests, beautifulsoup4, lxml
+├── requirements.txt            ← requests
 ├── .github/workflows/scrape.yml← gündəlik avtomatik scrape
 ├── .github/dependabot.yml      ← asılılıq təhlükəsizlik yeniləmələri
 └── docs/LAYIHE_ARXITEKTURASI.md← bu sənəd

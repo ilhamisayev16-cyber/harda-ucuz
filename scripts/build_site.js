@@ -33,12 +33,17 @@ function loadSite() {
   vm.runInContext(js + `;globalThis.__site={
     setDB(d){DB=sane(d);stores=DB.stores;GL=DB.groups;GM=Object.fromEntries(GL.map(g=>[g.id,g]));PRE=null;for(const k in GROUPS)delete GROUPS[k];return DB;},
     setPre(p){PRE=p;for(const k in GROUPS)delete GROUPS[k];},
-    groups:(gid,rec)=>groups(gid,rec), GL:()=>GL, catName:c=>catName(c), EMOJI, siteHash:()=>siteHash()};`, ctx);
+    groups:(gid,rec)=>groups(gid,rec), GL:()=>GL, catName:c=>catName(c), EMOJI, siteHash:()=>siteHash(),
+    upr:typeof upr==="function"?upr:null};`, ctx);   // upr (vahid qiymət) olmasa səhifələr onsuz qurulur
   return ctx.__site;
 }
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const fmt = n => n.toFixed(2) + " ₼";
+const fmt = n => n.toFixed(2) + "\u00a0₼";   // bölünməz boşluq: "7.10" və "₼" ayrı sətrə düşmür
+const num = n => n.toLocaleString("az");     // saytdakı kimi: 59.861
+/* rəqəmdən sonra yiyəlik şəkilçisi rəqəmin son sözünə görə: 428-i (səkkiz), 202-si (iki), 3-ü (üç), 30-u (on), 40-ı (qırx), 100-ü (yüz), 1000-i (min) */
+const poss = n => `${num(n)}-${n % 10 ? ["", "i", "si", "ü", "ü", "i", "sı", "si", "i", "u"][n % 10]
+  : n % 100 ? ["", "u", "si", "u", "ı", "si", "ı", "i", "i", "ı"][n % 100 / 10] : n % 1000 ? "ü" : n % 1e6 ? "i" : "u"}`;
 const cardJSON = cards => JSON.stringify(cards.map(g => { const { mi, ...r } = g; return r; }));
 
 function main() {
@@ -69,12 +74,14 @@ function main() {
   const pages = buildPages(db, S, CARDS);
   console.log(`qiymetler/: ${pages.length} səhifə`);
 
-  /* 3. sitemap.xml */
+  /* 3. sitemap.xml — lastmod: data səhifələri üçün qiymət tarixi, haqqinda.html üçün səhifədəki "Son yenilənmə" (hər gün dəyişmir) */
   const day = isoDay(db.last_updated);
-  const urls = ["", "haqqinda.html", ...pages];
+  let about = "";
+  try { about = isoDay((/Son yenilənmə: (\d\d\.\d\d\.\d{4})/.exec(fs.readFileSync(path.join(ROOT, "haqqinda.html"), "utf8")) || [])[1]); } catch (e) {}
+  const urls = [["", day], ["haqqinda.html", about], ...pages.map(u => [u, day])];
   writeAtomic(path.join(OUT, "sitemap.xml"),
     `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-    urls.map(u => `  <url><loc>${esc(SITE + u)}</loc>${day ? `<lastmod>${day}</lastmod>` : ""}</url>`).join("\n") + `\n</urlset>\n`);
+    urls.map(([u, d]) => `  <url><loc>${esc(SITE + u)}</loc>${d ? `<lastmod>${d}</lastmod>` : ""}</url>`).join("\n") + `\n</urlset>\n`);
   console.log(`sitemap.xml: ${urls.length} ünvan`);
 }
 
@@ -99,51 +106,49 @@ function buildPages(db, S, CARDS) {
     if (!cards.length) continue;
     const bySub = new Map();
     for (const c of cards) { const k = c.c || g.id; (bySub.get(k) || bySub.set(k, []).get(k)).push(c); }
-    const subs = g.cats.filter(c => (bySub.get(c) || []).length >= 5).map(c => ({ id: c, name: S.catName(c), cards: bySub.get(c) }));
+    let subs = g.cats.filter(c => (bySub.get(c) || []).length >= 5).map(c => ({ id: c, name: S.catName(c), cards: bySub.get(c) }));
+    if (subs.length === 1 && subs[0].cards.length === cards.length) subs = [];   // tək alt növ bütün qrupdursa (Çörək, Digər…) ayrıca səhifə yox: siyahı qrup səhifəsindədir, eyni məzmunlu iki səhifə olmur
     groupsInfo.push({ g, cards, subs });
   }
 
-  /* qovluqlar arası keçid: hub (qiymetler/), qrup (qiymetler/<qrup>/), alt növ (qiymetler/<qrup>/<alt>.html) */
+  /* qovluqlar arası keçid: hub (qiymetler/), qrup (qiymetler/<qrup>/), alt növ (qiymetler/<qrup>/<alt>.html).
+     crumbs / app sayt kökünə görə yazılır, page() səhifənin dərinliyinə görə "../" əlavə edir */
+  const lead = (cards, champ) => { const cmp = cards.filter(c => c.n > 1).length;
+    return `${num(cards.length)} məhsul${cmp ? ` · ${poss(cmp)} bir neçə mağazada` : ""}${champ ? ` · ən çox ən ucuz: <b>${esc(champ[0])}</b> (${num(champ[1])} məhsulda)` : ""}`; };
+  const desc = (name, cards, champ) => { const cmp = cards.filter(c => c.n > 1).length;
+    return `${name}: ${num(cards.length)} məhsul${cmp ? `, ${poss(cmp)} bir neçə mağazada müqayisə olunur` : ""}.${champ ? ` Ən çox ən ucuz: ${champ[0]}.` : ""} Mağazalar: ${storeList}.`; };
+  const all = (cards, app) => { const list = pick(cards);   // qrup və alt növ səhifələri eyni dərinlikdədir (qiymetler/<qrup>/)
+    return items(list, S) + (list.length < cards.length ? `<p class="mute">Burada ${num(list.length)} məhsul göstərilir. Hamısı (${num(cards.length)}), süzgəc və axtarış: <a href="../../${app}">saytda</a>.</p>` : ""); };
+  const chip = (href, label, n) => `<li><a href="${href}">${label} <small>${num(n)}</small></a></li>`;   // say da linkin içində: bütöv düymə toxunulan sahədir
+  const crumbs = [["", "Ana səhifə"], ["qiymetler/", "Bütün qiymətlər"]];
   for (const { g, cards, subs } of groupsInfo) {
     const em = S.EMOJI[g.id] || "📦";
     for (const sub of subs) {
-      const title = `${sub.name} qiymətləri`;
-      const list = pick(sub.cards);
-      const cmp = sub.cards.filter(c => c.n > 1).length;
-      const champ = champion(sub.cards);
-      const desc = `${sub.name}: ${sub.cards.length} məhsulun qiyməti${cmp ? `, ${cmp} məhsul bir neçə mağazada müqayisə` : ""}. ` +
-        `${champ ? `Ən çox ən ucuz: ${champ[0]}. ` : ""}${storeList}.`;
+      const title = `${sub.name} qiymətləri`, champ = champion(sub.cards), app = `#/c/${g.id}/${sub.id}`;
       write(`${g.id}/${sub.id}.html`, page({
-        depth: 2, path: `qiymetler/${g.id}/${sub.id}.html`, title, desc, upd,
-        crumbs: [["../../", "Ana səhifə"], ["../", "Bütün qiymətlər"], ["./", g.name]],
-        h1: `${S.EMOJI[sub.id] || em} ${esc(title)}`,
-        lead: `${sub.cards.length} məhsul${cmp ? ` · ${cmp}-i bir neçə mağazada` : ""}${champ ? ` · ən çox ən ucuz: <b>${esc(champ[0])}</b> (${champ[1]} məhsulda)` : ""}`,
-        app: `../../#/c/${g.id}/${sub.id}`,
-        body: items(list) + (list.length < sub.cards.length ? `<p class="mute">Burada ${list.length} məhsul göstərilir. Hamısı, süzgəc və axtarış saytdadır.</p>` : ""),
+        path: `qiymetler/${g.id}/${sub.id}.html`, title, desc: desc(sub.name, sub.cards, champ), upd,
+        crumbs: [...crumbs, [`qiymetler/${g.id}/`, g.name]],
+        h1: `${S.EMOJI[sub.id] || em} ${esc(title)}`, lead: lead(sub.cards, champ), app, body: all(sub.cards, app),
       }));
     }
     const top = cards.filter(c => c.n > 1).sort((a, b) => b.save - a.save).slice(0, 30);
-    const champ = champion(cards);
+    const champ = champion(cards), app = `#/c/${g.id}`;
     write(`${g.id}/index.html`, page({
-      depth: 1, path: `qiymetler/${g.id}/`, title: `${g.name} — qiymətlər`, upd,
-      desc: `${g.name}: ${cards.length} məhsulun qiyməti ${storeList} mağazalarında müqayisə.${champ ? ` Ən çox ən ucuz: ${champ[0]}.` : ""}`,
-      crumbs: [["../../", "Ana səhifə"], ["../", "Bütün qiymətlər"]],
-      h1: `${em} ${esc(g.name)}`,
-      lead: `${cards.length} məhsul${champ ? ` · ən çox ən ucuz: <b>${esc(champ[0])}</b> (${champ[1]} məhsulda)` : ""}`,
-      app: `../../#/c/${g.id}`,
-      body: (subs.length ? `<h2>Alt bölmələr</h2><ul class="subs">${subs.map(s => `<li><a href="${s.id}.html">${S.EMOJI[s.id] || em} ${esc(s.name)}</a> <small>${s.cards.length}</small></li>`).join("")}</ul>` : "") +
-        (top.length ? `<h2>Ən çox qənaət</h2>${items(top)}` : ""),
+      path: `qiymetler/${g.id}/`, title: `${g.name} qiymətləri`, desc: desc(g.name, cards, champ), upd, crumbs,
+      h1: `${em} ${esc(g.name)}`, lead: lead(cards, champ), app,
+      body: subs.length ? `<h2>Alt bölmələr</h2><ul class="subs">${subs.map(s => chip(`${s.id}.html`, `${S.EMOJI[s.id] || em} ${esc(s.name)}`, s.cards.length)).join("")}</ul>` +
+        (top.length ? `<h2>Ən çox qənaət</h2>${items(top, S, true)}` : "") : all(cards, app),
     }));
   }
   write("index.html", page({
-    depth: 1, path: "qiymetler/", title: "Bütün supermarket qiymətləri", upd,
+    path: "qiymetler/", title: "Bütün qiymətlər kateqoriyalar üzrə", upd,
     desc: `Bakı supermarketlərinin (${storeList}) qiymətləri kateqoriyalar üzrə: süd, ət, meyvə, tərəvəz, içkilər və s.`,
-    crumbs: [["../", "Ana səhifə"]],
+    crumbs: crumbs.slice(0, 1),
     h1: "🛒 Bütün qiymətlər",
-    lead: `${storeList} — ${Object.values(CARDS).reduce((a, c) => a + c.length, 0).toLocaleString("az")} məhsul`,
-    app: "../",
-    body: groupsInfo.map(({ g, cards, subs }) => `<h2><a href="${g.id}/">${S.EMOJI[g.id] || "📦"} ${esc(g.name)}</a> <small>${cards.length}</small></h2>` +
-      (subs.length ? `<ul class="subs">${subs.map(s => `<li><a href="${g.id}/${s.id}.html">${esc(s.name)}</a> <small>${s.cards.length}</small></li>`).join("")}</ul>` : "")).join("\n"),
+    lead: `${storeList} — ${num(Object.values(CARDS).reduce((a, c) => a + c.length, 0))} məhsul`,
+    app: "",
+    body: groupsInfo.map(({ g, cards, subs }) => `<h2><a href="${g.id}/">${S.EMOJI[g.id] || "📦"} ${esc(g.name)}</a> <small>${num(cards.length)}</small></h2>` +
+      (subs.length ? `<ul class="subs">${subs.map(s => chip(`${g.id}/${s.id}.html`, esc(s.name), s.cards.length)).join("")}</ul>` : "")).join("\n"),
   }));
   fs.rmSync(final, { recursive: true, force: true });   // yalnız bu skriptin yaratdığı qovluq: silinmiş alt növlərin səhifəsi qalmasın
   fs.renameSync(dir, final);
@@ -157,29 +162,35 @@ function pick(cards) {
   return multi.concat(single).slice(0, MAX_ITEMS);
 }
 
-/* ən çox kartda ən ucuz olan mağaza (ən azı 3 müqayisə) */
+/* ən çox kartda ən ucuz olan mağaza (ən azı 3 müqayisə; hamısında eyni qiymət olan kartlar sayılmır — orada "ən ucuz" yoxdur) */
 function champion(cards) {
   const w = {};
-  for (const c of cards) if (c.n > 1) for (const [s, o] of Object.entries(c.offers)) if (!o.st && o.p === c.min) w[s] = (w[s] || 0) + 1;
+  for (const c of cards) if (c.n > 1 && c.max > c.min) for (const [s, o] of Object.entries(c.offers)) if (!o.st && o.p === c.min) w[s] = (w[s] || 0) + 1;
   const best = Object.entries(w).sort((a, b) => b[1] - a[1])[0];
   return best && best[1] >= 3 ? best : null;
 }
 
-function items(list) {
+/* kart: ən ucuz mağaza yaşıl sətirdə, qalanları ucuzdan bahaya. Qiymət bərabərdirsə hamısı ən ucuzdur (birini seçib "ən ucuz" yazmırıq);
+   hamısında eynidirsə "N mağazada eyni qiymət". save: qənaət məbləği də göstərilir ("Ən çox qənaət" siyahısı) */
+function items(list, S, save) {
   return `<ul class="items">\n` + list.map(c => {
-    const u = c.a && c.a.kg ? "/kq" : "";
-    const offs = Object.entries(c.offers).sort((a, b) => a[1].p - b[1].p);
-    const cheap = c.n > 1 ? offs.find(([, o]) => !o.st && o.p === c.min) : null;
-    const lbl = ([s, o]) => `${esc(s)} ${fmt(o.p)}${u}${o.w ? "<sup>W</sup>" : ""}`;
-    const rest = offs.filter(x => x !== cheap).map(lbl).join(" · ");
-    return `<li><b>${esc(c.name)}</b>` +
-      (cheap ? `<span class="best"><i style="background:var(--${esc(cheap[0])})"></i>Ən ucuz: ${lbl(cheap)}</span>` : "") +
-      (rest ? `<small>${rest}</small>` : "") + `</li>`;
+    const u = c.a && c.a.kg ? "/kq" : "", W = o => o.w ? "<sup>W</sup>" : "";
+    const offs = Object.entries(c.offers).sort((a, b) => a[1].p - b[1].p), live = offs.filter(([, o]) => !o.st);
+    const low = c.n > 1 ? live.filter(([, o]) => o.p === c.min) : [], same = low.length > 1 && low.length === live.length;
+    const lbl = ([s, o]) => `<span>${esc(s)} ${fmt(o.p)}${u}${W(o)}${o.st ? " (arxiv)" : ""}</span>`, name = ([s, o]) => `<span>${esc(s)}${W(o)}</span>`;
+    const head = !low.length ? "" : low.length === 1 ? `<i style="background:var(--${esc(low[0][0])})"></i>Ən ucuz: ${lbl(low[0])}`
+      : same ? `${low.length} mağazada eyni qiymət: <span>${fmt(c.min)}${u}</span>` : `Ən ucuz: ${low.map(name).join(", ")} — <span>${fmt(c.min)}${u}</span>`;
+    const first = (low[0] || live[0] || offs[0] || [])[1], up = S.upr && first ? S.upr(c, first.p) : null;   // vahid qiymət (₼/kq, ₼/L), saytdakı kimi
+    const extra = (up && isFinite(up.v) && Math.abs(up.v - first.p) >= .005 ? ` <span class="u">· ${fmt(up.v)}/${esc(up.u)}</span>` : "") +   // 1 kq / 1 L qablaşdırmada təkrar olmasın
+      (save && !same && c.save > 0 ? ` <span class="u">· ${fmt(c.save)} qənaət</span>` : "");
+    const tail = (same ? low.map(name) : []).concat(offs.filter(x => !low.includes(x)).map(lbl)).join(" · ");
+    return `<li><b>${esc(c.name)}</b>` + (head ? `<span class="best">${head}${extra}</span>` : "") +
+      (tail || !head && extra ? `<small>${tail}${head ? "" : extra}</small>` : "") + `</li>`;
   }).join("\n") + `\n</ul>`;
 }
 
-function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body }) {
-  const up = "../".repeat(depth), url = SITE + p, full = `${title} — Bakı supermarketləri | Harda Ucuz`;
+function page({ path: p, title, desc, upd, crumbs, h1, lead, app, body }) {
+  const up = "../".repeat(p.split("/").length - 1), url = SITE + p, full = `${title} — Bakı supermarketləri | Harda Ucuz`;   // dərinlik ünvandan: qiymetler/ → ../, qiymetler/sud/ → ../../
   return `<!doctype html>
 <html lang="az">
 <head>
@@ -197,44 +208,51 @@ function page({ depth, path: p, title, desc, upd, crumbs, h1, lead, app, body })
 <meta property="og:description" content="${esc(desc.slice(0, 300))}">
 <meta property="og:url" content="${esc(url)}">
 <meta property="og:image" content="${esc(SITE)}og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="#e35600">
-<link rel="icon" href="${SITE}favicon.ico" sizes="48x48">
-<link rel="icon" href="${SITE}assets/icons/favicon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="${SITE}assets/icons/apple-touch-icon.png">
+<link rel="icon" href="${up}favicon.ico" sizes="48x48">
+<link rel="icon" href="${up}assets/icons/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="${up}assets/icons/apple-touch-icon.png">
 <style>
-:root{--bg:#faf6ee;--card:#fff;--ink:#281505;--mute:#6b5a46;--line:#eedcc4;--brand:#e35600;--good:#0f9d58;--good-soft:#e6f6ee;
+:root{--bg:#faf6ee;--card:#fff;--ink:#281505;--mute:#6b5a46;--line:#eedcc4;--brand:#bf4800;--on-brand:#fff;--good:#0b8043;--good-soft:#e6f6ee;
 --Bravo:#d93025;--OBA:#0b79d0;--Araz:#8e44ad;--Neptun:#0f9d58;--Tamstore:#e6a100;--Rahat:#c2185b;--Bazarstore:#00897b;--SPAR:#7cb342}
-@media (prefers-color-scheme:dark){:root{--bg:#151009;--card:#1f1810;--ink:#f5ebdc;--mute:#b4a58f;--line:#3a2e20;--brand:#ff7a2f;--good:#3ddc84;--good-soft:#12301f}}
+@media (prefers-color-scheme:dark){:root{--bg:#151009;--card:#1f1810;--ink:#f5ebdc;--mute:#b4a58f;--line:#3a2e20;--brand:#ff7a2f;--on-brand:#151009;--good:#3ddc84;--good-soft:#12301f}}
+/* mətn rəngləri WCAG AA (4.5:1): link #bf4800, yaşıl #0b8043; qaranlıq rejimdə narıncı düymədə tünd yazı */
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
 main{max-width:760px;margin:0 auto;padding:16px 16px 48px}
 a{color:var(--brand)}
-nav{font-size:14px;color:var(--mute)}
-nav a{text-decoration:none}
-h1{font-size:24px;line-height:1.2;margin:10px 0 4px}
+nav ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;font-size:14px;color:var(--mute)}
+nav li+li::before{content:"›";margin:0 6px}
+nav a{display:inline-block;padding:4px 0;text-decoration:none}
+h1{font-size:24px;line-height:1.2;margin:6px 0 4px}
 h2{font-size:18px;margin:26px 0 8px}
 h2 small,.subs small{color:var(--mute);font-weight:400;font-size:13px}
 .mute{color:var(--mute);font-size:14px}
-.go{display:inline-block;margin:12px 0 4px;background:var(--brand);color:#fff;text-decoration:none;font-weight:600;border-radius:12px;padding:10px 16px}
+.go{display:inline-block;margin:12px 0 4px;background:var(--brand);color:var(--on-brand);text-decoration:none;font-weight:600;border-radius:12px;padding:10px 16px}
 .subs{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}
-.subs li{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
-.subs a{text-decoration:none;color:var(--ink);font-weight:600}
+.subs li{background:var(--card);border:1px solid var(--line);border-radius:999px}
+.subs a{display:block;padding:6px 12px;text-decoration:none;color:var(--ink);font-weight:600}
 .items{list-style:none;padding:0;margin:12px 0}
 .items li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-bottom:8px}
 .items b{display:block;font-size:15px}
 .items .best{display:block;color:var(--good);font-weight:600;font-size:14px;margin-top:2px;font-variant-numeric:tabular-nums}
 .items .best i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+.items .u{color:var(--mute);font-weight:400}
 .items small{display:block;color:var(--mute);font-size:13px;margin-top:2px;font-variant-numeric:tabular-nums}
+.items small span,.items .best span{white-space:nowrap}
 footer{margin-top:28px;color:var(--mute);font-size:12.5px;line-height:1.6}
 </style>
 </head>
 <body>
 <main>
-<nav>${crumbs.map(([h, t]) => `<a href="${h}">${esc(t)}</a>`).join(" › ")}</nav>
+<nav aria-label="Səhifə yolu"><ol itemscope itemtype="https://schema.org/BreadcrumbList">${crumbs.map(([h, t], i) =>
+  `<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><a itemprop="item" href="${up}${h}"><span itemprop="name">${esc(t)}</span></a><meta itemprop="position" content="${i + 1}"></li>`).join("")}</ol></nav>
 <h1>${h1}</h1>
 <p class="mute">${lead}<br>Son yenilənmə: ${esc(upd || "—")}</p>
-<a class="go" href="${app}">Saytda aç: axtar, süz, siyahıya əlavə et →</a>
+<a class="go" href="${up}${app}">Saytda aç: axtar, süz, səbətə əlavə et →</a>
 ${body}
 <footer>Qiymətlər mağazaların açıq saytlarından gündə bir dəfə avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
 <sup>W</sup> — Wolt-dan alınan qiymət (rəfdəki qiymətdən fərqli ola bilər). Sayt heç bir mağaza ilə əlaqəli deyil.

@@ -8,3 +8,4 @@ qiymetler.tmp/
 !.env.example
 .venv/
 venv/
+.wrangler/

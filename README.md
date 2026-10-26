@@ -97,6 +97,19 @@ Scraper hər gün avtomatik işləyəcək.
 - `index.html` prices.json-u `sane()` ilə yoxlayır (yeni sahə → `FIELD`), səbəti `okFav` ilə; statik səhifələrdə JavaScript qadağandır (CSP `script-src 'none'`).
 - Asılılıqlar hash ilə: `requirements.in`-i dəyişin, sonra `pip install pip-tools && pip-compile --generate-hashes --allow-unsafe --strip-extras requirements.in`.
 
+## Köhnə və ağlasığmaz qiymətlər
+- **Dəyişməyən mağaza**: `scripts/build_site.js` `data/history.json`-dan hər mağazanın son qiymət dəyişikliyini tapır; 5 gün və daha çox heç bir qiyməti
+  dəyişməyibsə (məs. Rahat 2026-10: Wolt menyusu 17.10-dan yenilənmir) `catalog.json`-da `frozen` olur — ana səhifədə, qiymət sətrində ("köhnə ola bilər")
+  və statik səhifələrdə xəbərdarlıq. Mənbə yenilənəndə özü yox olur (`FROZEN_DAYS`).
+- **Ağlasığmaz qiymət** (mənbədə yazı səhvi: "Heinz ... 170 qr" 644.15 ₼): `index.html`-də `dropImplausible()` (`sane()`-dən çağırılır, sayt və build eyni):
+  1 kq / 1 L qiyməti eyni markanın digər məhsullarından ≥40 dəfə (marka azdırsa kateqoriyanın medianından ≥100 dəfə) baha olan, ölçüsü ≥50 q/ml və
+  qiyməti ≥20 ₼ məhsul göstərilmir. Baha markalar (Venchi, viski) öz markası ilə müqayisə olunur.
+
+## Cloudflare (Workers Builds)
+- `wrangler.jsonc` + `.assetsignore`: repo kökü statik fayllar kimi yüklənir, sayta aid olmayanlar (scrapers/, tests/, .git ...) və `mehsullar/` çıxarılır —
+  ~60 000 məhsul səhifəsi Workers Free limitinə (20 000 fayl) sığmır; `cloudflare/worker.js` onları GitHub Pages-dəki eyni səhifəyə yönləndirir.
+- Yoxlamaq: `npx wrangler dev` (lokal), `npx wrangler deploy --dry-run`. Worker adı (`harda-ucuz`) dashboard-dakı ilə eyni olmalıdır.
+
 ## Wolt söndürmə açarı və təhlükəsiz yazma
 - `WOLT_ENABLED=0` (və ya `python scrapers/scraper.py --no-wolt`): Wolt-a heç bir sorğu göndərilmir. GitHub-da: Settings → Variables → `WOLT_ENABLED`.
 - Köhnə Wolt qiymətləri silinmir; `stale: true` ("arxiv qiymət") işarələnir, ən ucuz/qənaət hesabına girmir; `meta[mağaza]`-da `source_type`, `auto_update`, `last_success`.

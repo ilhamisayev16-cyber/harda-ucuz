@@ -199,3 +199,24 @@ def test_service_worker_network_first_offline_page_and_5xx_fallback():
     assert R["js"] == [200, "yeni"]                                       # skript keşdə olsa da təzəsi (index.html ilə uyğun)
     assert R["img1"] == [200, "şəkil"] and R["img2"] == [200, "şəkil"]
     assert R["ext"] is None                                               # xarici ünvanlara toxunulmur
+
+
+@node
+def test_store_without_price_changes_gets_a_stale_warning(tmp_path):
+    # Rahat 2026-10: 13 578 qiymət 17.10-dan bəri eyni idi (Wolt menyusu yenilənmir), sayt isə hər gün "yeniləndi" göstərirdi
+    import scraper
+    db = _db()
+    def hist(store, day):
+        return {scraper._hk(store, it["name"]): [["2026-09-30", 1.0], [day, 2.0]]
+                for c in db["categories"].values() for it in c["stores"][store]}
+    h = {**hist("Araz", "2026-10-24"), **hist("Bravo", "2026-10-10")}   # OBA: tarixçə yoxdur (yeni mağaza) — xəbərdarlıq yox
+    (tmp_path / "history.json").write_text(json.dumps({"h": h}), encoding="utf-8")
+    out = _build(tmp_path, db)
+    assert json.loads((out / "data" / "catalog.json").read_text(encoding="utf-8"))["frozen"] == {"Bravo": "2026-10-10"}
+    html = (out / "qiymetler" / "index.html").read_text(encoding="utf-8")
+    assert '<p class="warn">⚠ Bravo: qiymətlər 10.10.2026 tarixindən bəri dəyişməyib, köhnə ola bilər.</p>' in html
+    assert "Araz: qiymətlər" not in html and "OBA: qiymətlər" not in html
+    (tmp_path / "history.json").unlink()   # tarixçə yoxdursa heç kim xəbərdarlıq almır
+    out = _build(tmp_path, db)
+    assert json.loads((out / "data" / "catalog.json").read_text(encoding="utf-8"))["frozen"] == {}
+    assert 'class="warn"' not in (out / "qiymetler" / "index.html").read_text(encoding="utf-8")

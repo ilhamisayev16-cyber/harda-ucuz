@@ -13,6 +13,7 @@ h1{font-size:24px;line-height:1.2;margin:6px 0 4px}
 h2{font-size:18px;margin:26px 0 8px}
 h2 small,.subs small{color:var(--mute);font-weight:400;font-size:13px}
 .mute{color:var(--mute);font-size:14px}
+.warn{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--brand);border-radius:10px;padding:8px 12px;font-size:14px}
 .go{display:inline-block;margin:12px 0 4px;background:var(--brand);color:var(--on-brand);text-decoration:none;font-weight:600;border-radius:12px;padding:10px 16px}
 .subs{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:8px}
 .subs li{background:var(--card);border:1px solid var(--line);border-radius:999px}

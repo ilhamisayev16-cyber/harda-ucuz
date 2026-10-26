@@ -19,7 +19,7 @@ const ctx={console,TextEncoder,document:{addEventListener(){},getElementById:id=
 vm.createContext(ctx);
 vm.runInContext(js+`;globalThis.__t={setDB(d){DB=sane(d);stores=DB.stores;GL=DB.groups;GM=Object.fromEntries(GL.map(g=>[g.id,g]));for(const k in GROUPS)delete GROUPS[k];},
   renderDrops:()=>renderDrops(), groups:g=>groups(g), card:g=>card(g), cheap:g=>cheap(g), parseSize:n=>parseSize(n), tokens:f=>[...tokens(fold(f))],
-  favText:()=>favText(), setFav:f=>{FAV=f;}, favKey:g=>favKey(g)};`,ctx);
+  favText:()=>favText(), setFav:f=>{FAV=f;}, favKey:g=>favKey(g), cats:()=>DB.categories};`,ctx);
 const T=ctx.__t, raw=JSON.parse(fs.readFileSync(0,'utf8'));
 """
 
@@ -124,3 +124,27 @@ console.log(JSON.stringify({best:T.card(g).match(/Ən ucuz: (\\w+)/)[1], cheap:T
     assert lines[0] == "• Süd Atena 1l × 2 — OBA 5.00 ₼ (2.50 ₼)"      # sətrin cəmi + vahid qiymət
     assert lines[1] == "• Banan kq × 1 kq — Araz 2.60 ₼"
     assert "Hər məhsulu ən ucuz olduğu mağazadan: 7.60 ₼" in out["text"]   # tam səbət heç bir mağazada olmasa da
+
+
+def test_implausible_prices_are_dropped_but_expensive_brands_kept():
+    # Rahat-ın Wolt menyusundakı yazı səhvləri (2026-10): 1 kq / 1 L qiyməti eyni markadan ≥40 dəfə, marka azdırsa kateqoriyadan ≥100 dəfə baha
+    temizlik = {"Rahat": [{"name": "Domestos 7 Expert Ultra Ağ 1 l", "wolt_price": 256.25},
+                          {"name": "Domestos Sarı Limon 1 l", "wolt_price": 4.9}],
+                "Bravo": [{"name": "Domestos Ultra Ağ 750 ml", "wolt_price": 3.99}, {"name": "Domestos Okean 1.5 l", "wolt_price": 6.5},
+                          {"name": "Domestos Pink 500 ml", "wolt_price": 2.9}]}
+    # baha marka: hamısı baha, öz markası ilə müqayisədə adi; ölçü yazı səhvi ("0.75ml" = 0.75 L) yoxlanmır
+    serab = {"Rahat": [{"name": f"Gaja Barolo {y} 0.75 l", "wolt_price": p} for y, p in ((2015, 245.49), (2016, 230.0), (2017, 219.0), (2018, 199.0))]
+             + [{"name": "Bottega Pinot Grigio 12% 0.75ml", "wolt_price": 32.0}]}
+    # kateqoriyada markanın tayı yoxdur: kateqoriyanın medianı ilə (30 məhsul ~30 ₼/kq)
+    usaq = {"Araz": [{"name": f"Fruto Sıyıq {i} 200 qr", "price": 5.0 + i / 10} for i in range(30)],
+            "Rahat": [{"name": "Heinz Balqabaq-Gavalı Südli Qarğıdalı Kasa 170 qr", "wolt_price": 644.15},
+                      {"name": "Hipp Orqanik Sıyıq 250 qr", "wolt_price": 12.5}]}
+    cats = {"temizlik": {"stores": temizlik}, "serab": {"stores": serab}, "usaq_qida": {"stores": usaq}}
+    groups = [{"id": k, "name": k, "cats": [k]} for k in cats]
+    out = _node("""T.setDB(raw); console.log(JSON.stringify(Object.fromEntries(Object.entries(DBx()).map(([k,c])=>
+  [k,Object.values(c.stores).flat().map(i=>i.name)]))));""".replace("DBx()", "T.cats()"),
+                _db(cats, groups))
+    assert "Domestos 7 Expert Ultra Ağ 1 l" not in out["temizlik"] and len(out["temizlik"]) == 4
+    assert len(out["serab"]) == 5                                    # baha çaxır və "0.75ml" yazılışı toxunulmur
+    assert "Heinz Balqabaq-Gavalı Südli Qarğıdalı Kasa 170 qr" not in out["usaq_qida"] and "Hipp Orqanik Sıyıq 250 qr" in out["usaq_qida"]
+    assert len(out["usaq_qida"]) == 31

@@ -1,0 +1,19 @@
+# Cloudflare-ə yüklənməyənlər (wrangler.jsonc): sayta aid olmayan fayllar və mehsullar/ (Workers Free: 20 000 fayl limiti, worker.js yönləndirir)
+.git
+.github
+.claude
+.wrangler
+.pytest_cache
+.assetsignore
+.gitignore
+wrangler.jsonc
+cloudflare/
+scrapers/
+scripts/
+tests/
+docs/
+node_modules/
+__pycache__/
+requirements.*
+README.md
+mehsullar/

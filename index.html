@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ZTmpE7v9HcoClHLpAARI3Rmh2+9kJWx0Sd0lvpc2LSg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-UGmFa7QAJrthmc765W1tJhc6/vsd0WzTRn4gDm2Kf60='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -1249,10 +1249,37 @@ function sane(d){
   }
   const groups=Array.isArray(d.groups)?d.groups.filter(g=>g&&okS(g.id,ID_RX)&&typeof g.name==="string"&&Array.isArray(g.cats))
     .map(g=>({id:g.id,name:g.name.slice(0,80),cats:g.cats.filter(c=>typeof c==="string"&&cats[c])})):null;
+  dropImplausible(cats);
   return {last_updated:typeof d.last_updated==="string"?d.last_updated.slice(0,20):"",stores,categories:cats,groups,product_ids:validIds(d.product_ids)};
+}
+/* ağlasığmaz qiymət — mənbədə yazı səhvi (Rahat-ın Wolt menyusu, 2026-10: "Heinz ... Kasa 170 qr" 644.15 ₼, "Domestos ... 1 l" 256.25 ₼,
+   "Lipton Soyuq Çay 330 ml" 42.49 ₼): 1 kq / 1 L qiyməti eyni kateqoriyada eyni markanın (adın ilk sözü) digər məhsullarından ≥40 dəfə, marka
+   3-dən azdırsa kateqoriyanın medianından ≥100 dəfə baha olan məhsul göstərilmir. Yalnız ölçüsü ≥50 q/ml və qiyməti ≥20 ₼ olan yoxlanır: ölçü yazı
+   səhvi ("0.75ml" = 0.75 L) və ucuz məhsul toxunulmur, baha markalar (Venchi, viski) öz markası ilə müqayisə olunur — bütün datada 3 məhsul.
+   build_site.js də sane() ilə işləyir: kataloq, kartlar və statik səhifələr eyni nəticəni görür */
+function dropImplausible(cats){
+  const B={q:[.001,"m"],kq:[1,"m"],ml:[.001,"v"],L:[1,"v"]}, med=a=>{ a=a.slice().sort((x,y)=>x-y); const m=a.length>>1; return a.length%2?a[m]:(a[m-1]+a[m])/2; };
+  for(const c of Object.values(cats)){
+    const rows=[], by=new Map(), all={m:[],v:[]};
+    for(const l of Object.values(c.stores)) for(const it of l){
+      const p=it.price??it.wolt_price, z=p>0&&parseSize(it.name), b=z&&B[z.wu]; if(!b) continue;
+      const w=fold(it.name).split(/[^a-z0-9]+/).filter(Boolean), q=z.wv*b[0];
+      const r={it,p,q,u:p/q,k:b[1],f:w.join(" "),br:(w.find(x=>x.length>=3&&!/^\d/.test(x))||"")+"|"+b[1]};
+      rows.push(r); all[r.k].push(r.u); (by.get(r.br)||by.set(r.br,[]).get(r.br)).push(r);
+    }
+    const cm={m:all.m.length>=30?med(all.m):0,v:all.v.length>=30?med(all.v):0}, bad=new Set();
+    for(const r of rows){ if(r.p<20||r.q<.05) continue;
+      const sib=by.get(r.br).filter(x=>x!==r&&x.f!==r.f);
+      if(sib.length>=3?r.u>=40*med(sib.map(x=>x.u)):cm[r.k]&&r.u>=100*cm[r.k]) bad.add(r.it); }
+    if(bad.size) for(const s in c.stores) c.stores[s]=c.stores[s].filter(it=>!bad.has(it));
+  }
 }
 function validIds(v){ const o=Object.create(null); if(v&&typeof v==="object") for(const [k,id] of Object.entries(v)) if(/^(?:[a-f0-9]{16}|gtin:\d{8,14})$/.test(k)&&/^s[a-f0-9]{16}$/.test(id)) o[k]=id; return o; }
 let CATALOG=null; const pendingGroups=new Map(), loadedGroups=new Set();
+/* FROZEN: {mağaza: "YYYY-MM-DD"} — mənbədə neçə gündür heç bir qiyməti dəyişməyən mağaza (build_site.js, catalog.json): qiymətlər köhnə ola bilər */
+let FROZEN=Object.create(null);
+const okFrozen=v=>{ const o=Object.create(null); if(v&&typeof v==="object") for(const [s,d] of Object.entries(v)) if(stores.includes(s)&&/^\d{4}-\d\d-\d\d$/.test(d)) o[s]=d; return o; };
+const dmy=d=>d.split("-").reverse().join(".");
 async function ensureGroup(id){
   if(!CATALOG||loadedGroups.has(id)) return;
   if(!pendingGroups.has(id)) pendingGroups.set(id,(async()=>{
@@ -1280,7 +1307,7 @@ async function load(){
       if(!r.ok) throw new Error(`Server cavab vermədi (HTTP ${r.status}).`);
       DB=sane(await r.json().catch(()=>{ throw new Error("Qiymət faylı oxunmadı, bir az sonra yenidən cəhd edin."); }));
     }
-    stores=DB.stores;
+    stores=DB.stores; FROZEN=okFrozen(CATALOG&&CATALOG.frozen);
     GL=DB.groups||Object.entries(DB.categories).map(([id,c])=>({id,name:c.name,cats:[id]}));
     GM=Object.assign(Object.create(null),Object.fromEntries(GL.map(g=>[g.id,g])));   // ünvandan gələn açar (#/c/toString) obyektin öz xassəsinə düşməsin
     const grants=await Promise.race([rights,new Promise(r=>setTimeout(()=>r(null),1500))]);
@@ -1309,7 +1336,8 @@ function renderHome(){
      <small>${esc(tops(g).join(" · "))}</small><span class="n"><i>${n.toLocaleString("az")}</i> məhsul</span></span><span class="go">›</span></button>`).join("");
   renderDrops();
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazaların onlayn qiymətləri göstərilir;
-    Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
+    Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`+
+    Object.entries(FROZEN).map(([s,d])=>`<br>⚠ <b>${esc(s)}</b>: qiymətlər ${dmy(d)} tarixindən bəri dəyişməyib, köhnə ola bilər.`).join("");
 }
 
 /* son günlərdə ucuzlayanlar (data-dakı pp/pd-dən; qruplaşdırma tələb olunmur) */
@@ -1409,7 +1437,7 @@ function offer(g,s){
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
-  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
+  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${FROZEN[s]?`<small class="kgp" title="${esc(s)}: qiymətlər ${dmy(FROZEN[s])} tarixindən bəri dəyişməyib">köhnə ola bilər · ${dmy(FROZEN[s]).slice(0,5)}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
 /* ən ucuz mağaza: arxiv (yenidən yoxlanmayan) qiymət g.min kimi hesaba girmir; hamısı arxivdirsə ən ucuzu */
 const cheap=g=>loOf(g)||(([s,o])=>({s,p:o.p}))(Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0]);

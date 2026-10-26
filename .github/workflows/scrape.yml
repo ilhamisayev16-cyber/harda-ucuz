@@ -54,22 +54,32 @@ jobs:
         timeout-minutes: 30
         run: python scrapers/off_images.py
 
-      - name: Saytı qur (hazır kartlar, statik səhifələr, sitemap)
+      # Scrape ~2.5 saat çəkir; bu vaxt main-ə kod gələ bilər. Əvvəl köhnə kodla qurulmuş fayllar (groups.json, qiymetler/, mehsullar/ ...)
+      # qiymətlərlə birlikdə commit olunurdu və rebase-də konflikt verirdi: push alınmır, günün qiymətləri itirdi (2026-10-26, PR #62 merge).
+      # İndi yalnız data commit olunub ən son main-in üzərinə keçirilir, sayt isə ondan sonra ən son kodla qurulur.
+      - name: Qiymətləri commit et, ən son main-ə keçir
         if: always()   # scrape vaxtı bitsə də yazılmış data üçün
+        run: |
+          git config user.name "Price Bot"
+          git config user.email "bot@qiymet.az"
+          git add data/prices.json data/history.json
+          if [ -e data/off_images.json ]; then git add data/off_images.json; fi
+          git diff --staged --quiet || git commit -m "Qiymətlər yeniləndi"
+          git reset -q --hard && git clean -fdq   # commit olunmamış qalıqlar (yaradılan fayllar) rebase-ə mane olmasın
+          git pull --rebase origin "$GITHUB_REF_NAME"   # açıq repo: token lazım deyil
+
+      - name: Saytı qur (hazır kartlar, statik səhifələr, sitemap)
+        if: always()
         timeout-minutes: 10
-        run: node scripts/build_site.js
+        run: |
+          node scripts/build_site.js || echo "⚠ sayt qurulmadı — qiymətlər yenə də yüklənir"
+          for f in data/groups.json data/product_ids.json data/catalog.json data/catalog sitemap.xml sitemap-products*.xml robots.txt mehsullar qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done
+          git diff --staged --quiet || git commit -m "Sayt yenidən quruldu"
 
       - name: Nəticəni GitHub-a yüklə
         if: always()
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # yazma tokeni yalnız bu addımda: əvvəlki addımlar (pip paketləri, scraper) onu görmür
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # yazma tokeni yalnız bu addımda: əvvəlki addımlar (pip paketləri, scraper, qurma) onu görmür
         run: |
-          git config user.name "Price Bot"
-          git config user.email "bot@qiymet.az"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git add data/prices.json data/history.json
-          if [ -e data/off_images.json ]; then git add data/off_images.json; fi
-          for f in data/groups.json data/product_ids.json data/catalog.json data/catalog sitemap.xml sitemap-products*.xml robots.txt mehsullar qiymetler; do if [ -e "$f" ]; then git add -A "$f"; fi; done   # qurma alınmasa da qiymətlər commit olunsun
-          git diff --staged --quiet || git commit -m "Qiymətlər yeniləndi"
-          git pull --rebase origin "$GITHUB_REF_NAME"
-          git push
+          git push || { git pull --rebase origin "$GITHUB_REF_NAME" && git push; }   # bu arada yeni commit gəlibsə bir dəfə təkrar

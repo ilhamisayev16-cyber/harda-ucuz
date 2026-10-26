@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-UGmFa7QAJrthmc765W1tJhc6/vsd0WzTRn4gDm2Kf60='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-OB26dtd1TTBkgWccU6XwRJVq/OhwbEheA0xheQdm8GY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -1222,6 +1222,18 @@ function toggleFav(g){ const k=favKey(g), i=FAV.findIndex(f=>matchesFav(f,g)); i
 /* qiymət tarixçəsi (data/history.json, ilk dəfə lazım olanda) */
 let HIST=null;
 async function hist(){ if(HIST) return HIST; try{ const r=await fetch("data/history.json"); HIST=r.ok?((await r.json()).h||{}):{}; }catch(e){ HIST={}; } return HIST; }
+/* mağaza sətrinə basanda: "12.10.2026: 25.00 ₼ → 13.10.2026: 23.00 ₼" (tarixçəyə yalnız qiymətin dəyişdiyi günlər yazılır, sonra dəyişiklik
+   yoxdursa belə qalır); tək qeyd: "23.00 ₼ (13.10.2026)"; heç qeyd yoxdursa son məlumatın tarixi. Əvvəl tarix ay.gün idi ("10.12" = 12 oktyabr) */
+const dmy=d=>String(d).slice(0,10).split("-").reverse().join(".");
+const dataDay=()=>{ const m=/^(\d\d)\.(\d\d)\.(\d{4})/.exec(DB&&DB.last_updated||""); return m?`${m[3]}-${m[2]}-${m[1]}`:""; };
+function histHtml(o,h,day){
+  const pts=(Array.isArray(h)?h:[]).filter(x=>Array.isArray(x)&&/^\d{4}-\d\d-\d\d$/.test(x[0])&&+x[1]>0).map(x=>[x[0],+x[1]]);
+  if(!pts.length&&o.pp&&o.pd) return `${fmt(o.pp)} → ${esc(dmy(o.pd))}: <b>${fmt(o.p)}</b>`;
+  if(pts.length&&Math.abs(pts[pts.length-1][1]-o.p)>.004) pts.push([day,o.p]);   // tarixçə geri qalıb (mənbə dəyişən gün yazılmır): indiki qiymət
+  if(pts.length>1) return pts.map(([d,p],i)=>`${d?esc(dmy(d))+": ":""}${i===pts.length-1?`<b>${fmt(p)}</b>`:fmt(p)}`).join(" → ");
+  if(pts.length) return `<b>${fmt(pts[0][1])}</b> (${esc(dmy(pts[0][0]))})`;
+  return `<b>${fmt(o.p)}</b>${day?` (${esc(dmy(day))})`:""} · qiymət dəyişikliyi qeydə alınmayıb`;
+}
 const SRC=document.currentScript?document.currentScript.textContent:"";   // bu skriptin mətni: hazır kartların hansı kod versiyası ilə qurulduğunu yoxlamaq üçün
 const siteHash=()=>hk("site",SRC);
 function hk(s,n){ let h1=0x811c9dc5,h2=5381; for(const b of new TextEncoder().encode(s+"|"+n)){ h1=Math.imul(h1^b,0x01000193)>>>0; h2=(Math.imul(h2,33)^b)>>>0; }
@@ -1276,10 +1288,6 @@ function dropImplausible(cats){
 }
 function validIds(v){ const o=Object.create(null); if(v&&typeof v==="object") for(const [k,id] of Object.entries(v)) if(/^(?:[a-f0-9]{16}|gtin:\d{8,14})$/.test(k)&&/^s[a-f0-9]{16}$/.test(id)) o[k]=id; return o; }
 let CATALOG=null; const pendingGroups=new Map(), loadedGroups=new Set();
-/* FROZEN: {mağaza: "YYYY-MM-DD"} — mənbədə neçə gündür heç bir qiyməti dəyişməyən mağaza (build_site.js, catalog.json): qiymətlər köhnə ola bilər */
-let FROZEN=Object.create(null);
-const okFrozen=v=>{ const o=Object.create(null); if(v&&typeof v==="object") for(const [s,d] of Object.entries(v)) if(stores.includes(s)&&/^\d{4}-\d\d-\d\d$/.test(d)) o[s]=d; return o; };
-const dmy=d=>d.split("-").reverse().join(".");
 async function ensureGroup(id){
   if(!CATALOG||loadedGroups.has(id)) return;
   if(!pendingGroups.has(id)) pendingGroups.set(id,(async()=>{
@@ -1307,7 +1315,7 @@ async function load(){
       if(!r.ok) throw new Error(`Server cavab vermədi (HTTP ${r.status}).`);
       DB=sane(await r.json().catch(()=>{ throw new Error("Qiymət faylı oxunmadı, bir az sonra yenidən cəhd edin."); }));
     }
-    stores=DB.stores; FROZEN=okFrozen(CATALOG&&CATALOG.frozen);
+    stores=DB.stores;
     GL=DB.groups||Object.entries(DB.categories).map(([id,c])=>({id,name:c.name,cats:[id]}));
     GM=Object.assign(Object.create(null),Object.fromEntries(GL.map(g=>[g.id,g])));   // ünvandan gələn açar (#/c/toString) obyektin öz xassəsinə düşməsin
     const grants=await Promise.race([rights,new Promise(r=>setTimeout(()=>r(null),1500))]);
@@ -1336,8 +1344,7 @@ function renderHome(){
      <small>${esc(tops(g).join(" · "))}</small><span class="n"><i>${n.toLocaleString("az")}</i> məhsul</span></span><span class="go">›</span></button>`).join("");
   renderDrops();
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazaların onlayn qiymətləri göstərilir;
-    Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`+
-    Object.entries(FROZEN).map(([s,d])=>`<br>⚠ <b>${esc(s)}</b>: qiymətlər ${dmy(d)} tarixindən bəri dəyişməyib, köhnə ola bilər.`).join("");
+    Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
 }
 
 /* son günlərdə ucuzlayanlar (data-dakı pp/pd-dən; qruplaşdırma tələb olunmur) */
@@ -1437,7 +1444,7 @@ function offer(g,s){
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
-  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${FROZEN[s]?`<small class="kgp" title="${esc(s)}: qiymətlər ${dmy(FROZEN[s])} tarixindən bəri dəyişməyib">köhnə ola bilər · ${dmy(FROZEN[s]).slice(0,5)}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
+  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
 /* ən ucuz mağaza: arxiv (yenidən yoxlanmayan) qiymət g.min kimi hesaba girmir; hamısı arxivdirsə ən ucuzu */
 const cheap=g=>loOf(g)||(([s,o])=>({s,p:o.p}))(Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0]);
@@ -1733,8 +1740,7 @@ document.addEventListener("click",async e=>{
   if(ob){ const nx=ob.nextElementSibling; if(nx&&nx.classList.contains("o-h")){ nx.remove(); return; }
     const {g}=cardOf(ob), o=g&&g.offers[ob.dataset.s]; if(!o) return;
     const d=document.createElement("div"); d.className="o-h"; d.textContent="…"; ob.after(d);
-    const h=(await hist())[hk(ob.dataset.s,o.n)];
-    d.innerHTML=h&&h.length>1?h.map(x=>`${esc(String(x[0]).slice(5).replace("-","."))}: <b>${fmt(+x[1])}</b>`).join(" → "):o.pp?`Əvvəl ${fmt(o.pp)} (${esc(o.pd)}) → indi <b>${fmt(o.p)}</b>`:"Son dəyişiklik qeydə alınmayıb";
+    d.innerHTML=histHtml(o,(await hist())[hk(ob.dataset.s,o.n)],dataDay());
     const l=shopLink(ob.dataset.s,o);
     d.innerHTML+=`<div>${esc(o.n)}</div>`+(l?`<div>${extA(l,ob.dataset.s,l.x?`🔗 ${esc(ob.dataset.s)} saytında bax ↗`:`🔗 ${esc(ob.dataset.s)} saytı${l.t?" — "+esc(l.t):""} ↗`)}</div>`:""); }
 });

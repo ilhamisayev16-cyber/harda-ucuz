@@ -18,7 +18,6 @@ const PRICES = path.resolve(arg("--prices", path.join(ROOT, "data", "prices.json
 const OUT = path.resolve(arg("--out", ROOT));
 const SITE = (arg("--site", process.env.SITE_URL || "https://ilhamisayev16-cyber.github.io/harda-ucuz/")).replace(/\/?$/, "/");
 const STATS = process.env.STATS_URL ?? "https://qiymetmuqayise.goatcounter.com/count";   // anonim ziyarət sayı (cookie yoxdur); "" söndürür
-const FROZEN_DAYS = 5;   // mağazanın heç bir qiyməti bu qədər gün dəyişməyibsə xəbərdarlıq (mağazalarda hər gün onlarla dəyişiklik olur)
 const MAX_ITEMS = 150;   // alt növ səhifəsində ən çox kart (səhifə yüngül qalsın; tam siyahı saytdadır)
 
 /* ── index.html-in skriptini node-da yükləmək (DOM yoxdur: sadə əvəzlər) ── */
@@ -88,10 +87,7 @@ function main() {
   }
   db.product_ids=registry; S.setIds(registry);
   writeAtomic(path.join(OUT,"data","product_ids.json"),JSON.stringify(registry));
-  const frozen=frozenStores(db,S);
-  for(const [st,d] of Object.entries(frozen)) console.warn(`  ⚠ ${st}: qiymətlər ${d} tarixindən bəri dəyişməyib — saytda "köhnə ola bilər" qeydi`);
-  NOTE=Object.entries(frozen).map(([st,d])=>`⚠ ${esc(st)}: qiymətlər ${d.split("-").reverse().join(".")} tarixindən bəri dəyişməyib, köhnə ola bilər.`).join("<br>");
-  const catalog={version:1,last_updated:db.last_updated,stores:db.stores,groups:db.groups,frozen,
+  const catalog={version:1,last_updated:db.last_updated,stores:db.stores,groups:db.groups,
     highlights:{},categoryCounts:{},categories:Object.fromEntries(Object.entries(db.categories).map(([k,c])=>[k,{name:c.name,stores:{}}])),counts:{},files:{}};
   const highlights=[];
   for(const [cid,c] of Object.entries(db.categories)){
@@ -137,24 +133,6 @@ function main() {
 function writeAtomic(f, text) { fs.mkdirSync(path.dirname(f), { recursive: true }); fs.writeFileSync(f + ".tmp", text); fs.renameSync(f + ".tmp", f); }
 
 const isoDay = s => { const m = /^(\d\d)\.(\d\d)\.(\d{4})/.exec(s || ""); return m ? `${m[3]}-${m[2]}-${m[1]}` : ""; };
-
-/* mənbədə neçə gündür heç bir qiyməti dəyişməyən mağaza → {mağaza: son dəyişiklik günü}. Son dəyişiklik history.json-dan (scraper hər
-   dəyişikliyi yazır; açar index.html-in hk(mağaza, ad)-ı). 2026-10: Rahat-ın 13 578 qiyməti 17.10-dan bəri eyni idi (Wolt menyusu yenilənmir),
-   sayt isə onu hər gün "yeniləndi" göstərirdi. Tarixçəsi olmayan mağaza (yeni) xəbərdarlıq almır */
-let NOTE = "";
-function frozenStores(db, S) {
-  let h; try { h = JSON.parse(fs.readFileSync(path.join(path.dirname(PRICES), "history.json"), "utf8")).h || {}; } catch (e) { return {}; }
-  const today = isoDay(db.last_updated), out = {};
-  for (const st of db.stores) {
-    let last = "";
-    for (const c of Object.values(db.categories)) for (const it of c.stores[st] || []) {
-      const e = h[S.hash(st, it.name)], d = e && e.length && e[e.length - 1][0];
-      if (typeof d === "string" && d > last) last = d;
-    }
-    if (last && today && (Date.parse(today) - Date.parse(last)) / 864e5 >= FROZEN_DAYS) out[st] = last;
-  }
-  return out;
-}
 
 /* ── statik səhifələr ── */
 function buildPages(db, S, CARDS) {
@@ -230,7 +208,7 @@ function buildProducts(db,CARDS,S,built){
     const rel=`mehsullar/${c.pid}.html`, offers=Object.entries(c.offers).sort((a,b)=>a[1].p-b[1].p);
     const body=`<h2>Mağazalar üzrə qiymətlər</h2>`+items([c],S)+`<h2>Qiymət tarixçəsi</h2>`+offers.map(([store,o])=>{
       const h=history[S.hash(store,o.n)]||[], rows=h.slice(-30);
-      return `<details><summary>${esc(store)} · ${o.w?"Wolt":"Mağazanın onlayn qiyməti"}${o.st?" · köhnə məlumat":""}</summary><p class="mute">Qeydə alınmış qiymət dəyişiklikləri; gündəlik stok göstəricisi deyil.</p>`+(rows.length?`<ul>${rows.map(([d,p])=>`<li>${esc(d)} — ${fmt(p)}</li>`).join("")}</ul>`:`<p>Hələ qiymət dəyişikliyi qeydə alınmayıb.</p>`)+`</details>`;
+      return `<details><summary>${esc(store)} · ${o.w?"Wolt":"Mağazanın onlayn qiyməti"}${o.st?" · köhnə məlumat":""}</summary><p class="mute">Qeydə alınmış qiymət dəyişiklikləri; gündəlik stok göstəricisi deyil.</p>`+(rows.length?`<ul>${rows.map(([d,p])=>`<li>${esc(String(d).split("-").reverse().join("."))} — ${fmt(p)}</li>`).join("")}</ul>`:`<p>Hələ qiymət dəyişikliyi qeydə alınmayıb.</p>`)+`</details>`;
     }).join("")+`<h2>Oxşar məhsulları araşdır</h2>`+(built.has(`qiymetler/${c.t}/${c.c}.html`)?`<a href="../qiymetler/${c.t}/${c.c}.html">${esc(S.catName(c.c))} qiymətləri</a>`:`<a href="../qiymetler/${c.t}/">${esc((db.groups.find(g=>g.id===c.t)||{}).name||"Kateqoriya")} qiymətləri</a>`);
     const html=page({path:rel,title:c.name+" — qiymət müqayisəsi",desc:`${c.name}: ${offers.map(([s,o])=>s+" "+fmt(o.p)).join(", ")}. Mənbələr və qeydə alınmış qiymət tarixçəsi.`,upd:db.last_updated,crumbs:[["","Ana səhifə"],[`qiymetler/${c.t}/`,"Kateqoriya"]],h1:esc(c.name),lead:`${offers.length} mağazada qiymət məlumatı · ${c.a.kg?"1 kq üçün":"qablaşdırma üçün"}`,app:`#/c/${c.t}/${c.pid}`,body});
     fs.writeFileSync(path.join(tmp,c.pid+".html"),html);urls.push(rel);
@@ -320,7 +298,7 @@ function page({ path: p, title, desc, upd, crumbs, h1, lead, app, body }) {
 <nav aria-label="Səhifə yolu"><ol itemscope itemtype="https://schema.org/BreadcrumbList">${crumbs.map(([h, t], i) =>
   `<li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem"><a itemprop="item" href="${up}${h}"><span itemprop="name">${esc(t)}</span></a><meta itemprop="position" content="${i + 1}"></li>`).join("")}</ol></nav>
 <h1>${h1}</h1>
-<p class="mute">${lead}<br>Son yenilənmə: ${esc(upd || "—")}</p>${NOTE ? `\n<p class="warn">${NOTE}</p>` : ""}
+<p class="mute">${lead}<br>Son yenilənmə: ${esc(upd || "—")}</p>
 <a class="go" href="${up}${app}">Saytda aç: axtar, süz, səbətə əlavə et →</a>
 ${body}
 <footer>Qiymətlər mağazaların açıq saytlarından gündə bir dəfə avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.

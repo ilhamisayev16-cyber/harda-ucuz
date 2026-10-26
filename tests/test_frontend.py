@@ -19,7 +19,7 @@ const ctx={console,TextEncoder,document:{addEventListener(){},getElementById:id=
 vm.createContext(ctx);
 vm.runInContext(js+`;globalThis.__t={setDB(d){DB=sane(d);stores=DB.stores;GL=DB.groups;GM=Object.fromEntries(GL.map(g=>[g.id,g]));for(const k in GROUPS)delete GROUPS[k];},
   renderDrops:()=>renderDrops(), groups:g=>groups(g), card:g=>card(g), cheap:g=>cheap(g), parseSize:n=>parseSize(n), tokens:f=>[...tokens(fold(f))],
-  favText:()=>favText(), setFav:f=>{FAV=f;}, favKey:g=>favKey(g), cats:()=>DB.categories};`,ctx);
+  favText:()=>favText(), setFav:f=>{FAV=f;}, favKey:g=>favKey(g), cats:()=>DB.categories, histHtml:(o,h,d)=>histHtml(o,h,d)};`,ctx);
 const T=ctx.__t, raw=JSON.parse(fs.readFileSync(0,'utf8'));
 """
 
@@ -148,3 +148,20 @@ def test_implausible_prices_are_dropped_but_expensive_brands_kept():
     assert len(out["serab"]) == 5                                    # baha çaxır və "0.75ml" yazılışı toxunulmur
     assert "Heinz Balqabaq-Gavalı Südli Qarğıdalı Kasa 170 qr" not in out["usaq_qida"] and "Hipp Orqanik Sıyıq 250 qr" in out["usaq_qida"]
     assert len(out["usaq_qida"]) == 31
+
+
+def test_price_history_panel_shows_full_dates_and_since_when():
+    # mağaza sətrinə basanda: "12.10.2026: 25.00 ₼ → 13.10.2026: 23.00 ₼"; dəyişiklik yoxdursa "23.00 ₼ (13.10.2026)" (əvvəl "10.12" = 12 oktyabr idi)
+    out = _node("""console.log(JSON.stringify([
+  T.histHtml({p:23},[["2026-10-12",25],["2026-10-13",23]],"2026-10-25"),
+  T.histHtml({p:23},[["2026-10-13",23]],"2026-10-25"),
+  T.histHtml({p:21},[["2026-10-12",25],["2026-10-13",23]],"2026-10-25"),
+  T.histHtml({p:23,pp:25,pd:"2026-10-13"},null,"2026-10-25"),
+  T.histHtml({p:23},undefined,"2026-10-25")]));""",
+                _db({"su": {"stores": {"Rahat": [{"name": "x", "wolt_price": 1}]}}}, [{"id": "iceckiler", "name": "İçkilər", "cats": ["su"]}]))
+    m = lambda v: f"{v:.2f} ₼"
+    assert out[0] == f"12.10.2026: {m(25)} → 13.10.2026: <b>{m(23)}</b>"
+    assert out[1] == f"<b>{m(23)}</b> (13.10.2026)"
+    assert out[2] == f"12.10.2026: {m(25)} → 13.10.2026: {m(23)} → 25.10.2026: <b>{m(21)}</b>"   # tarixçə geri qalıbsa indiki qiymət
+    assert out[3] == f"{m(25)} → 13.10.2026: <b>{m(23)}</b>"
+    assert out[4] == f"<b>{m(23)}</b> (25.10.2026) · qiymət dəyişikliyi qeydə alınmayıb"

@@ -1,0 +1,9 @@
+// Cloudflare Workers nüsxəsi: Workers Builds hər push-da bunu qurur. Əsas sayt GitHub Pages-dədir (canonical linklər oraya göstərir).
+// Statik fayllar repo kökündəndir; .assetsignore sayta aid olmayan qovluqları və mehsullar/-ı çıxarır: ~60 000 məhsul səhifəsi
+// Workers Free limitinə (20 000 fayl) sığmır, onları cloudflare/worker.js əsas sayta yönləndirir. Ad dashboard-dakı Worker adı ilə eyni olmalıdır.
+{
+  "name": "harda-ucuz",
+  "main": "cloudflare/worker.js",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": ".", "binding": "ASSETS" }
+}

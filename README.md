@@ -97,6 +97,18 @@ Scraper hər gün avtomatik işləyəcək.
 - `index.html` prices.json-u `sane()` ilə yoxlayır (yeni sahə → `FIELD`), səbəti `okFav` ilə; statik səhifələrdə JavaScript qadağandır (CSP `script-src 'none'`).
 - Asılılıqlar hash ilə: `requirements.in`-i dəyişin, sonra `pip install pip-tools && pip-compile --generate-hashes --allow-unsafe --strip-extras requirements.in`.
 
+## Ağlasığmaz qiymətlər və tarixçə
+- **Qiymət tarixçəsi**: mağaza sətrinə basanda `data/history.json`-dan "12.10.2026: 25.00 ₼ → 13.10.2026: 23.00 ₼" (yalnız dəyişən günlər);
+  tək qeyd "23.00 ₼ (13.10.2026)", qeyd yoxdursa son məlumatın tarixi (`histHtml()`).
+- **Ağlasığmaz qiymət** (mənbədə yazı səhvi: "Heinz ... 170 qr" 644.15 ₼): `index.html`-də `dropImplausible()` (`sane()`-dən çağırılır, sayt və build eyni):
+  1 kq / 1 L qiyməti eyni markanın digər məhsullarından ≥40 dəfə (marka azdırsa kateqoriyanın medianından ≥100 dəfə) baha olan, ölçüsü ≥50 q/ml və
+  qiyməti ≥20 ₼ məhsul göstərilmir. Baha markalar (Venchi, viski) öz markası ilə müqayisə olunur.
+
+## Cloudflare (Workers Builds)
+- `wrangler.jsonc` + `.assetsignore`: repo kökü statik fayllar kimi yüklənir, sayta aid olmayanlar (scrapers/, tests/, .git ...) və `mehsullar/` çıxarılır —
+  ~60 000 məhsul səhifəsi Workers Free limitinə (20 000 fayl) sığmır; `cloudflare/worker.js` onları GitHub Pages-dəki eyni səhifəyə yönləndirir.
+- Yoxlamaq: `npx wrangler dev` (lokal), `npx wrangler deploy --dry-run`. Worker adı (`harda-ucuz`) dashboard-dakı ilə eyni olmalıdır.
+
 ## Wolt söndürmə açarı və təhlükəsiz yazma
 - `WOLT_ENABLED=0` (və ya `python scrapers/scraper.py --no-wolt`): Wolt-a heç bir sorğu göndərilmir. GitHub-da: Settings → Variables → `WOLT_ENABLED`.
 - Köhnə Wolt qiymətləri silinmir; `stale: true` ("arxiv qiymət") işarələnir, ən ucuz/qənaət hesabına girmir; `meta[mağaza]`-da `source_type`, `auto_update`, `last_success`.

@@ -730,6 +730,156 @@ def test_no_wolt_links_and_safe_external_links_in_pages():
         assert "object-src 'none'" in csp and "base-uri 'none'" in csp and "frame-src 'none'" in csp and "unsafe-eval" not in csp
 
 
+# ── eyni məhsul bir mağazada iki kateqoriyada: bir dəfə qalır, saxta nişan yazılmır (2026-10-25: Araz 545, Rahat 31, OBA 6 cüt) ──
+def test_same_product_in_two_categories_of_one_store_kept_once():
+    d = S.empty_data()
+    own = {"pecenye": [{"name": "Lady Fingers 200qr", "price": 5.25, "u": "lady-fingers-200qr-1"}]}   # Araz saytı: Peçenye
+    wolt = {"saglam": [{"name": "Lady Fingers 200qr", "wolt_price": 5.45, "gtin": "8001234567890"}],    # Wolt: Sağlam qida
+            "sac_boya": [{"name": "Life Color Plus 6.0 100ml", "wolt_price": 7.05}],
+            "beden_baximi": [{"name": "Life Color Plus 6.0 100ml", "wolt_price": 7.05}]}
+    assert S.apply_to_data(own, wolt, "Araz", d, {})
+    got = {(cid, it["name"]): it for cid, c in d["categories"].items() for it in c["stores"].get("Araz", [])}
+    assert got == {("pecenye", "Lady Fingers 200qr"): {"name": "Lady Fingers 200qr", "price": 5.25, "u": "lady-fingers-200qr-1",
+                                                       "wolt_price": 5.45, "gtin": "8001234567890"},
+                   ("sac_boya", "Life Color Plus 6.0 100ml"): {"name": "Life Color Plus 6.0 100ml", "wolt_price": 7.05}}
+
+
+def test_duplicate_with_two_prices_does_not_write_daily_fake_badge():
+    # Rahat: "Grants 750ml Qutu" iki kateqoriyada iki qiymətlə — köhnə qiymət adla tapılır, hər gün "↑3%" yazılırdı
+    raw = {"viski": [{"name": "Grants 750ml Qutu", "wolt_price": 48.75}], "likor": [{"name": "Grants 750ml Qutu", "wolt_price": 47.45}],
+           "serab": [{"name": "Meyseri Sadaf 750ml", "wolt_price": 28.75}], "konfet": [{"name": "Meyseri Sadaf 750ml", "wolt_price": 27.99}]}
+    d = S.empty_data()
+    for day in ("24.10.2026 13:15", "25.10.2026 13:40"):
+        d.setdefault("meta", {})["Rahat"] = {"updated": day}
+        assert S.apply_to_data({}, copy.deepcopy(raw), "Rahat", d, {})
+    items = [(cid, it) for cid, c in d["categories"].items() for it in c["stores"].get("Rahat", [])]
+    assert sorted((cid, it["name"], it["wolt_price"]) for cid, it in items) == [("konfet", "Meyseri Sadaf 750ml", 27.99),
+                                                                                ("likor", "Grants 750ml Qutu", 47.45)]
+    assert not any("pp" in it for _, it in items)
+
+
+def test_tidy_merges_old_cross_category_duplicates():
+    d = S.empty_data()
+    st = d["categories"]
+    st["usaq_baxim"]["stores"]["Bazarstore"] = [{"name": "Colgate Diş Məcunu Uşaq 60 Ml Qarpiz", "price": 6.69, "pp": 9.59, "pd": "2026-10-25"}]
+    st["dis_baximi"]["stores"]["Bazarstore"] = [{"name": "Colgate Diş Məcunu Uşaq 60 Ml Qarpiz", "price": 9.59}]
+    st["qabyuyan"]["stores"]["Araz"] = [{"name": "Finish Tablet All in 1 25 əd", "price": 18.64}]
+    st["temizlik"]["stores"]["Araz"] = [{"name": "Finish Tablet All in 1 25 əd", "wolt_price": 18.64}]
+    st["sud"]["stores"]["Araz"] = [{"name": "Süd 1 L", "price": 2.0}]
+    st["kefir"]["stores"]["Araz"] = [{"name": "Kefir 1 L", "price": 2.0}]     # fərqli məhsul: toxunulmur
+    S.tidy(d)
+    rows = sorted((cid, s, it["name"]) for cid, c in st.items() for s, l in c["stores"].items() for it in l)
+    assert rows == [("kefir", "Araz", "Kefir 1 L"), ("qabyuyan", "Araz", "Finish Tablet All in 1 25 əd"),
+                    ("sud", "Araz", "Süd 1 L"), ("usaq_baxim", "Bazarstore", "Colgate Diş Məcunu Uşaq 60 Ml Qarpiz")]
+    assert st["qabyuyan"]["stores"]["Araz"][0] == {"name": "Finish Tablet All in 1 25 əd", "price": 18.64}   # eyni qiymət: wolt_price yazılmır
+
+
+def test_multi_branch_merge_ignores_trailing_barcode(monkeypatch):
+    br = {"a": {"likor": [{"name": "Grants 750ml Qutu", "wolt_price": 47.45}]},
+          "b": {"viski": [{"name": "Grants 750ml Qutu 5010327000176", "wolt_price": 48.75}]},
+          "c": {"likor": [{"name": "Grants 750ml Qutu", "wolt_price": 47.45}]}}
+    monkeypatch.setattr(S, "scrape_wolt_full", lambda store, slug=None: copy.deepcopy(br[slug]))
+    monkeypatch.setattr(S.time, "sleep", lambda s: None)
+    monkeypatch.setitem(S.WOLT_BRANCHES, "Rahat", ["a", "b", "c"])
+    res = S.scrape_wolt_multi("Rahat")
+    assert [(cid, e["wolt_price"]) for cid, l in res.items() for e in l] == [("likor", 47.45)]
+
+
+# ── filial siyahısı dəyişəndə median dəyişir: bu, qiymət dəyişikliyi deyil (2026-10-16: Bravo 2486, Tamstore 260 saxta nişan) ──
+def test_branch_list_change_is_a_source_change(monkeypatch):
+    prices = {"a": 2.0, "b": 2.4, "c": 2.6}
+    monkeypatch.setattr(S, "scrape_wolt_full", lambda store, slug=None: {"sud": [{"name": "Süd Atena 1 l", "wolt_price": prices[slug]}]})
+    monkeypatch.setattr(S.time, "sleep", lambda s: None)
+    d = S.empty_data()
+    monkeypatch.setitem(S.WOLT_BRANCHES, "Bravo", ["a", "b"])
+    assert S.apply_to_data({}, S.scrape_wolt_multi("Bravo"), "Bravo", d, {})        # median_low(2.0, 2.4) = 2.0
+    src1 = d["meta"]["Bravo"]["src"]
+    monkeypatch.setitem(S.WOLT_BRANCHES, "Bravo", ["a", "b", "c"])                  # filial əlavə olundu: median 2.4
+    assert S.apply_to_data({}, S.scrape_wolt_multi("Bravo"), "Bravo", d, {})
+    it = d["categories"]["sud"]["stores"]["Bravo"][0]
+    assert d["meta"]["Bravo"]["src"] != src1 and it["wolt_price"] == 2.4 and "pp" not in it
+    prices["c"] = 2.2                                                               # eyni filiallar: real dəyişiklik qeyd olunur
+    assert S.apply_to_data({}, S.scrape_wolt_multi("Bravo"), "Bravo", d, {})
+    assert d["categories"]["sud"]["stores"]["Bravo"][0]["pp"] == 2.4
+
+
+def test_legacy_unsigned_multi_source_is_not_a_switch(monkeypatch):
+    d = S.empty_data()
+    d["categories"]["sud"]["stores"]["Bravo"] = [{"name": "Süd Atena 1 l", "wolt_price": 2.0}]
+    d["meta"] = {"Bravo": {"updated": "25.10.2026 12:02", "src": "multi-" + S.WOLT_SRC_VER}}   # 2026-10-25 datası (imzasız)
+    monkeypatch.setitem(S.WOLT_SRC, "Bravo", S.wolt_src_multi(S.WOLT_BRANCHES["Bravo"]))
+    assert S.apply_to_data({}, {"sud": [{"name": "Süd Atena 1 l", "wolt_price": 1.8}]}, "Bravo", d, {})
+    assert d["categories"]["sud"]["stores"]["Bravo"][0]["pp"] == 2.0                # bir dəfəlik nişan sıfırlanması yoxdur
+
+
+# ── ət rəfi (Neptun) qida/məişət mallarını tutmur; ət məhsulu qalır ──
+@pytest.mark.parametrize("name,cat", [
+    ("Oreo Peçenye 95 qr", "pecenye"), ("Tess Sunrise Qara Çay 400 Gr", "cay"), ("Kehriz 5lt Təbii Su", "su"),
+    ("Crystalex Qabyuyan Maye Limon 450 ml", "qabyuyan"), ("Car 1kq Un", "un"), ("Nestle 64 qr Kit-Kat Şokolad", "sokolad"),
+    ("Parmalat 1 lt Süd 3,5% Paket", "sud"), ("Divo 1lt Günəbaxan Yağı (Şüşə Qabda)", "bitki_yagi"),
+    ("Kreker Ani Fiyonik Duzlu kq", "pecenye"),
+    # ət məhsulları ət rəfində qalır (sous/xama/qaymaq dad sözüdür, "Baton" çoxmənalıdır, "Sam" = Şam kolbasası)
+    ("Dımov Kolbaski Pikolini Xama Soğan 50qr", "kolbasa"), ("H.t Halal Kolb.qaymaq (Vak.) H300-800 qr", "kolbasa"),
+    ("Hicaz Halal Sam Serv 400-500 qr", "kolbasa"), ("Sochinskiy Salyami Ministersaya H/V Baton 300 qr", "kolbasa"),
+    ("Soci Musliman Y H/V Baton kq", "kolbasa"), ("Sevimli Dad Ət Çörəyi Bişmiş. 554", "kolbasa"),
+    ("Jitomirskiy Hisə Kolbasa Pendirli kq", "kolbasa")])
+def test_meat_shelf_keeps_only_meat(name, cat):
+    assert S.classify(name, "Qastronom") == cat
+
+
+def test_meat_shelf_rule_keeps_frozen_meat_and_sauces():
+    assert S.classify("Mercan File Dondurulmuş 1kq", "Toyuq əti") == "toyuq"
+    assert S.classify("Master Gurme Pendir Sousu Paket 200ml", "Toyuq əti") == "toyuq"   # dəyişməyib: sous qrupu qaydaya daxil deyil
+
+
+# ── qarışıq "Duz və ədviyyatlar" / "Un" rəfi: adında duz/un olmayan ədviyyat və bişirmə məhsulu ədviyyatdır ──
+@pytest.mark.parametrize("name,path,cat", [
+    ("Masoud 50 qr Sumax Paket", "Duz və ədviyyatlar", "istiot"), ("Masoud Kətan Toxumu Paket 50 qr", "Duz və ədviyyatlar", "istiot"),
+    ("Azərduz Süfrə Duzu 500 qr", "Duz və ədviyyatlar", "duz"), ("Azərduz 750qr Paketdə", "Duz və ədviyyatlar", "duz"),
+    ("Masoud 50 qr Sumax Paket", "Duz", "duz"),                                     # təmiz duz rəfi: ad heç nə demir — rəf qalır
+    ("Kotanyi 25 qr Qırmızı Bibər Hisə Verilmiş Paprika Ədviyyat Paket", "Duz", "istiot"),
+    ("Dr.oetker Şəkərli Vanilin 5*5 qr", "Un", "istiot"), ("Pakmaya Xəmir Mayası 60 qr", "Un və bişirmə", "istiot"),
+    ("Makfa Un 1 kq", "Un və bişirmə", "un"), ("Pakmaya Quru Xəmir Mayası 60qr", "Şəkər", "istiot"),
+    ("Azərşəkər Sarma 500qr", "Şəkər", "sekerqum")])
+def test_staple_shelf_spices_go_to_spices(name, path, cat):
+    assert S.classify(name, path) == cat
+
+
+# ── arxiv (yoxlanmamış) qiymət dəyişiklik nişanı daşımır ──
+def test_stale_items_lose_change_badge():
+    d = mini("Neptun", 0)
+    d["categories"]["sud"]["stores"]["Neptun"] = [{"name": "Süd Atena 1 l", "wolt_price": 1.5, "pp": 2.0, "pd": "2026-10-24"}]
+    S.mark_stale("Neptun", d)
+    assert d["categories"]["sud"]["stores"]["Neptun"] == [{"name": "Süd Atena 1 l", "wolt_price": 1.5, "stale": True}]
+    d = S.empty_data()
+    d["categories"]["sud"]["stores"]["OBA"] = [{"name": "OnlyWolt", "wolt_price": 2.0, "pp": 2.5, "pd": "2026-10-24"}]
+    assert S.apply_to_data({"sud": [{"name": "A", "price": 1.2}]}, {}, "OBA", d, {}, wolt_on=False)
+    assert {"name": "OnlyWolt", "wolt_price": 2.0, "stale": True} in d["categories"]["sud"]["stores"]["OBA"]
+
+
+# ── ölçü yazılışı: "0 33 Lt" = 0.33 L (Rahat), "Çubuq.100 Q" (Bazarstore 40 simvol) ──
+@pytest.mark.parametrize("raw,want", [
+    ("Mountain Dew Pet 0 33 Lt", "Mountain Dew Pet 0.33 Lt"), ("Rahat Qazsiz Su 0 5 Litr", "Rahat Qazsiz Su 0.5 Litr"),
+    ("Pive Tuborq Gold Şüşə 5 6% 0 5 Lt", "Pive Tuborq Gold Şüşə 5 6% 0.5 Lt"), ("Tsar 0 7lt (1x12)", "Tsar 0.7lt (1x12)"),
+    ("Superfresh Milfoy Xəmir 0 5 Kq", "Superfresh Milfoy Xəmir 0.5 Kq"),
+    ("Kuzya Qarğidali Çubuq.100 Q", "Kuzya Qarğidali Çubuq. 100 Q"), ("B.sufre Ketcup Acili.500q Dpk", "B.sufre Ketcup Acili. 500q Dpk"),
+    ("Mennen S.S.150ml Antiperspirant", "Mennen S.S. 150ml Antiperspirant"),
+    ("Vernel 1.44 L Lale", "Vernel 1.44 L Lale"), ("Dr.Oetker Kakaolu Pudinq, 147 gr", "Dr.Oetker Kakaolu Pudinq, 147 gr"),
+    ("Su 6x1.5 L", "Su 6x1.5 L"), ("Ulker Cizi Citir Kreker 50 Q Pendir Soga", "Ulker Cizi Citir Kreker 50 Q Pendir Soga")])
+def test_clean_name_fixes_size_spelling(raw, want):
+    assert S.clean_name(raw) == want
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="node yoxdur")
+def test_site_reads_cleaned_sizes():
+    names = [S.clean_name(n) for n in ("Mountain Dew Pet 0 33 Lt", "Kuzya Qarğidali Çubuq.100 Q")]
+    js = f"""const api=require({json.dumps(str(ROOT / 'tests' / 'site_harness.js'))})({json.dumps(str(ROOT / 'index.html'))});
+console.log(JSON.stringify({json.dumps(names, ensure_ascii=False)}.map(n=>{{const a=api.attrs(n);return [a.wv,a.wu]}})));"""
+    r = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stderr[-500:]
+    assert json.loads(r.stdout.strip()) == [[0.33, "L"], [100, "q"]]
+
+
 def test_overrides_file_hides_photos():
     ov = json.loads((ROOT / "data" / "overrides.json").read_text(encoding="utf-8"))
     assert isinstance(ov.get("hide_photo"), list) and all(isinstance(x, str) for x in ov["hide_photo"])

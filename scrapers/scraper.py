@@ -706,6 +706,19 @@ def _sweet_out(nc, kw, name, n):
     if nc == "hazir_yemek": return kw in _DOUGH
     return nc in _NFC and not _WEIGHT.search(n) and _name_cat(name, _SWC)[0] == "diger"
 
+# Ət rəfində ət sözü olmayan və uzaq qrupun aydın növünü deyən ad (Neptun-un qarışıq rəfi "kolbasa"-ya düşürdü: "Oreo Peçenye",
+# "Tess Qara Çay", "Kəhriz Təbii Su", "Crystalex Qabyuyan", "Car 1kq Un" — 2026-10-25: Neptun 50, Araz 2). Sous, xama, qaymaq, dondurulmuş,
+# hazır yemək, konserv bura daxil deyil: "Kolbaski Xama Soğan", "Kolb.qaymaq", "Dondurulmuş toyuq filesi" ət rəfində düzgündür.
+_NOT_MEAT = frozenset(c for c, g in CAT2GROUP.items() if g in ("sirniyyat", "iceckiler", "spirtli", "bakaliya", "ev", "gigiyena")
+                      and c not in ("dondurma", "seher", "mesis")) | {"bitki_yagi", "zeytun_yagi", "kere_yagi", "sud", "pendir", "kesmik",
+                                                                       "yoqurt", "kefir", "qatiq", "sekerqum"}
+_MEAT_WORD = re.compile(_kw_re([w for c, g in CAT2GROUP.items() if g == "et" for w in CATEGORIES[c]["kw"]]
+                               + ["ət", "əti", "kolb", "salyami", "sucuk"]).pattern)
+# Dar əsas məhsul rəfi (duz, un, şəkər) çox vaxt qarışıq seqmentdən gəlir ("Duz və ədviyyatlar", "Un və bişirmə"): belə məhsulun adında
+# öz sözü olur ("Azərduz", "Makfa Un", "Azərşəkər"). Yoxdursa və ad ədviyyat/bişirmə sözü deyirsə (vanilin, maya, nişasta) və ya rəfin
+# ədviyyat alternativi varsa — ədviyyatdır (Neptun "Duz": 189 məhsuldan 148-i "Masoud Sumax", "Küncüt", "Kətan toxumu" idi)
+_STAPLE = {"duz": re.compile("duz"), "un": _CAT_RE["un"][0], "sekerqum": _CAT_RE["sekerqum"][0]}
+
 def classify(name, path=""):
     """Mağazanın öz kateqoriyası (varsa) + məhsul adı. Mağaza kateqoriyası dəqiqdirsə ona üstünlük verilir;
     ümumi/"digər"/qarışıq olduqda və ya ad kateqoriyanın alternativlərindən birini göstərirsə ad üzrə nəticə götürülür."""
@@ -713,6 +726,8 @@ def classify(name, path=""):
     if not path: return nc
     pc, gen, alts = _path_info(path)
     if pc is None or pc == "diger": return nc   # mağaza kateqoriyası məlumat vermirsə ("Sağlam qida" və s.) ada görə
+    n = _f(name)
+    if pc in _STAPLE and not _STAPLE[pc].search(n) and (_has_kw("istiot", n) or (pc == "duz" and "istiot" in alts)): pc = "istiot"
     flav, kw = kw[:1] == "@", kw.lstrip("@")
     # yalnız dad/təyinat sözü ("Pendir ilə kraker", "Qanad üçün marinad"): mağaza rəfi
     if flav and nc != "diger" and CAT2GROUP[nc] not in (CAT2GROUP[pc], "sirniyyat", "gigiyena", "ev"): return pc
@@ -722,7 +737,8 @@ def classify(name, path=""):
     if kw == "~" and (not gen or (len(alts) > 1 and alts & _NOJUICE)): nc = "diger"
     if pc in _PRODUCE and (nc == "diger" or kw in _WEAK_KW): nc = _produce_in(name) or nc   # "4 Fəsil Pomidor Çeri paket" > Tərəvəzlər
     if nc == "diger": return pc
-    n, gp = _f(name), CAT2GROUP[pc]
+    gp = CAT2GROUP[pc]
+    if gp == "et" and nc in _NOT_MEAT and kw not in _WEAK_KW and kw != "~" and not flav and not _MEAT_WORD.search(n): return nc
     # qeyri-qida rəfi (gigiyena, ev, heyvan, oyuncaq) addakı qida sözünə uymur: "Rexona Men-titan-un", "Arko Krem Zeytun Yağı",
     # "Keks qəlibi", "Sprey boya qəhvəyi" — adda qeyri-qida növü axtarılır, yoxdursa mağaza kateqoriyası
     if gp in _NONFOOD and nc in _FOODC:
@@ -783,11 +799,18 @@ def _decaps(n):
     n = _WRD.sub(lambda m: m.group()[0] + _low(m.group()[1:]), n)
     return _UNIT_N.sub(lambda m: m.group(1) + m.group(2).lower(), n)
 
+_SPACE_DEC = re.compile(r"(?<![\d.,])0 (\d{1,3})(?=\s?(?:l|lt|litr|kq|kg)\b)", re.I)
+_GLUED_SZ = re.compile(r"(?<=[^\W\d_])\.(?=\d+(?:[.,]\d+)?\s?(?:q|qr|gr|g|kq|kg|ml|l|lt)\b)", re.I)
+
 def clean_name(n):
     """Artıq boşluq, vergül/nöqtədən əvvəlki boşluq və sonda qalan vergül/defis atılır, TAM BÖYÜK hərfli ad normal yazılır:
     "FAIRY LIMON MAYE QABYUYAN , 750 ml" -> "Fairy Limon Maye Qabyuyan, 750 ml"."""
     n = _decaps(re.sub(r"\s+", " ", str(n)).strip())
     n = re.sub(r"\s+\d{12,14}$", "", n)   # sonda qalan ştrix-kod (EAN) ada aid deyil
+    # ölçü yazılışı (2026-10-25): "Mountain Dew 0 33 Lt" = 0.33 L (186 ad, əsasən Rahat), sayt 33 L oxuyurdu; "Çubuq.100 Q", "Sousu.200q"
+    # (65 ad, qısaldılmış söz) — sayt ".100"-ü 0.100 q oxuyurdu: nöqtədən sonra boşluq
+    n = _SPACE_DEC.sub(r"0.\1", n)
+    n = _GLUED_SZ.sub(". ", n)
     n = re.sub(r"\s+([,.;:!?)%])", r"\1", n)
     n = re.sub(r"\(\s+", "(", n)
     return re.sub(r"[\s,;:\-]+$", "", n) or n
@@ -810,6 +833,31 @@ def dedupe(items):
         k = name_key(it["name"]) or it["name"]
         if k not in best or _pref(it) < _pref(best[k]): best[k] = it
     return list(best.values())
+
+def dedupe_store(lists):
+    """Bir mağazanın {kateqoriya: [məhsullar]} siyahısında eyni məhsul (name_key) bütün kateqoriyalarda bir dəfə qalır (yerində dəyişir).
+    Öz sayt ↔ Wolt birləşdirməsi kateqoriya daxilindədir: Araz-ın saytı "Lady Fingers 200qr"-ı Peçenyeyə, Wolt Sağlam qidaya qoyanda məhsul
+    iki dəfə görünürdü (2026-10-25: Araz 545, Rahat 31, OBA 6 cüt). Eyni adın iki qiyməti isə hər gün saxta nişan yazırdı: köhnə qiymət adla
+    tapılır ("Grants 750ml Qutu" viski 48.75 ↔ likör 47.45: hər gün "↑3%"). Qalan: _pref (yoxlanmış, öz qiymətli, ucuz); öz qiymətli
+    qalanda Wolt nüsxəsinin qiyməti ona wolt_price kimi keçir (merge_own_wolt kimi: fərqlidirsə və 1.6 dəfədən az fərqlənirsə)."""
+    groups = {}
+    for cid, items in lists.items():
+        for it in items: groups.setdefault(name_key(it["name"]) or it["name"], []).append(it)
+    drop = set()
+    for g in groups.values():
+        if len(g) < 2: continue
+        keep = min(g, key=_pref)
+        for it in g:
+            if it is keep: continue
+            drop.add(id(it))
+            q, p = it.get("wolt_price"), keep.get("price")
+            if p and q and "price" not in it and "wolt_price" not in keep and abs(q - p) > 0.005 and max(p, q) <= 1.6 * min(p, q):
+                keep["wolt_price"] = q
+            for f in ("wt", "gtin"):
+                if it.get(f) and f not in keep: keep[f] = it[f]
+    if drop:
+        for cid in lists: lists[cid] = [it for it in lists[cid] if id(it) not in drop]
+    return len(drop)
 
 # ── "Digər"-ə düşən məhsullar: ad yalnız brenddir ("Rafaello 70 Q", "Kent Nanotek") və ya mağaza kateqoriya verməyib ──
 # Qayda yalnız "diger"-dəki məhsullara tətbiq olunur (qalan təsnifata təsir etmir). Sıra: qəti açar sözlər (qeyri-qida),
@@ -895,13 +943,18 @@ def reassign_other(data):
     return moved
 
 def tidy(data):
-    """Bütün mağazalar: adlar təmizlənir, dublikatlar birləşir, köhnə şəkil linkləri silinir (sayt şəkil göstərmir)."""
-    for c in data.get("categories", {}).values():
+    """Bütün mağazalar: adlar təmizlənir, dublikatlar (kateqoriyalar arası da) birləşir, köhnə şəkil linkləri silinir (sayt şəkil göstərmir)."""
+    cats = data.get("categories", {})
+    for c in cats.values():
         for s, items in c.get("stores", {}).items():
             for it in items:
                 it.pop("img", None)
                 it["name"] = clean_name(it["name"])
             c["stores"][s] = dedupe(items)
+    for s in {s for c in cats.values() for s in c.get("stores", {})}:
+        lists = {cid: c["stores"][s] for cid, c in cats.items() if s in c.get("stores", {})}
+        if dedupe_store(lists):
+            for cid, items in lists.items(): cats[cid]["stores"][s] = items
 
 # ── Öz sayt ↔ Wolt: eyni məhsul (ad sözləri + ÖLÇÜ) ─────────────────────────
 _SZ = re.compile(r"(\d+(?:[.,]\d+)?)\s*(kq|kg|qr|gr|q|g|ml|lt|litr|l)(?![a-z])")
@@ -1455,6 +1508,12 @@ WOLT_SRC = {}
 # Üsul versiyası: v2 = Wolt-özəl endirimli məhsullar çıxarılır.
 WOLT_SRC_VER = "v2"
 
+def wolt_src_multi(slugs):
+    """Filiallar üzrə median üsulunun adı + filial siyahısının imzası: siyahı dəyişəndə (filial əlavə/silinir) median dəyişir, bu da üsul
+    dəyişikliyidir. 2026-10-16: Bravo-ya 5, Tamstore-a 7 filial əlavə olunanda üsul adı eyni qaldı ("multi-v2") — 2486 + 260 saxta ↑/↓ nişanı."""
+    import zlib
+    return f"multi-{WOLT_SRC_VER}-{zlib.crc32(','.join(sorted(slugs)).encode()):08x}"
+
 def scrape_wolt_multi(store):
     """WOLT_BRANCHES-dəki bütün filialların tam kataloqu: ad üzrə birləşdirilir, qiymət = filiallar üzrə median.
     Heç bir filial alınmasa None."""
@@ -1472,7 +1531,9 @@ def scrape_wolt_multi(store):
         before = len(merged)
         for cid, items in res.items():
             for e in items:
-                k = name_key(e["name"]) or e["name"]   # "Dtj 750ml" = "Dtj  750 ml": filiallarda yazılışı fərqli eyni məhsul birləşir
+                # "Dtj 750ml" = "Dtj  750 ml": filiallarda yazılışı fərqli eyni məhsul birləşir; clean_name sondakı ştrix-kodu atır
+                # (Rahat: "Grants 750ml Qutu" bir filialda kodla — iki ayrı qeyd, iki kateqoriya, iki qiymət idi)
+                k = name_key(clean_name(e["name"])) or e["name"]
                 m = merged.get(k)
                 if m is None:
                     merged[k] = {"cid": cid, "p": [e["wolt_price"]], "e": dict(e)}
@@ -1488,7 +1549,7 @@ def scrape_wolt_multi(store):
         e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
         results[m["cid"]].append(e)
     print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
-    WOLT_SRC[store] = "multi-" + WOLT_SRC_VER
+    WOLT_SRC[store] = wolt_src_multi(slugs)
     return results
 
 def scrape_wolt(store):
@@ -1648,12 +1709,15 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     # yalnız onların nişanı buraxılır, öz sayt qiymətlərinin dəyişikliyi adi qaydada qeyd olunur.
     src = WOLT_SRC.get(store, "single-" + WOLT_SRC_VER) if wolt_only or any(wolt_res.values()) else None
     prev_src = (data.get("meta", {}).get(store) or {}).get("src", "single")
+    if src and prev_src == "multi-" + WOLT_SRC_VER and src.startswith(prev_src + "-"):
+        prev_src = src   # imzasız köhnə ad (WOLT_BRANCHES 2026-10-16-dan dəyişməyib): bir dəfəlik nişan sıfırlanması olmasın
     if src and src != prev_src and store in data.get("meta", {}):
         print(f"  [{store}] qiymət mənbəyi dəyişdi ({prev_src} → {src}): bu dəfə Wolt qiymətlərinə dəyişiklik nişanı qoyulmur")
         old = {} if wolt_only else {k: v for k, v in old.items() if "price" in v}
     src = src or (prev_src if prev_src != "single" else None)   # Wolt bu dəfə alınmayıbsa əvvəlki üsul yaddaşda qalır
     today = now().strftime("%Y-%m-%d")
     old_day = _iso((data.get("meta", {}).get(store) or {}).get("updated", "")) or _iso(data.get("last_updated", ""))
+    new = {}
     for cid in CATEGORIES:
         if wolt_only:
             items = [{k: w[k] for k in ("name", "wolt_price", "wt", "gtin") if k in w}
@@ -1661,13 +1725,15 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))
         for it in items: it["name"] = clean_name(it["name"])
-        items = dedupe(items)
+        new[cid] = dedupe(items)
+    dedupe_store(new)   # eyni məhsul iki kateqoriyada (öz sayt ↔ Wolt fərqli rəf, filiallarda fərqli rəf)
+    have = {name_key(it["name"]) for items in new.values() for it in items}
+    for cid, items in new.items():
         mark_changes(old, items, store, hist, today, old_day)
         if not wolt_on and not wolt_only:   # Wolt söndürülüb: köhnə Wolt-only məhsullar silinmir, "arxiv" kimi işarələnir
-            have = {it["name"] for it in items}
             for it in data["categories"][cid]["stores"].get(store, []):
-                if "price" not in it and it.get("wolt_price") is not None and it["name"] not in have:
-                    items.append({**it, "stale": True})
+                if "price" not in it and it.get("wolt_price") is not None and name_key(it["name"]) not in have:
+                    items.append(_stale(it))
         data["categories"][cid]["stores"][store] = items
     data.setdefault("meta", {})[store] = {
         "updated": now().strftime("%d.%m.%Y %H:%M"),
@@ -1679,12 +1745,18 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     data["meta"][store]["last_success"] = now().strftime("%Y-%m-%dT%H:%M:%S")
     return True
 
+def _stale(it):
+    """Arxiv (yenidən yoxlanmamış) qiymət: köhnə dəyişiklik nişanı (pp/pd) atılır — yoxlanmamış qiymət ana səhifədə "ucuzlayan" kimi
+    və kartda "↓30%" ilə göstərilməsin (renderDrops arxiv məhsulu ayırmır)."""
+    return {**{k: v for k, v in it.items() if k not in ("pp", "pd")}, "stale": True}
+
 def mark_stale(store, data):
     """Wolt söndürülüb və başqa mənbə yoxdur: mövcud məhsullar silinmir, amma yenidən yoxlanmadığı işarələnir."""
     n = 0
     for c in data["categories"].values():
-        for it in c["stores"].get(store, []):
-            if not it.get("stale"): it["stale"] = True; n += 1
+        items = c["stores"].get(store, [])
+        n += sum(1 for it in items if not it.get("stale"))
+        if items: c["stores"][store] = [_stale(it) for it in items]
     m = data.setdefault("meta", {}).setdefault(store, {})
     m.update(source_meta(store, False))
     m.setdefault("last_success", None)

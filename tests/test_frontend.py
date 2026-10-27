@@ -126,6 +126,20 @@ console.log(JSON.stringify({best:T.card(g).match(/Ən ucuz: (\\w+)/)[1], cheap:T
     assert "Hər məhsulu ən ucuz olduğu mağazadan: 7.60 ₼" in out["text"]   # tam səbət heç bir mağazada olmasa da
 
 
+def test_archived_offer_is_not_highlighted_and_wolt_source_is_visible():
+    cats = {"sud": {"stores": {
+        "Bravo": [{"name": "Atena Süd 1l", "wolt_price": 2.5, "stale": True}],
+        "OBA": [{"name": "Atena Süd 1l", "price": 2.5}],
+        "Araz": [{"name": "Atena Süd 1l", "price": 3.0}],
+    }}}
+    groups = [{"id": "sud", "name": "Süd", "cats": ["sud"]}]
+    html = _node('T.setDB(raw); console.log(JSON.stringify(T.card(T.groups("sud")[0])));', _db(cats, groups))
+    assert 'class="o" data-s="Bravo"' in html
+    assert 'class="o min" data-s="OBA"' in html
+    assert "Wolt · filialdan asılıdır" in html
+    assert "arxiv qiymət" in html
+
+
 def test_implausible_prices_are_dropped_but_expensive_brands_kept():
     # Rahat-ın Wolt menyusundakı yazı səhvləri (2026-10): 1 kq / 1 L qiyməti eyni markadan ≥40 dəfə, marka azdırsa kateqoriyadan ≥100 dəfə baha
     temizlik = {"Rahat": [{"name": "Domestos 7 Expert Ultra Ağ 1 l", "wolt_price": 256.25},

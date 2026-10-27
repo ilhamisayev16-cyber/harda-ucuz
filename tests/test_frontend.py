@@ -126,7 +126,7 @@ console.log(JSON.stringify({best:T.card(g).match(/Ən ucuz: (\\w+)/)[1], cheap:T
     assert "Hər məhsulu ən ucuz olduğu mağazadan: 7.60 ₼" in out["text"]   # tam səbət heç bir mağazada olmasa da
 
 
-def test_archived_offer_is_not_highlighted_and_wolt_source_is_visible():
+def test_archived_offer_is_not_highlighted():
     cats = {"sud": {"stores": {
         "Bravo": [{"name": "Atena Süd 1l", "wolt_price": 2.5, "stale": True}],
         "OBA": [{"name": "Atena Süd 1l", "price": 2.5}],
@@ -136,7 +136,7 @@ def test_archived_offer_is_not_highlighted_and_wolt_source_is_visible():
     html = _node('T.setDB(raw); console.log(JSON.stringify(T.card(T.groups("sud")[0])));', _db(cats, groups))
     assert 'class="o" data-s="Bravo"' in html
     assert 'class="o min" data-s="OBA"' in html
-    assert "Wolt · filialdan asılıdır" in html
+    assert "<sup>W</sup>" in html and "filialdan" not in html   # Wolt işarəsi W; izah səhifənin altında, hər sətirdə yox
     assert "arxiv qiymət" in html
 
 

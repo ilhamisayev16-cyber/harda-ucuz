@@ -755,4 +755,15 @@ def test_duplicate_with_two_prices_does_not_write_daily_fake_badge():
     items = [(cid, it) for cid, c in d["categories"].items() for it in c["stores"].get("Rahat", [])]
     assert sorted((cid, it["name"], it["wolt_price"]) for cid, it in items) == [("konfet", "Meyseri Sadaf 750ml", 27.99),
                                                                                 ("likor", "Grants 750ml Qutu", 47.45)]
-   
+    assert not any("pp" in it for _, it in items)
+
+
+def test_tidy_merges_old_cross_category_duplicates():
+    d = S.empty_data()
+    st = d["categories"]
+    st["usaq_baxim"]["stores"]["Bazarstore"] = [{"name": "Colgate Diş Məcunu Uşaq 60 Ml Qarpiz", "price": 6.69, "pp": 9.59, "pd": "2026-10-25"}]
+    st["dis_baximi"]["stores"]["Bazarstore"] = [{"name": "Colgate Diş Məcunu Uşaq 60 Ml Qarpiz", "price": 9.59}]
+    st["qabyuyan"]["stores"]["Araz"] = [{"name": "Finish Tablet All in 1 25 əd", "price": 18.64}]
+    st["temizlik"]["stores"]["Araz"] = [{"name": "Finish Tablet All in 1 25 əd", "wolt_price": 18.64}]
+    st["sud"]["stores"]["Araz"] = [{"name": "Süd 1 L", "price": 2.0}]
+    st["kefir"]["stores"]["Araz"] = [{"name": "Kefir 1 L", "price": 

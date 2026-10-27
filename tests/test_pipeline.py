@@ -690,7 +690,7 @@ console.log(JSON.stringify({
     assert out["bravo"]["u"] == "https://bravosupermarket.az/special-offers/"
     assert out["neptun"] is None and out["bad"]["u"] == "https://arazmarket.az/az/products"   # saytı işləməyən mağaza: link yoxdur
     html = out["html"]
-    assert "wolt.com" not in html.lower()   # Wolt-a link verilmir
+    assert "wolt" not in html.lower()
     links = re.findall(r'<a class="ext" href="([^"]+)" target="_blank" rel="noopener noreferrer"', html)
     assert links and all(re.match(r"https://(arazmarket\.az|oba\.az|bazarstore\.az)/", u) for u in links), links
 

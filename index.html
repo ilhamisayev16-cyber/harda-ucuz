@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-OB26dtd1TTBkgWccU6XwRJVq/OhwbEheA0xheQdm8GY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-+bqKA9U9Oa7jcsZpSBr2r9VDbgqDoJrSVrWLAcG3tzQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -106,12 +106,16 @@ h1.hero{margin:18px 0 4px;font-size:24px;letter-spacing:-.03em;line-height:1.15}
 .btn:active{border-color:var(--brand);color:var(--brand-t)}
 .btn.primary{background:var(--brand-t);border-color:var(--brand-t);color:var(--on-brand)}
 .title{margin:0;font-size:22px;letter-spacing:-.02em;line-height:1.2;min-width:0}
-.champ{background:var(--good-soft);color:var(--good);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:12px}
+.champ{display:block;width:100%;text-align:left;border:0;background:var(--good-soft);color:var(--good);border-radius:12px;padding:8px 12px;font-size:13px;font-weight:600;margin-bottom:12px}
+.champ[hidden]{display:none}
 .scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -14px 12px;padding:0 14px}
 .scroll::-webkit-scrollbar{display:none}
 .pill{flex:none;min-height:38px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:0 14px;
   font-size:14px;font-weight:600;color:var(--mute);white-space:nowrap}
 .subs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.shops{align-items:center}.shops[hidden]{display:none}
+.shops .lbl{width:auto;flex:none;font-weight:600}
+.shops .pill{display:inline-flex;align-items:center;gap:6px}
 .subs.collapsed .pill:nth-child(n+10){display:none}
 .subs[hidden]{display:none}
 .subs.collapsed .pill.sm{display:inline-flex;align-items:center}
@@ -400,7 +404,8 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
       <button class="btn" id="back" aria-label="Geri">←</button>
       <h1 class="title"><span id="catEm"></span> <span id="catName"></span></h1>
     </div>
-    <div class="champ" id="champ" hidden></div>
+    <button class="champ" id="champ" type="button" hidden></button>
+    <div class="scroll shops" id="shops" role="group" aria-label="Mağaza üzrə ən ucuzlar" hidden></div>
     <div class="subs collapsed" id="subs"></div>
     <div class="tools">
       <input id="tq" type="search" maxlength="100" placeholder="Siyahıda süz…" aria-label="Siyahıda süz">
@@ -1182,7 +1187,7 @@ function mk(it){
 /* ─────────── state ─────────── */
 let DB=null, PRE=null; const GROUPS={}; let stores=[], GL=[], GM={};
 let cur=null, filtered=[], shown=PAGE, hl=null;
-const F={sub:null,mode:"Hamısı",size:null,fat:null,q:"",sort:"savings_desc"};
+const F={sub:null,mode:"Hamısı",size:null,fat:null,q:"",sort:"savings_desc",shop:null};
 /* ümumi kateqoriya = bir neçə alt kateqoriyanın birləşməsi */
 function groups(gid,rec){
   if(GROUPS[gid]&&!rec) return GROUPS[gid];
@@ -1376,7 +1381,7 @@ function renderDrops(){
 function openCat(id,focus,sub){
   cur=id; hl=focus||null; shown=PAGE;
   const gs=groups(id), fg=hl&&gs.find(g=>g.id===hl);
-  Object.assign(F,{sub:sub||(fg?fg.c:null),mode:"Hamısı",size:null,fat:null,q:"",sort:"savings_desc"});   // axtarışdan gələn məhsulun alt növü seçilir
+  Object.assign(F,{sub:sub||(fg?fg.c:null),mode:"Hamısı",size:null,fat:null,q:"",sort:"savings_desc",shop:null});   // axtarışdan gələn məhsulun alt növü seçilir
   $("tq").value=""; $("sort").value=F.sort;
   document.querySelector("details.more-f").open=false;
   $("catEm").textContent=EMOJI[id]||"📦"; $("catName").textContent=GM[id].name;
@@ -1391,7 +1396,7 @@ function openCat(id,focus,sub){
   $("modes").innerHTML=modes.map(m=>pill(m,m,"mode")).join("");
   const cnt={}; gs.forEach(g=>{ if(g.n<2)return; for(const[s,o]of Object.entries(g.offers)) if(o.p===g.min) cnt[s]=(cnt[s]||0)+1; });
   const ch=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
-  $("champ").hidden=!ch; if(ch) $("champ").textContent=`🏆 Ən sərfəli: ${ch[0]} (${ch[1]} məhsulda ən ucuz)`;
+  $("champ").hidden=!ch; if(ch){ $("champ").textContent=`🏆 Ən sərfəli: ${ch[0]} (${ch[1]} məhsulda ən ucuz) ›`; $("champ").dataset.s=ch[0]; }
   apply();
 }
 /* faiz və ölçü düymələri cari siyahıya görə (alt növ, növ, mətn süzgəcindən sonra): seçilən alt növdə olmayan faiz göstərilmir */
@@ -1416,11 +1421,22 @@ function syncPills(){
     b.classList.toggle("on",(cv==null&&v==="")||(cv!=null&&String(cv)===v));
   });
 }
+/* mağaza üzrə ən ucuzlar: məhsul ən azı 2 mağazada var və bu mağazanın (arxiv olmayan) qiyməti ən aşağıdır (bərabər ən ucuz da sayılır) */
+const isLo=(g,s)=>{ const o=g.offers[s]; return g.n>1&&!!o&&!o.st&&o.p-g.min<.005; };
+function shopPills(l){
+  const cn={}; l.forEach(g=>{ for(const s in g.offers) if(isLo(g,s)) cn[s]=(cn[s]||0)+1; });
+  const sl=stores.filter(s=>cn[s]||s===F.shop).sort((a,b)=>(cn[b]||0)-(cn[a]||0));
+  $("shops").hidden=!sl.length;
+  $("shops").innerHTML=sl.length?`<span class="lbl">Ən ucuz olduğu mağaza:</span>`+pill("Hamısı",null,"shop")
+    +sl.map(s=>`<button class="pill" data-k="shop" data-v="${esc(s)}" aria-label="${esc(s)}: ${cn[s]||0} məhsulda ən ucuz"><i class="dot" style="--c:var(--${esc(s)})"></i>${esc(s)}<small>${cn[s]||0}</small></button>`).join(""):"";
+}
 const modeOf=g=>g.a.kg?"🛒 Kq ilə satılan":{w:"⚖ Çəki",v:"💧 Həcm"}[fam(g.a.wu)]||"📦 Digər";
 function apply(){
   let l=groups(cur).slice(), sc=null;
   if(F.mode!=="Hamısı") l=l.filter(g=>modeOf(g)===F.mode);
   if(F.q.trim()){ const Q=qparse(F.q); sc=new Map(); l=l.filter(g=>{const s=qscore(g,Q,cur); s>0&&sc.set(g,s>=.9?1:0); return s>0;}); }
+  shopPills(l.filter(g=>(!F.sub||g.c===F.sub)&&(!F.size||g.sk===F.size)&&(F.fat==null||g.a.fat===+F.fat)));   // mağaza sayları: digər bütün süzgəclərdən sonra
+  if(F.shop) l=l.filter(g=>isLo(g,F.shop));
   // alt növ sayları: digər bütün süzgəclərdən sonra
   const sf=l.filter(g=>(!F.size||g.sk===F.size)&&(F.fat==null||g.a.fat===+F.fat)), cn=new Map(); sf.forEach(g=>cn.set(g.c,(cn.get(g.c)||0)+1));
   document.querySelectorAll('#subs .pill[data-k="sub"] small').forEach(s=>{const v=s.parentNode.dataset.v; s.textContent=v?cn.get(v)||0:sf.length;});
@@ -1520,8 +1536,8 @@ function card(g,o={}){
 }
 function render(){
   const list=filtered.slice(0,shown);
-  $("count").textContent=`${filtered.length} məhsul`;
-  const fon=F.sub||F.mode!=="Hamısı"||F.size||F.fat!=null||F.q.trim();
+  $("count").textContent=`${filtered.length} məhsul${F.shop?` · ${F.shop}-da ən ucuz`:""}`;
+  const fon=F.sub||F.mode!=="Hamısı"||F.size||F.fat!=null||F.q.trim()||F.shop;
   $("list").innerHTML=list.length?list.map(g=>card(g)).join(""):`<div class="empty">Filtrə uyğun məhsul tapılmadı.${fon?'<br><button class="btn" id="fReset" type="button">Filtrləri sıfırla</button>':""}</div>`;
   $("more").hidden=shown>=filtered.length;
   $("more").textContent=`Daha çox göstər (${filtered.length-shown} qalıb)`;
@@ -1750,7 +1766,8 @@ $("catGrid").onclick=e=>{const b=e.target.closest(".cat"); if(b) go("#/c/"+b.dat
 /* seçilən alt növ ünvana yazılır (tarixçəyə yeni addım əlavə etmədən): geri qayıdanda / linki paylaşanda alt növ itmir */
 const subHash=()=>{ try{ history.replaceState(history.state,"",`#/c/${cur}${F.sub?"/"+F.sub:""}${F.q.trim()?"?q="+encodeURIComponent(F.q):""}`); }catch(e){} };
 $("catView").addEventListener("click",e=>{
-  if(e.target.closest("#fReset")){ Object.assign(F,{sub:null,mode:"Hamısı",size:null,fat:null,q:""}); $("tq").value=""; hl=null; shown=PAGE; apply(); subHash(); return; }
+  if(e.target.closest("#fReset")){ Object.assign(F,{sub:null,mode:"Hamısı",size:null,fat:null,q:"",shop:null}); $("tq").value=""; hl=null; shown=PAGE; apply(); subHash(); return; }
+  const cb=e.target.closest("#champ"); if(cb){ F.shop=cb.dataset.s||null; hl=null; shown=PAGE; apply(); return; }   // "🏆 Ən sərfəli" -> o mağazada ən ucuzlar
   const b=e.target.closest(".pill"); if(!b) return;
   if(b.id==="subsMore"){ const c=$("subs").classList.toggle("collapsed"); b.textContent=c?"Daha çox ▾":"Daha az ▴"; return; }
   const k=b.dataset.k, v=b.dataset.v;

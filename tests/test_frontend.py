@@ -19,7 +19,8 @@ const ctx={console,TextEncoder,document:{addEventListener(){},getElementById:id=
 vm.createContext(ctx);
 vm.runInContext(js+`;globalThis.__t={setDB(d){DB=sane(d);stores=DB.stores;GL=DB.groups;GM=Object.fromEntries(GL.map(g=>[g.id,g]));for(const k in GROUPS)delete GROUPS[k];},
   renderDrops:()=>renderDrops(), groups:g=>groups(g), card:g=>card(g), cheap:g=>cheap(g), parseSize:n=>parseSize(n), tokens:f=>[...tokens(fold(f))],
-  favText:()=>favText(), setFav:f=>{FAV=f;}, favKey:g=>favKey(g), cats:()=>DB.categories, histHtml:(o,h,d)=>histHtml(o,h,d)};`,ctx);
+  favText:()=>favText(), setFav:f=>{FAV=f;}, favKey:g=>favKey(g), cats:()=>DB.categories, histHtml:(o,h,d)=>histHtml(o,h,d),
+  openCat:id=>openCat(id), F:()=>F, apply:()=>{apply();return filtered.map(g=>g.name);}};`,ctx);
 const T=ctx.__t, raw=JSON.parse(fs.readFileSync(0,'utf8'));
 """
 
@@ -124,6 +125,24 @@ console.log(JSON.stringify({best:T.card(g).match(/Ən ucuz: (\\w+)/)[1], cheap:T
     assert lines[0] == "• Süd Atena 1l × 2 — OBA 5.00 ₼ (2.50 ₼)"      # sətrin cəmi + vahid qiymət
     assert lines[1] == "• Banan kq × 1 kq — Araz 2.60 ₼"
     assert "Hər məhsulu ən ucuz olduğu mağazadan: 7.60 ₼" in out["text"]   # tam səbət heç bir mağazada olmasa da
+
+
+def test_store_filter_shows_only_products_cheapest_there():
+    cats = {"sud": {"stores": {"Bravo": [{"name": "Süd Atena 1l", "price": 2.0}, {"name": "Kefir Atena 1l", "price": 3.0},
+                                         {"name": "Ayran Atena 1l", "price": 1.5}, {"name": "Qatıq Atena 1l", "price": 1.0}],
+                               "OBA": [{"name": "Süd Atena 1l", "price": 2.5}, {"name": "Kefir Atena 1l", "price": 2.8},
+                                       {"name": "Ayran Atena 1l", "price": 1.5}, {"name": "Xama Atena 200q", "price": 1.9, "stale": True}],
+                               "Araz": [{"name": "Xama Atena 200q", "price": 2.2}]}}}
+    groups = [{"id": "sud", "name": "Süd", "cats": ["sud"]}]
+    out = _node("""T.setDB(raw); T.openCat("sud"); const all=T.apply(), pills=els.shops.innerHTML;
+T.F().shop="Bravo"; const bravo=T.apply().sort(); T.F().shop="Araz"; const araz=T.apply();
+console.log(JSON.stringify({all:all.length, pills, bravo, araz, count:els.count.textContent}));""", _db(cats, groups))
+    assert out["all"] == 5
+    assert out["bravo"] == ["Ayran Atena 1l", "Süd Atena 1l"]   # bərabər ən ucuz sayılır; tək mağazada olan (Qatıq) ən ucuz sayılmır
+    assert out["araz"] == []                                     # OBA-nın Xama qiyməti arxivdir: Araz yeganə aktual qiymətdir, müqayisə yoxdur
+    assert 'data-v="Bravo"' in out["pills"] and ">Bravo<small>2</small>" in out["pills"]
+    assert ">OBA<small>2</small>" in out["pills"] and 'data-v="Araz"' not in out["pills"]
+    assert out["count"] == "0 məhsul · Araz-da ən ucuz"
 
 
 def test_implausible_prices_are_dropped_but_expensive_brands_kept():

@@ -253,7 +253,7 @@ function items(list, S, save) {
     const u = c.a && c.a.kg ? "/kq" : "", W = o => o.w ? "<sup>W</sup>" : "";
     const offs = Object.entries(c.offers).sort((a, b) => a[1].p - b[1].p), live = offs.filter(([, o]) => !o.st);
     const low = c.n > 1 ? live.filter(([, o]) => o.p === c.min) : [], same = low.length > 1 && low.length === live.length;
-    const lbl = ([s, o]) => `<span>${esc(s)} ${fmt(o.p)}${u}${o.w ? W(o) : " (onlayn)"}${o.wp ? " · Wolt: " + fmt(o.wp) : ""}${o.op ? " (endirim, əvvəl " + fmt(o.op) + ")" : ""}${o.st ? " (arxiv)" : ""}</span>`, name = ([s, o]) => `<span>${esc(s)}${W(o)}</span>`;
+    const lbl = ([s, o]) => `<span>${esc(s)} ${fmt(o.p)}${u}${o.w ? W(o) : " (onlayn)"}${o.wp ? " · Wolt: " + fmt(o.wp) : ""}${o.op ? (o.w ? " (Wolt-da endirim, əvvəl " : " (endirim, əvvəl ") + fmt(o.op) + ")" : ""}${o.st ? " (arxiv)" : ""}</span>`, name = ([s, o]) => `<span>${esc(s)}${W(o)}</span>`;
     const head = !low.length ? "" : low.length === 1 ? `<i style="background:var(--${esc(low[0][0])})"></i>Ən ucuz: ${lbl(low[0])}`
       : same ? `${low.length} mağazada eyni qiymət: <span>${fmt(c.min)}${u}</span>` : `Ən ucuz: ${low.map(name).join(", ")} — <span>${fmt(c.min)}${u}</span>`;
     const first = (low[0] || live[0] || offs[0] || [])[1], up = S.upr && first ? S.upr(c, first.p) : null;   // vahid qiymət (₼/kq, ₼/L), saytdakı kimi

@@ -338,18 +338,18 @@ def test_multi_branch_regular_price_is_median_of_regular_prices(monkeypatch):
     assert out["Pril 1 L"]["wolt_price"] == 3.0 and out["Pril 1 L"]["op"] == 5.0
 
 
-def test_wolt_discount_is_not_shown_only_store_own_discount_is():
-    own = [{"name": "Klar Maye Qabyuyan 1 L", "price": 3.99},                      # OBA saytı: köhnə qiymət → Wolt-özəl endirim
+def test_wolt_discount_kept_with_old_price_and_store_discount_marked():
+    own = [{"name": "Klar Maye Qabyuyan 1 L", "price": 3.99},                      # OBA saytı: köhnə qiymət → endirim yalnız Wolt-da
            {"name": "Natura Albalı Şirəsi 1 L", "price": 1.99},                    # saytda da endirimli → mağazanın endirimi
            {"name": "Eti Adicto Intense 35qr", "price": 0.79, "rp": 1.0}]          # Araz saytı adi qiyməti verir
     wolt = [{"name": "Klar Maye Qabyuyan 1 L", "wolt_price": 2.99, "op": 3.99},
             {"name": "Natura Albalı Şirəsi 1 L", "wolt_price": 1.99, "op": 2.49},
             {"name": "Selpak Tualet Kağızı 16əd", "wolt_price": 9.99, "op": 26.7}]   # yalnız Wolt-da
     m = {e["name"]: e for e in S.merge_own_wolt(own, wolt)}
-    assert m["Klar Maye Qabyuyan 1 L"] == {"name": "Klar Maye Qabyuyan 1 L", "price": 3.99}
-    assert m["Natura Albalı Şirəsi 1 L"]["op"] == 2.49 and "wolt_price" not in m["Natura Albalı Şirəsi 1 L"]
+    assert m["Klar Maye Qabyuyan 1 L"] == {"name": "Klar Maye Qabyuyan 1 L", "price": 3.99, "wolt_price": 2.99}
+    assert m["Natura Albalı Şirəsi 1 L"] == {"name": "Natura Albalı Şirəsi 1 L", "price": 1.99, "op": 2.49}
     assert m["Eti Adicto Intense 35qr"]["op"] == 1.0
-    assert m["Selpak Tualet Kağızı 16əd"] == {"name": "Selpak Tualet Kağızı 16əd", "wolt_price": 26.7}
+    assert m["Selpak Tualet Kağızı 16əd"] == {"name": "Selpak Tualet Kağızı 16əd", "wolt_price": 9.99, "op": 26.7}
 
 
 def test_unify_cats_moves_minority_store_to_majority_group():

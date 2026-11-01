@@ -1434,8 +1434,8 @@ def _wolt_price(item):
 def _wolt_old_price(item, price):
     """Wolt-un göstərdiyi köhnə (üstündən xətt çəkilmiş) qiymət: original_price > price olanda endirimdir.
     Wolt endirimin yalnız Wolt-a aid olub-olmadığını demir (məhsulda heç bir sahə/yazı bunu ayırmır, 2026-11-01 yoxlanıb). Ona görə:
-    yalnız Wolt-dakı məhsulda adi qiymət götürülür (_wolt_regular); mağaza saytı da eyni endirimli qiyməti verirsə, bu mağazanın
-    öz endirimidir və kartda "Endirim · əvvəl X" yazılır (merge_own_wolt). Ağlasığmaz fərq (10 dəfədən çox) atılır."""
+    Wolt qiymətində kartda "Wolt-da endirim · əvvəl X" yazılır (_wolt_regular); mağaza saytı da eyni endirimli qiyməti verirsə, bu
+    mağazanın öz endirimidir və "Endirim · əvvəl X" yazılır (merge_own_wolt). Ağlasığmaz fərq (10 dəfədən çox) atılır."""
     v = item.get("original_price")
     if isinstance(v, dict): v = v.get("amount") or v.get("value")
     if not isinstance(v, (int, float)) or not price: return None
@@ -1443,11 +1443,10 @@ def _wolt_old_price(item, price):
     return op if price * 1.01 < op <= price * 10 else None
 
 def _wolt_regular(w):
-    """Yalnız Wolt-dan gələn məhsul: Wolt-un endirimi mağazanın rəfdə də olduğu yoxlanıla bilmir (Wolt bunu ayırmır; 2026-11-01:
-    OBA-da Wolt endirimlərinin 71%-i saytda yoxdur), ona görə qiymət endirimsiz adi qiymətdir və endirim nişanı qoyulmur."""
-    e = {k: w[k] for k in ("name", "wolt_price", "wt", "gtin") if k in w}
-    if w.get("op"): e["wolt_price"] = w["op"]
-    return e
+    """Yalnız Wolt-dan gələn məhsul: qiymət Wolt-dakı kimidir (endirimli), op = Wolt-un adi qiyməti — kartda "Wolt-da endirim · əvvəl X".
+    Endirimin mağazada da olub-olmadığı bilinmir (Wolt ayırmır; 2026-11-01: Araz-da 96%-i saytda da var, OBA-da 71%-i yoxdur),
+    ona görə yazı "Wolt-da" deyir; sahibin qərarı (2026-11-01): Wolt endirimi gizlədilmir."""
+    return {k: w[k] for k in ("name", "wolt_price", "wt", "gtin", "op") if k in w}
 
 def _wolt_weight(item):
     """Çəkiyə görə satılan "ədəd" məhsulda bir ədədin təxmini çəkisi (qram): sell_by_weight_config.grams_per_step.
@@ -1592,8 +1591,8 @@ def scrape_wolt_full(store, slug=None):
 # Qiymətin mənbə üsulu (tək filial / filiallar üzrə median). Üsul dəyişən gün qiymət fərqləri
 # real qiymət dəyişikliyi deyil, ona görə həmin gün dəyişiklik nişanı və tarixçə yazılmır.
 WOLT_SRC = {}
-# Üsul versiyası: v2 = Wolt-özəl endirimli məhsullar çıxarılır; v3 = Wolt endirimi əvəzinə adi (üstündən xətt çəkilmiş) qiymət.
-WOLT_SRC_VER = "v3"   # v3 (2026-11-01): Wolt-dakı endirim yerinə adi qiymət
+# Üsul versiyası: v2 = Wolt-özəl endirimli məhsullar çıxarılır.
+WOLT_SRC_VER = "v2"
 
 def wolt_src_multi(slugs):
     """Filiallar üzrə median üsulunun adı + filial siyahısının imzası: siyahı dəyişəndə (filial əlavə/silinir) median dəyişir, bu da üsul
@@ -1731,8 +1730,7 @@ def merge_own_wolt(own_list, wolt_list):
             # Wolt endirimi mağazanın saytındakı qiymətlə eynidirsə, mağazanın öz endirimidir (OBA saytı köhnə qiyməti vermir)
             same = abs(w["wolt_price"] - item["price"]) <= 0.011
             if "op" not in entry and w.get("op") and same: entry["op"] = w["op"]
-            wr = w["wolt_price"] if same else w.get("op") or w["wolt_price"]   # Wolt-un yalnız özündəki endirim göstərilmir: Wolt sətrində adi qiymət
-            if abs(wr - item["price"]) > 0.005: entry["wolt_price"] = wr
+            if abs(w["wolt_price"] - item["price"]) > 0.005: entry["wolt_price"] = w["wolt_price"]
             if w.get("wt"): entry["wt"] = w["wt"]
             if w.get("gtin"): entry["gtin"] = w["gtin"]
             if item.get("rp") and item["price"] <= 0.5 * item["rp"]:

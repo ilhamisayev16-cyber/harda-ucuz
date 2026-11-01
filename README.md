@@ -61,11 +61,13 @@ Scraper hər gün avtomatik işləyəcək.
 ## Qiymət mənbələri və etibarlılıq
 - Mağazanın öz saytından/API-dən alınan qiymət (`price`) həmişə Wolt qiymətindən (`wolt_price`) üstün tutulur.
 - Cədvəldə Wolt qiymətləri <sup>W</sup> ilə işarələnir (Wolt qiyməti rəf qiymətindən bir qədər yüksək ola bilər).
-- Scrape boş nəticə qaytararsa, köhnə qiymətlər silinmir (`meta` bölməsində hər mağazanın son yenilənmə vaxtı var).
+- Scrape boş və ya kəskin azalmış nəticə qaytararsa, köhnə qiymətlər silinmir, `stale: true` ilə arxivləşdirilir. Arxiv qiymətlər cari ən ucuz və səbət hesabına daxil edilmir. `meta` bölməsində son uğurlu yenilənmə, son cəhd və yoxlamanın nəticəsi ayrı saxlanır.
 - Wolt filialının slug-ı dəyişibsə, mühit dəyişəni ilə verin: `WOLT_SLUG_NEPTUN=neptun-supermarket-...` (vergüllə bir neçə).
 - Çoxfilialli mağazalarda (`WOLT_BRANCHES`: Bravo, Neptun, Tamstore) bir neçə filialın kataloqu birləşdirilir: məhsul sayı artır, qiymət filiallar üzrə mediandır.
 - "Wolta Özəl" kimi yalnız Wolt-a aid endirim kateqoriyalarındakı məhsullar götürülmür (bu endirim mağazanın rəfində yoxdur). Təxmini çevirmə (məs. Wolt qiymətindən faiz çıxmaq) edilmir.
-- Öz saytı yoxlanılıb, qiymətli kataloq tapılmayıb (2026-10): neptun.az (boş cavab), bravosupermarket.az, tamstore.az, rahatmarket.az (yalnız kampaniyalar). Bunlar üçün yeganə mənbə Wolt-dur.
+- Avtomatik qiymət toplanması üçün Neptun, Bravo, Tamstore və Rahat-da hələ təsdiqlənmiş açıq rəsmi məhsul kataloqu yoxdur; hazırda çatdırılma kataloqu istifadə olunur. Bravo, Tamstore və Rahat-ın rəsmi kampaniyaları qiyməti ayrıca yoxlamaq üçün mənbədir: tarix, filial formatı və kart şərtləri nəzərə alınmalıdır.
+- Ana səhifədə “Qiymət mənbələri və yoxlama vaxtları” bölməsi hər mağazanın son uğurlu yoxlanmasını və rəsmi mənbə keçidlərini göstərir. Saytın ümumi hazırlanma vaxtı mağazanın yoxlanma vaxtı deyil.
+- Yeni mənbələr, yoxlanmış keçidlər və növbəti inkişaf ideyaları: [Mənbə araşdırması](docs/MENBE_ARASDIRMASI.md) (01.11.2026). Namizəd saytın tapılması onun qiymətlərinin artıq avtomatik müqayisəyə qoşulması demək deyil.
 
 ## Tətbiq (PWA)
 - `manifest.webmanifest` (ad, ikonlar `assets/icons/icon-*.png`) və `sw.js` (service worker): sayt telefona "tətbiq" kimi quraşdırılır, internetsiz son saxlanmış qiymətlərlə açılır.
@@ -111,6 +113,7 @@ Scraper hər gün avtomatik işləyəcək.
 
 ## Wolt söndürmə açarı və təhlükəsiz yazma
 - `WOLT_ENABLED=0` (və ya `python scrapers/scraper.py --no-wolt`): Wolt-a heç bir sorğu göndərilmir. GitHub-da: Settings → Variables → `WOLT_ENABLED`.
-- Köhnə Wolt qiymətləri silinmir; `stale: true` ("arxiv qiymət") işarələnir, ən ucuz/qənaət hesabına girmir; `meta[mağaza]`-da `source_type`, `auto_update`, `last_success`.
+- Köhnə Wolt qiymətləri silinmir; `stale: true` ("arxiv qiymət") işarələnir, ən ucuz/qənaət hesabına girmir; `meta[mağaza]`-da `source_type`, `auto_update`, `last_success`. Uğursuz cəhddə `check_status: failed`, natamam nəticədə `partial`, uğurlu nəticədə `ok` və `last_attempt` yazılır.
+- Çoxfiliallı qiymətin mənbə imzası yalnız həmin cəhddə kataloqu alınmış filialları əhatə edir: filial müvəqqəti alınmayanda median fərqi qiymət ucuzlaşması kimi təqdim edilmir.
 - `prices.json` yazılmazdan əvvəl sxem/qiymət yoxlanır, mağaza nəticəsi >60% azalıbsa köhnə data saxlanır, yazma atomikdir.
 - Testlər: `pip install pytest && python -m pytest tests` (`scrapers/sources.py` — mənbə konfiqurasiyası).

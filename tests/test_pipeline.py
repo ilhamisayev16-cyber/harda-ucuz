@@ -49,18 +49,56 @@ def test_history_hash_stable_and_tracking():
 
 
 # 6. boş / kəskin azalmış nəticə köhnə datanı silmir
-def test_empty_result_keeps_old_data():
+def test_empty_result_keeps_old_data(monkeypatch):
+    from datetime import datetime
+    monkeypatch.setattr(S, "now", lambda: datetime(2026, 11, 1, 12, tzinfo=SRC.BAKU))
     d = mini()
+    d["meta"]["Neptun"] = {"updated": "31.10.2026 07:00", "last_success": "2026-10-31T07:00:00",
+                           "source_type": "wolt", "auto_update": True}
+    d["categories"]["sud"]["stores"]["Neptun"][0].update(pp=1.5, pd="2026-10-31")
     before = copy.deepcopy(d)
     assert S.apply_to_data({}, {}, "Neptun", d, {}) is False
-    assert d["categories"] == before["categories"]
+    items = d["categories"]["sud"]["stores"]["Neptun"]
+    assert len(items) == len(before["categories"]["sud"]["stores"]["Neptun"])
+    assert all(it["stale"] and it["wolt_price"] == 1.0 and "pp" not in it and "pd" not in it for it in items)
+    m = d["meta"]["Neptun"]
+    assert m["updated"] == "31.10.2026 07:00" and m["last_success"] == "2026-10-31T07:00:00"
+    assert m["check_status"] == "failed" and m["auto_update"] is True and m["last_attempt"] > m["last_success"]
 
 
 def test_sharp_drop_keeps_old_data():
     d = mini(n=1000)
     new = {"sud": [{"name": "Y", "wolt_price": 1.0}] * 10}
     assert S.apply_to_data({}, new, "Neptun", d, {}) is False
-    assert len(d["categories"]["sud"]["stores"]["Neptun"]) == 1000
+    items = d["categories"]["sud"]["stores"]["Neptun"]
+    assert len(items) == 1000 and all(it["stale"] for it in items)
+    assert d["meta"]["Neptun"]["check_status"] == "partial"
+    assert d["meta"]["Neptun"]["auto_update"] is True
+
+
+def test_failed_source_recovery_has_no_unverified_price_change_baseline(monkeypatch):
+    from datetime import datetime
+    monkeypatch.setattr(S, "now", lambda: datetime(2026, 11, 1, 12, tzinfo=SRC.BAKU))
+    monkeypatch.setattr(S, "WOLT_SRC", {})
+    d = S.empty_data()
+    d["categories"]["sud"]["stores"]["Neptun"] = [
+        {"name": "Süd Atena 1 l", "wolt_price": 2.0, "pp": 2.5, "pd": "2026-10-31"}]
+    d["meta"] = {"Neptun": {"updated": "31.10.2026 07:00", "last_success": "2026-10-31T07:00:00",
+                             "src": "single-" + S.WOLT_SRC_VER}}
+    hist = {"existing": [["2026-10-31", 2.0]]}
+    before_hist = copy.deepcopy(hist)
+    assert S.apply_to_data({}, {}, "Neptun", d, hist) is False
+    result = {"sud": [{"name": "Süd Atena 1 l", "wolt_price": 1.5}]}
+    assert S.apply_to_data({}, result, "Neptun", d, hist)
+    item = d["categories"]["sud"]["stores"]["Neptun"][0]
+    assert item == {"name": "Süd Atena 1 l", "wolt_price": 1.5}
+    assert hist == before_hist
+    m = d["meta"]["Neptun"]
+    assert m["check_status"] == "ok" and m["last_attempt"] == m["last_success"]
+    assert m["last_success"] > "2026-10-31T07:00:00"
+    # İki uğurlu müşahidə arasında real dəyişiklik yenidən qeyd olunur.
+    assert S.apply_to_data({}, {"sud": [{"name": "Süd Atena 1 l", "wolt_price": 1.25}]}, "Neptun", d, hist)
+    assert d["categories"]["sud"]["stores"]["Neptun"][0]["pp"] == 1.5
 
 
 def test_invalid_data_never_overwrites_file(tmp_path):
@@ -110,6 +148,26 @@ def test_wolt_off_own_plus_wolt_store_keeps_archived_wolt_items():
     items = {i["name"]: i for i in d["categories"]["sud"]["stores"]["OBA"]}
     assert items["A"]["price"] == 1.2 and "stale" not in items["A"]
     assert items["OnlyWolt"]["wolt_price"] == 2.0 and items["OnlyWolt"]["stale"] is True
+
+
+@pytest.mark.parametrize("flag,store", [("--own-only", "Neptun"), ("--wolt-only", "Bazarstore")])
+def test_mode_without_a_store_source_is_not_a_failed_attempt(tmp_path, monkeypatch, flag, store):
+    out = tmp_path / "prices.json"
+    d = mini(store, n=300, wolt=store == "Neptun")
+    d["meta"][store] = {"updated": "31.10.2026 07:00", "last_success": "2026-10-31T07:00:00",
+                         "last_attempt": "2026-10-31T07:00:00", "check_status": "ok", "auto_update": True}
+    d["categories"]["sud"]["stores"][store][0].update(pp=1.5, pd="2026-10-31")
+    before_items = copy.deepcopy(d["categories"]["sud"]["stores"][store])
+    before_meta = copy.deepcopy(d["meta"][store])
+    assert S._save(d, out)
+    def boom(*args, **kwargs): raise AssertionError("Bu rejimdə mənbə yoxlanılmamalıdır")
+    for fn in ("scrape_wolt", "scrape_wolt_full", "scrape_wolt_multi", "scrape_bazarstore", "_session", "mark_unverified", "mark_stale"):
+        monkeypatch.setattr(S, fn, boom)
+    monkeypatch.setattr("sys.argv", ["scraper.py", flag, "--store", store.lower(), "--out", str(out)])
+    S.main()
+    result = json.loads(out.read_text(encoding="utf-8"))
+    assert result["categories"]["sud"]["stores"][store] == before_items
+    assert result["meta"][store] == before_meta
 
 
 def test_failed_run_keeps_previous_files(tmp_path, monkeypatch):
@@ -801,6 +859,40 @@ def test_branch_list_change_is_a_source_change(monkeypatch):
     prices["c"] = 2.2                                                               # eyni filiallar: real dəyişiklik qeyd olunur
     assert S.apply_to_data({}, S.scrape_wolt_multi("Bravo"), "Bravo", d, {})
     assert d["categories"]["sud"]["stores"]["Bravo"][0]["pp"] == 2.4
+
+
+@pytest.mark.parametrize("unavailable", [None, {}, {"sud": []}])
+def test_branch_failure_and_recovery_change_source_without_false_discounts(monkeypatch, unavailable):
+    prices = {"a": 2.0, "b": 2.4, "c": 2.6}
+    missing = set()
+    def scrape(store, slug=None):
+        return unavailable if slug in missing else {"sud": [{"name": "Süd Atena 1 l", "wolt_price": prices[slug]}]}
+    monkeypatch.setattr(S, "scrape_wolt_full", scrape)
+    monkeypatch.setattr(S.time, "sleep", lambda s: None)
+    monkeypatch.setattr(S, "WOLT_SRC", {})
+    monkeypatch.setitem(S.WOLT_BRANCHES, "Bravo", ["a", "b", "c"])
+    d, hist = S.empty_data(), {}
+    assert S.apply_to_data({}, S.scrape_wolt_multi("Bravo"), "Bravo", d, hist)
+    full_src = d["meta"]["Bravo"]["src"]
+    assert d["categories"]["sud"]["stores"]["Bravo"][0]["wolt_price"] == 2.4
+    missing.add("b")
+    assert S.apply_to_data({}, S.scrape_wolt_multi("Bravo"), "Bravo", d, hist)
+    assert d["meta"]["Bravo"]["src"] == S.wolt_src_multi(["a", "c"]) != full_src
+    assert d["categories"]["sud"]["stores"]["Bravo"][0] == {"name": "Süd Atena 1 l", "wolt_price": 2.0}
+    assert hist == {}
+    missing.clear()
+    assert S.apply_to_data({}, S.scrape_wolt_multi("Bravo"), "Bravo", d, hist)
+    assert d["meta"]["Bravo"]["src"] == full_src
+    assert d["categories"]["sud"]["stores"]["Bravo"][0] == {"name": "Süd Atena 1 l", "wolt_price": 2.4}
+    assert hist == {}
+
+
+def test_all_empty_branch_catalogues_are_unavailable(monkeypatch):
+    monkeypatch.setattr(S, "scrape_wolt_full", lambda *args: {"sud": [], "pendir": []})
+    monkeypatch.setattr(S, "WOLT_SRC", {})
+    monkeypatch.setitem(S.WOLT_BRANCHES, "Bravo", ["a", "b"])
+    assert S.scrape_wolt_multi("Bravo") is None
+    assert "Bravo" not in S.WOLT_SRC
 
 
 def test_legacy_unsigned_multi_source_is_not_a_switch(monkeypatch):

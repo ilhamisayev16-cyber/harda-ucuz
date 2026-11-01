@@ -1521,13 +1521,13 @@ def scrape_wolt_multi(store):
     slugs = [x.strip() for x in os.environ.get("WOLT_BRANCHES_" + store.upper(), "").split(",") if x.strip()] \
         or WOLT_BRANCHES.get(store)
     if not slugs: return None
-    merged, ok, t0 = {}, 0, time.time()
+    merged, successful, t0 = {}, [], time.time()
     for slug in slugs:
         res = scrape_wolt_full(store, slug)
-        if not res:
+        if not res or not any(res.values()):
             print(f"  [Wolt/{store}] ✗ {slug} alınmadı", flush=True)
             continue
-        ok += 1
+        successful.append(slug)
         before = len(merged)
         for cid, items in res.items():
             for e in items:
@@ -1543,13 +1543,14 @@ def scrape_wolt_multi(store):
                     if "gtin" not in m["e"] and e.get("gtin"): m["e"]["gtin"] = e["gtin"]
         print(f"  [Wolt/{store}] {slug}: +{len(merged) - before} yeni (cəmi {len(merged)}); {round(time.time() - t0)} san", flush=True)
         time.sleep(5)
-    if not ok: return None
+    if not successful: return None
     results = {c: [] for c in CATEGORIES}
     for m in merged.values():
         e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
         results[m["cid"]].append(e)
-    print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
-    WOLT_SRC[store] = wolt_src_multi(slugs)
+    print(f"  [Wolt/{store}] {len(successful)}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
+    # Cavab verməyən filial medianın hissəsi deyil: uğursuzluq/bərpa da mənbə dəyişikliyidir.
+    WOLT_SRC[store] = wolt_src_multi(successful)
     return results
 
 def scrape_wolt(store):
@@ -1678,7 +1679,7 @@ def _real_change(a, b):
 def mark_changes(old, items, store, hist, today, old_day):
     for it in items:
         p = _eff(it); o = old.get(it["name"])
-        if p is None or o is None: continue
+        if p is None or o is None or o.get("stale"): continue
         if ("price" in it) != ("price" in o): continue   # mənbə dəyişib (öz sayt ↔ Wolt): qiymət dəyişikliyi deyil
         op = _eff(o)
         if op is not None and abs(op - p) > 0.004 and not _real_change(op, p): continue
@@ -1697,6 +1698,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     own_res, wolt_res = own_res or {}, wolt_res or {}
     if not any(own_res.values()) and not any(wolt_res.values()):
         print(f"  [{store}] ⚠ nəticə boşdur — köhnə qiymətlər saxlanıldı")
+        mark_unverified(store, data, "failed", wolt_on)
         return False
     wolt_only = store in WOLT_ONLY
     old = track_changes(store, data, hist)
@@ -1704,6 +1706,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     new_n = sum(len(v) for v in own_res.values()) + sum(len(v) for v in wolt_res.values())
     if old_n >= 200 and new_n < 0.4 * old_n:   # natamam nəticə əvvəlki etibarlı datanı əvəz etməsin
         print(f"  [{store}] ⚠ nəticə kəskin azalıb ({old_n} → {new_n}) — köhnə qiymətlər saxlanıldı")
+        mark_unverified(store, data, "partial", wolt_on)
         return False
     # Öz saytı olan mağazada (Araz, OBA) Wolt qiyməti yalnız Wolt-da olan məhsullarda göstərilir: üsul dəyişəndə
     # yalnız onların nişanı buraxılır, öz sayt qiymətlərinin dəyişikliyi adi qaydada qeyd olunur.
@@ -1743,12 +1746,26 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     if src: data["meta"][store]["src"] = src
     data["meta"][store].update(source_meta(store, wolt_on))
     data["meta"][store]["last_success"] = now().strftime("%Y-%m-%dT%H:%M:%S")
+    data["meta"][store]["last_attempt"] = data["meta"][store]["last_success"]
+    data["meta"][store]["check_status"] = "ok"
     return True
 
 def _stale(it):
     """Arxiv (yenidən yoxlanmamış) qiymət: köhnə dəyişiklik nişanı (pp/pd) atılır — yoxlanmamış qiymət ana səhifədə "ucuzlayan" kimi
     və kartda "↓30%" ilə göstərilməsin (renderDrops arxiv məhsulu ayırmır)."""
     return {**{k: v for k, v in it.items() if k not in ("pp", "pd")}, "stale": True}
+
+def mark_unverified(store, data, status, wolt_on=True):
+    """Alınmayan/natamam scrape köhnə qiymətləri saxlayır, amma aktual müqayisədən çıxarır.
+    Son uğurlu müşahidənin vaxtı dəyişmir; avtomatik yenilənmə ayarı uğursuzluqdan ayrıdır."""
+    for c in data["categories"].values():
+        items = c["stores"].get(store, [])
+        if items: c["stores"][store] = [_stale(it) for it in items]
+    m = data.setdefault("meta", {}).setdefault(store, {})
+    m.update(source_meta(store, wolt_on))
+    m.setdefault("last_success", None)
+    m["last_attempt"] = now().strftime("%Y-%m-%dT%H:%M:%S")
+    m["check_status"] = status
 
 def mark_stale(store, data):
     """Wolt söndürülüb və başqa mənbə yoxdur: mövcud məhsullar silinmir, amma yenidən yoxlanmadığı işarələnir."""
@@ -1844,6 +1861,9 @@ def main():
 
     for t in targets:
         sname = STORE_KEYS[t]
+        if (args.own_only and sname in WOLT_ONLY) or (args.wolt_only and sname == "Bazarstore"):
+            print(f"  [{sname}] seçilmiş rejimdə mənbə yoxdur — yoxlanılmadan buraxıldı")
+            continue   # sorğu göndərilməyibsə uğursuz cəhd / arxiv qiymət deyil
         print(f"\n{'─'*50}\n  {sname}\n{'─'*50}")
         own_res, wolt_res = {}, {}
 

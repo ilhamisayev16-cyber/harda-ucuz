@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-+bqKA9U9Oa7jcsZpSBr2r9VDbgqDoJrSVrWLAcG3tzQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-zfMa95Ez/7JfK5wryar88gqCeza0v98+Yq5nLJJ4ctM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -346,6 +346,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 /* Planning workspace: calm surfaces, clear hierarchy and large touch targets. */
 .intro{padding:32px;border:1px solid var(--line);border-radius:24px;background:linear-gradient(125deg,var(--brand-soft),var(--card));margin:10px 0 28px}.eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--brand)}.intro .hero{font-size:clamp(28px,5vw,44px);line-height:1.13;max-width:680px;margin:14px 0}.intro p{color:var(--mute);max-width:540px}.intro .btn{color:var(--ink);display:inline-flex;text-decoration:none;margin:8px 8px 0 0;min-height:44px;align-items:center}.intro .btn.primary{color:#fff}.intro-steps{display:flex;flex-wrap:wrap;gap:18px;margin-top:28px;color:var(--mute);font-size:13px}.planner{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin:16px 0}.planner h2{margin-top:0}.planner label{display:block;font-size:14px;font-weight:600;margin:8px 0}.planner textarea{display:block;width:100%;padding:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;border-radius:10px;resize:vertical;margin:8px 0 12px}.planner input{width:120px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}.plan-row{padding:14px 0;border-bottom:1px solid var(--line)}.plan-row select{display:block;width:100%;padding:10px;margin:8px 0;background:var(--bg);border:1px solid var(--line);border-radius:8px}.product-tools{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}.product-tools a,.product-tools button{font-size:12px;padding:8px 10px;border-radius:8px;border:1px solid var(--line);color:var(--ink);background:var(--card);text-decoration:none;cursor:pointer}.watch-card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:12px 0;padding:18px}.watch-card.reached{border-color:var(--good);background:var(--good-soft)}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--brand);outline-offset:3px}@media(max-width:560px){.intro{padding:22px}.intro-steps{gap:10px;font-size:12px}.planner{padding:16px}}
 .photo-credit{display:block;color:var(--mute);font-size:11px;margin:8px 0}.photo-credit a{color:inherit}
+.sources{margin:18px 0;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card)}.sources summary{cursor:pointer;font-weight:700;min-height:32px}.sources-scroll{overflow-x:auto}.sources table{width:100%;border-collapse:collapse;font-size:12px;min-width:620px}.sources caption{text-align:left;color:var(--mute);padding:10px 0}.sources th,.sources td{text-align:left;vertical-align:top;padding:10px 8px;border-bottom:1px solid var(--line)}.sources th{font-weight:700}.sources td small{display:block;color:var(--mute);margin-top:4px}.sources a{color:var(--brand)}
 </style>
 </head>
 <body>
@@ -382,6 +383,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
     <div id="watchSummary" aria-live="polite"></div><div class="drops" id="drops" hidden></div>
     <div class="grid" id="catGrid"></div>
     <p class="note" id="srcNote"></p>
+    <details class="sources"><summary>Qiymət mənbələri və yoxlama vaxtları</summary><div id="sourceDetails"></div></details>
     <p class="note">Qiymətlər mağazaların açıq saytlarından avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
       Bu sayt heç bir mağaza ilə əlaqəli deyil, mağaza adları öz sahiblərinə məxsusdur. Sayt cookie istifadə etmir, ziyarət sayı anonim hesablanır;
       səbət yalnız sizin brauzerinizdə saxlanır. Məhsul şəkilləri: icazə qeydi olan mənbələr və <a href="https://world.openfoodfacts.org/" rel="noopener noreferrer" style="color:inherit">Open Food Facts</a>
@@ -550,8 +552,9 @@ const SHOP={
   OBA:{q:"https://oba.az/products/?search=",h:"https://oba.az/products/",w:6},   // məhsul səhifəsi yoxdur: ad (vergüldən əvvəl) ilə axtarış
   Bravo:{h:"https://bravosupermarket.az/special-offers/",t:"kampaniyalar"},
   Tamstore:{h:"https://www.tamstore.az/az/kampaniyalar",t:"kampaniyalar"},
+  Rahat:{h:"https://rahatmarket.az/az/aksiyalar/rahat-market",t:"kampaniyalar"},
   SPAR:{h:"https://spar-international.com/country/azerbaijan-2/"}};   // spar.az açılmır; Azərbaycanda SPAR-ı Araz idarə edir
-/* Neptun, Rahat: link yoxdur — 2026-10-25 yoxlanılıb: neptun.az boş səhifə, rahatmarket.az HTTP 500 / boş nginx səhifəsi. Sayt işləyəndə h əlavə edin */
+/* Neptun: 2026-11-01 yoxlamasında oxunaqlı rəsmi kataloq alınmadı. Rahat üçün işlək rəsmi kampaniya səhifəsi tapıldı. */
 const U_RX=/^(?:[a-z0-9-]|%[0-9A-Fa-f]{2}){1,250}$/;
 /* {u: link, x: 1 = bu məhsulun səhifəsi / axtarışı, 0 = mağazanın ümumi səhifəsi, t: səhifənin adı} */
 function shopLink(s,o){ const S=Object.hasOwn(SHOP,s)&&SHOP[s]; if(!S) return null;
@@ -560,6 +563,15 @@ function shopLink(s,o){ const S=Object.hasOwn(SHOP,s)&&SHOP[s]; if(!S) return nu
     if(q) return {u:S.q+encodeURIComponent(q),x:1}; }
   return S.h?{u:S.h,x:0,t:S.t}:null; }
 const extA=(l,s,txt)=>`<a class="ext" href="${esc(l.u)}" target="_blank" rel="noopener noreferrer" aria-label="${esc(s)} saytında bax">${txt}</a>`;
+/* Rəsmi kataloq/kampaniya keçidləri qiymətləri yoxlamaq üçündür; kampaniya qiymətləri avtomatik idxal edilmir. */
+const SOURCE_REFS={
+  OBA:{url:"https://oba.az/products/",label:"Rəsmi məhsul kataloqu",note:"Tətbiqə özəl kampaniyalarda OBA Plus şərtlərini yoxlayın."},
+  Araz:{url:"https://arazmarket.az/az/products",label:"Rəsmi məhsul kataloqu"},
+  Bazarstore:{url:"https://bazarstore.az/",label:"Rəsmi onlayn mağaza"},
+  Bravo:{url:"https://www.bravosupermarket.az/special-offers/",label:"Rəsmi kampaniya kataloqları",note:"Hiper, Super, Market və Express formatlarını, kampaniyanın tarixini yoxlayın."},
+  Tamstore:{url:"https://www.tamstore.az/az/kampaniyalar",label:"Rəsmi kampaniyalar",note:"Kampaniyanın tarixini və bonus kartı şərtini yoxlayın."},
+  Rahat:{url:"https://rahatmarket.az/az/aksiyalar/rahat-market",label:"Rəsmi kampaniyalar",note:"Kampaniyanın tarixini və hansı filiallara aid olduğunu yoxlayın."}
+};
 /* ingiliscə ad / axtarış: ana kateqoriya adları və söz uyğunluqları (+ azərbaycanca ümumi sözlər) */
 const GEN={saglam:"healthy diet protein gluten free diabetic fitness pehriz",geyim:"clothes clothing shoes socks textile towel",konserv:"canned pickles olives",tutun:"tobacco cigarettes siqaret",meyve:"fruit",sebze:"vegetables veggies",sud:"dairy milk cheese eggs yogurt butter",et:"meat fish chicken beef sausage",
   corek:"bread bakery",bakaliya:"grains rice pasta flour cereal",sirniyyat:"sweets chocolate biscuits candy dessert honey",
@@ -1154,7 +1166,7 @@ function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (da
     g.sk=g.a.kg?"kg":(g.a.wv!=null?fam(g.a.wu)+":"+Math.round(norm(g.a.wv,g.a.wu)*100)/100:"");
     const o=Object.values(g.offers), v=o.map(x=>x.p);
     const fr=o.filter(x=>!x.st).map(x=>x.p), vv=fr.length?fr:v;   // arxiv (yenidən yoxlanmayan) qiymətlər ən ucuz/qənaət hesabına girmir
-    g.n=vv.length; g.min=Math.min(...vv); g.max=Math.max(...vv); g.save=g.n>1?g.max-g.min:0;
+    g.n=fr.length; g.min=Math.min(...vv); g.max=Math.max(...vv); g.save=g.n>1?g.max-g.min:0;
     if(rec) g.mi=g.m.map(x=>x.i);
     delete g.m;
   }
@@ -1252,6 +1264,22 @@ const okP=v=>typeof v==="number"&&v>0&&v<1e5, okS=(v,rx)=>typeof v==="string"&&r
 const FIELD=new Map(Object.entries({name:v=>typeof v==="string"&&v.length>0&&v.length<=300, price:okP, wolt_price:okP, pp:okP,
   wt:v=>Number.isInteger(v)&&v>0&&v<1e5, pd:v=>okS(v,/^\d{4}-\d\d-\d\d$/), stale:v=>v===true,
   im_by:v=>typeof v==="string"&&v.length<=120, online_offer:v=>v===true, im_match:v=>v==="exact_name", gtin:v=>okS(v,/^\d{8,14}$/), im:v=>okS(v,IM_RX), ph:v=>okS(v,PH_RX), u:v=>okS(v,U_RX)}));
+const META_DATE=/^(?:0[1-9]|[12]\d|3[01])\.(?:0[1-9]|1[0-2])\.\d{4} (?:[01]\d|2[0-3]):[0-5]\d$/;
+const META_ISO=/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d$/;
+function sourceMeta(raw,storeList){
+  const out=Object.create(null); if(!raw||typeof raw!=="object"||Array.isArray(raw)) return out;
+  for(const s of storeList){
+    if(!Object.hasOwn(raw,s)) continue; const v=raw[s]; if(!v||typeof v!=="object"||Array.isArray(v)) continue;
+    const m={};
+    if(okS(v.updated,META_DATE)) m.updated=v.updated;
+    for(const k of ["last_success","last_attempt"]) if(okS(v[k],META_ISO)) m[k]=v[k];
+    if(["own","own+wolt","wolt","wolt-arxiv"].includes(v.source_type)) m.source_type=v.source_type;
+    if(["ok","failed","partial"].includes(v.check_status)) m.check_status=v.check_status;
+    if(typeof v.auto_update==="boolean") m.auto_update=v.auto_update;
+    out[s]=m;
+  }
+  return out;
+}
 function sane(d){
   if(!d||typeof d!=="object"||!d.categories||typeof d.categories!=="object") throw new Error("data formatı tanınmadı");
   const stores=(Array.isArray(d.stores)?d.stores:[]).filter(s=>okS(s,ST_RX)), SS=new Set(stores), cats=Object.create(null);
@@ -1267,7 +1295,7 @@ function sane(d){
   const groups=Array.isArray(d.groups)?d.groups.filter(g=>g&&okS(g.id,ID_RX)&&typeof g.name==="string"&&Array.isArray(g.cats))
     .map(g=>({id:g.id,name:g.name.slice(0,80),cats:g.cats.filter(c=>typeof c==="string"&&cats[c])})):null;
   dropImplausible(cats);
-  return {last_updated:typeof d.last_updated==="string"?d.last_updated.slice(0,20):"",stores,categories:cats,groups,product_ids:validIds(d.product_ids)};
+  return {last_updated:typeof d.last_updated==="string"?d.last_updated.slice(0,20):"",stores,categories:cats,groups,meta:sourceMeta(d.meta,stores),product_ids:validIds(d.product_ids)};
 }
 /* ağlasığmaz qiymət — mənbədə yazı səhvi (Rahat-ın Wolt menyusu, 2026-10: "Heinz ... Kasa 170 qr" 644.15 ₼, "Domestos ... 1 l" 256.25 ₼,
    "Lipton Soyuq Çay 330 ml" 42.49 ₼): 1 kq / 1 L qiyməti eyni kateqoriyada eyni markanın (adın ilk sözü) digər məhsullarından ≥40 dəfə, marka
@@ -1348,8 +1376,23 @@ function renderHome(){
     `<button class="cat" data-id="${g.id}"><span class="em">${EMOJI[g.id]||"📦"}</span><span class="tx"><b>${esc(g.name)}</b>
      <small>${esc(tops(g).join(" · "))}</small><span class="n"><i>${n.toLocaleString("az")}</i> məhsul</span></span><span class="go">›</span></button>`).join("");
   renderDrops();
-  $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazaların onlayn qiymətləri göstərilir;
+  $("srcNote").innerHTML=`Məlumat faylının yenilənməsi: <b>${esc(DB.last_updated||"—")}</b>. Hər mağazanın son uğurlu yoxlaması aşağıda göstərilir. Mağazaların onlayn qiymətləri göstərilir;
     Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
+  $("sourceDetails").innerHTML=sourceDetails(DB);
+}
+
+function sourceDetails(d){
+  const time=v=>v?`${v.slice(8,10)}.${v.slice(5,7)}.${v.slice(0,4)} ${v.slice(11,16)}`:"—";
+  const method={own:"Mağazanın onlayn kataloqu","own+wolt":"Onlayn kataloq və çatdırılma qiymətləri",wolt:"Çatdırılma qiymətləri","wolt-arxiv":"Çatdırılma qiymətləri · arxiv"};
+  const status={ok:"Son yoxlama uğurludur",failed:"Son yoxlama alınmadı · əvvəlki qiymətlər arxivdir",partial:"Natamam nəticə · əvvəlki qiymətlər arxivdir"};
+  const meta=sourceMeta(d.meta,d.stores);
+  const rows=d.stores.map(s=>{
+    const m=meta[s]||{}, ref=Object.hasOwn(SOURCE_REFS,s)&&SOURCE_REFS[s];
+    const link=ref?`<a href="${esc(ref.url)}" target="_blank" rel="noopener noreferrer">${esc(ref.label)} ↗</a>${ref.note?`<small>${esc(ref.note)}</small>`:""}`:"Rəsmi qiymət kataloqu təsdiqlənməyib";
+    const state=m.auto_update===false?"Avtomatik yenilənmə bağlıdır":status[m.check_status]||"Yoxlama nəticəsi qeydə alınmayıb";
+    return `<tr><th scope="row">${esc(s)}</th><td>${esc(method[m.source_type]||"Mənbə məlumatı qeydə alınmayıb")}<small>${link}</small></td><td>${esc(m.updated||time(m.last_success))}<small>Son cəhd: ${esc(time(m.last_attempt))}</small></td><td>${esc(state)}</td></tr>`;
+  }).join("");
+  return `<p class="note">Qiymətlər onlayn müşahidələrdir. Uğursuz yoxlamada saxlanmış qiymətlər arxiv kimi göstərilir. Kampaniya kataloqları ayrıca yoxlama mənbəyidir; buradan qiymətlər avtomatik köçürülmür.</p><div class="sources-scroll" tabindex="0" role="region" aria-label="Mağazalar üzrə mənbə və vaxt cədvəli"><table><caption>Vaxtlar Bakı vaxtı ilədir. Son uğurlu yoxlama hər məhsulun stokda olduğunu təsdiqləmir.</caption><thead><tr><th scope="col">Mağaza</th><th scope="col">Mənbə və rəsmi yoxlama</th><th scope="col">Son uğurlu yoxlama</th><th scope="col">Vəziyyət</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 /* son günlərdə ucuzlayanlar (data-dakı pp/pd-dən; qruplaşdırma tələb olunmur) */
@@ -1394,7 +1437,7 @@ function openCat(id,focus,sub){
   const hasKg=gs.some(g=>g.a.kg), hasW=gs.some(g=>!g.a.kg&&["kq","q"].includes(g.a.wu)), hasV=gs.some(g=>["L","ml"].includes(g.a.wu));
   const modes=[["Hamısı",1],["⚖ Çəki",hasW],["💧 Həcm",hasV],["🛒 Kq ilə satılan",hasKg],["📦 Digər",1]].filter(m=>m[1]).map(m=>m[0]);
   $("modes").innerHTML=modes.map(m=>pill(m,m,"mode")).join("");
-  const cnt={}; gs.forEach(g=>{ if(g.n<2)return; for(const[s,o]of Object.entries(g.offers)) if(o.p===g.min) cnt[s]=(cnt[s]||0)+1; });
+  const cnt={}; gs.forEach(g=>{ if(g.n<2)return; for(const[s,o]of Object.entries(g.offers)) if(!o.st&&o.p===g.min) cnt[s]=(cnt[s]||0)+1; });
   const ch=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0];
   $("champ").hidden=!ch; if(ch){ $("champ").textContent=`🏆 Ən sərfəli: ${ch[0]} (${ch[1]} məhsulda ən ucuz) ›`; $("champ").dataset.s=ch[0]; }
   apply();
@@ -1458,7 +1501,7 @@ function apply(){
 function offer(g,s){
   const o=g.offers[s], l=o&&shopLink(s,o), c0=`<i class="dot" style="--c:var(--${esc(s)})"></i>${esc(s)}${l&&l.x?extA(l,s,"↗"):""}`;
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
-  const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
+  const c=g.n>1&&!o.st?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
   return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
@@ -1467,6 +1510,7 @@ const cheap=g=>loOf(g)||(([s,o])=>({s,p:o.p}))(Object.entries(g.offers).sort((x,
 /* bir neçə mağaza eyni ən ucuz qiymətdədirsə hamısı yazılır (əvvəl ilki tək "ən ucuz" kimi göstərilirdi); statik səhifələrlə eyni:
    "Ən ucuz: Bravo, OBA, Araz" və ya "5 mağazada eyni qiymət" */
 function bestOf(g){
+  if(!loOf(g)) return '<div class="best"><span>Yalnız arxiv qiymətlər var · aktual müqayisə yoxdur</span></div>';
   const e=cheap(g), tie=Object.entries(g.offers).filter(([s,o])=>!o.st&&Math.abs(o.p-e.p)<.005).map(([s])=>s), t=tie.length>1?tie:[e.s];
   const lb=t.length>3?`${t.length} mağazada eyni qiymət`:`Ən ucuz: ${t.map(esc).join(", ")}`;
   const sv=g.n<2?`<small>yalnız bu mağazada</small>`:g.save>.004?`<small>${fmt(g.save)} qənaət (ən bahadan)</small>`:`<small>mağazalar arasında fərq yoxdur</small>`;
@@ -1548,9 +1592,9 @@ function render(){
    o mağaza ayrıca "yoxdur: ..." ilə göstərilir. Qiymət = kartdakı qiymət × say (kq ilə satılanda kq sayı). */
 function basket(){
   const rs=FAV.map(f=>({f,g:GM[f.t]?groups(f.t).find(g=>matchesFav(f,g)):null})), ok=rs.filter(x=>x.g), n=ok.length;
-  const tot=stores.map(s=>{ let t=0; const miss=[]; for(const {f,g} of ok){ const o=g.offers[s]; if(o) t+=o.p*f.q; else miss.push(g.name); } return {s,t,miss,h:n-miss.length}; }).filter(x=>x.h);
+  const tot=stores.map(s=>{ let t=0; const miss=[]; for(const {f,g} of ok){ const o=g.offers[s]; if(o&&!o.st) t+=o.p*f.q; else miss.push(g.name); } return {s,t,miss,h:n-miss.length}; }).filter(x=>x.h);
   const full=tot.filter(x=>!x.miss.length).sort((a,b)=>a.t-b.t), part=tot.filter(x=>x.miss.length).sort((a,b)=>b.h-a.h||a.t-b.t);
-  return {rs,ok,n,full,part,ideal:ok.reduce((a,{f,g})=>a+g.min*f.q,0)};
+  return {rs,ok,n,full,part,ideal:ok.every(({g})=>loOf(g))?ok.reduce((a,{f,g})=>a+loOf(g).p*f.q,0):null};
 }
 function renderList(){
   renderSplit();
@@ -1567,7 +1611,7 @@ function renderList(){
       <small>${x.miss.length?`${x.h}/${n} məhsul`:i===0?(top[1]?"ən ucuz":"tam səbət"):x.t-top[0].t<.005?"eyni qiymət":`+${fmt(x.t-top[0].t)} bahalı`}</small></div>`).join("")+`</div>`;
     if(top.length){   // məhsul-məhsul müqayisə: ilk iki mağaza
       h+=`<h2>Məhsul-məhsul</h2><table class="bk-t"><thead><tr><th>Məhsul</th>${top.map(x=>`<th>${esc(x.s)}</th>`).join("")}</tr></thead><tbody>`+
-        ok.map(({f,g})=>{ const ps=top.map(x=>g.offers[x.s]?g.offers[x.s].p*f.q:null), lo=Math.min(...ps.filter(v=>v!=null));
+        ok.map(({f,g})=>{ const ps=top.map(x=>g.offers[x.s]&&!g.offers[x.s].st?g.offers[x.s].p*f.q:null), lo=Math.min(...ps.filter(v=>v!=null));
           return `<tr><td>${esc(g.name)}${f.q>1?` <small>× ${f.q}${g.a.kg?" kq":""}</small>`:g.a.kg?" <small>1 kq</small>":""}</td>`+
             ps.map(v=>v==null?`<td class="na">yoxdur</td>`:`<td class="mono${top.length>1&&ps.every(x=>x!=null)&&v===lo?" lo":""}">${fmt(v)}</td>`).join("")+`</tr>`; }).join("")+
         `</tbody><tfoot><tr><td>Cəmi</td>${top.map(x=>`<td class="mono">${fmt(x.t)}</td>`).join("")}</tr></tfoot></table>`;
@@ -1575,14 +1619,14 @@ function renderList(){
     const rest=full.slice(2), rp=full.length?part:part.slice(2);
     const det=x=>`<details class="bk-d"><summary><span>${dot(x.s)}<span>${esc(x.s)} <small>${x.miss.length?`${x.h}/${n} məhsul · ${x.miss.length} yoxdur`:`hamısı var`}</small></span></span>
       <b class="mono">${fmt(x.t)} <small>${x.miss.length?"olanların cəmi":full[0]&&x!==full[0]?"+"+fmt(x.t-full[0].t):""}</small></b></summary><div class="bk-dl">`+
-      ok.map(({f,g})=>{ const o=g.offers[x.s]; return `<div class="${o?(o.p===g.min&&g.n>1?"lo":""):"na"}"><span>${esc(g.name)}${f.q>1?` <small>× ${f.q}</small>`:""}</span><b class="mono">${o?fmt(o.p*f.q):"yoxdur"}</b></div>`; }).join("")+
+      ok.map(({f,g})=>{ const o=g.offers[x.s]&&!g.offers[x.s].st?g.offers[x.s]:null; return `<div class="${o?(o.p===g.min&&g.n>1?"lo":""):"na"}"><span>${esc(g.name)}${f.q>1?` <small>× ${f.q}</small>`:""}</span><b class="mono">${o?fmt(o.p*f.q):"yoxdur"}</b></div>`; }).join("")+
       `<div class="sum2"><span>Cəmi (${x.h} məhsul)</span><b class="mono">${fmt(x.t)}</b></div></div></details>`;
     if(rest.length||rp.length) h+=`<h2>Digər mağazalar</h2><p class="bk-note" style="margin:0 0 8px">Mağazaya bas: səbətdəki məhsulların orada qiyməti və cəmi.</p>`+rest.map(det).join("")+rp.map(det).join("");
-    const bf=full[0]; if(n>1&&(!bf||bf.t-ideal>.005)) h+=`<p class="bk-note">Hər məhsulu ən ucuz olduğu mağazadan alsan: <b class="mono">${fmt(ideal)}</b>${bf?` (−${fmt(bf.t-ideal)})`:""}</p>`;   // səbətin hamısı bir mağazada olmasa da göstərilir: o halda yeganə tam qiymətdir
+    const bf=full[0]; if(ideal!=null&&n>1&&(!bf||bf.t-ideal>.005)) h+=`<p class="bk-note">Hər məhsulu ən ucuz olduğu mağazadan alsan: <b class="mono">${fmt(ideal)}</b>${bf?` (−${fmt(bf.t-ideal)})`:""}</p>`;   // səbətin hamısı bir mağazada olmasa da göstərilir: o halda yeganə tam qiymətdir
   }
   $("favSum").innerHTML=h;
   $("favList").innerHTML=`<h2>Səbətdəki məhsullar (${FAV.length})</h2>`+rs.map(({f,g})=>g?`<div class="bk-i"><span class="ic">${picOf(g)}</span>
-    <button class="nm" data-go="#/c/${g.t}/${g.pid}"><b>${esc(g.name)}</b><small>ən ucuz: ${esc(cheap(g).s)} <span style="white-space:nowrap">${fmt(g.min)}${unit(g)}</span></small></button>
+    <button class="nm" data-go="#/c/${g.t}/${g.pid}"><b>${esc(g.name)}</b><small>${loOf(g)?`ən ucuz: ${esc(loOf(g).s)} <span style="white-space:nowrap">${fmt(loOf(g).p)}${unit(g)}</span>`:"Yalnız arxiv qiymətlər var"}</small></button>
     <div class="qty"><button data-bq="-1" data-k="${esc(f.k)}" aria-label="Azalt">−</button><b>${f.q}</b><button data-bq="1" data-k="${esc(f.k)}" aria-label="Artır">+</button></div>
     <button class="x" data-del="${esc(f.k)}" aria-label="Səbətdən çıxar">✕</button></div>`
     :`<div class="bk-i"><span class="nm"><b>${esc(f.n)}</b><small>Bu məhsul artıq tapılmadı</small></span><button class="x" data-del="${esc(f.k)}" aria-label="Sil">✕</button></div>`).join("")+
@@ -1674,9 +1718,10 @@ function altHtml(ok){
 function favText(){
   const {full,n,ideal}=basket();
   return FAV.map(f=>{ const g=GM[f.t]?groups(f.t).find(g=>matchesFav(f,g)):null; if(!g) return "• "+f.n+" × "+f.q;
-    const e=cheap(g), kg=g.a.kg?" kq":""; return `• ${g.name} × ${f.q}${kg} — ${e.s} ${fmt(e.p*f.q)}${f.q>1?` (${fmt(e.p)}${kg?"/kq":""})`:""}`; }).join("\n")+
+    const e=loOf(g), kg=g.a.kg?" kq":""; if(!e) return `• ${g.name} × ${f.q}${kg} — aktual qiymət yoxdur`;
+    return `• ${g.name} × ${f.q}${kg} — ${e.s} ${fmt(e.p*f.q)}${f.q>1?` (${fmt(e.p)}${kg?"/kq":""})`:""}`; }).join("\n")+
     (full.length?"\n\nSəbətin cəmi: "+full.slice(0,2).map(x=>`${x.s} ${fmt(x.t)}`).join(", "):"")+
-    (n>1&&(!full.length||full[0].t-ideal>.005)?`${full.length?"\n":"\n\n"}Hər məhsulu ən ucuz olduğu mağazadan: ${fmt(ideal)}`:"");
+    (ideal!=null&&n>1&&(!full.length||full[0].t-ideal>.005)?`${full.length?"\n":"\n\n"}Hər məhsulu ən ucuz olduğu mağazadan: ${fmt(ideal)}`:"");
 }
 
 /* ─────────── routing (hash): #/c/<qrup>[/<pNN məhsul | alt növ>] ─────────── */

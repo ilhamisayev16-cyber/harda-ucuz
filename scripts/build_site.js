@@ -87,7 +87,7 @@ function main() {
   }
   db.product_ids=registry; S.setIds(registry);
   writeAtomic(path.join(OUT,"data","product_ids.json"),JSON.stringify(registry));
-  const catalog={version:1,last_updated:db.last_updated,stores:db.stores,groups:db.groups,
+  const catalog={version:1,last_updated:db.last_updated,stores:db.stores,groups:db.groups,meta:db.meta,
     highlights:{},categoryCounts:{},categories:Object.fromEntries(Object.entries(db.categories).map(([k,c])=>[k,{name:c.name,stores:{}}])),counts:{},files:{}};
   const highlights=[];
   for(const [cid,c] of Object.entries(db.categories)){
@@ -104,7 +104,7 @@ function main() {
   for(const g of db.groups){
     const categories=Object.fromEntries(g.cats.map(k=>[k,db.categories[k]])), ids={};
     for(const c of CARDS[g.id]) for(const k of S.aliases(c)) ids[k]=registry[k];
-    const payload=JSON.stringify({last_updated:db.last_updated,stores:db.stores,groups:[g],categories,product_ids:ids});
+    const payload=JSON.stringify({last_updated:db.last_updated,stores:db.stores,groups:[g],categories,meta:db.meta,product_ids:ids});
     const digest=crypto.createHash("sha256").update(payload).digest("hex").slice(0,16), file=`catalog/${g.id}-${digest}.json`;
     catalog.counts[g.id]=Object.values(categories).reduce((n,c)=>n+Object.values(c.stores).reduce((m,l)=>m+l.length,0),0);
     catalog.files[g.id]=file; writeAtomic(path.join(OUT,"data",file),payload);
@@ -210,7 +210,7 @@ function buildProducts(db,CARDS,S,built){
       const h=history[S.hash(store,o.n)]||[], rows=h.slice(-30);
       return `<details><summary>${esc(store)} · ${o.w?"Wolt":"Mağazanın onlayn qiyməti"}${o.st?" · köhnə məlumat":""}</summary><p class="mute">Qeydə alınmış qiymət dəyişiklikləri; gündəlik stok göstəricisi deyil.</p>`+(rows.length?`<ul>${rows.map(([d,p])=>`<li>${esc(String(d).split("-").reverse().join("."))} — ${fmt(p)}</li>`).join("")}</ul>`:`<p>Hələ qiymət dəyişikliyi qeydə alınmayıb.</p>`)+`</details>`;
     }).join("")+`<h2>Oxşar məhsulları araşdır</h2>`+(built.has(`qiymetler/${c.t}/${c.c}.html`)?`<a href="../qiymetler/${c.t}/${c.c}.html">${esc(S.catName(c.c))} qiymətləri</a>`:`<a href="../qiymetler/${c.t}/">${esc((db.groups.find(g=>g.id===c.t)||{}).name||"Kateqoriya")} qiymətləri</a>`);
-    const html=page({path:rel,title:c.name+" — qiymət müqayisəsi",desc:`${c.name}: ${offers.map(([s,o])=>s+" "+fmt(o.p)).join(", ")}. Mənbələr və qeydə alınmış qiymət tarixçəsi.`,upd:db.last_updated,crumbs:[["","Ana səhifə"],[`qiymetler/${c.t}/`,"Kateqoriya"]],h1:esc(c.name),lead:`${offers.length} mağazada qiymət məlumatı · ${c.a.kg?"1 kq üçün":"qablaşdırma üçün"}`,app:`#/c/${c.t}/${c.pid}`,body});
+    const html=page({path:rel,title:c.name+" — qiymət müqayisəsi",desc:`${c.name}: ${offers.map(([s,o])=>s+" "+fmt(o.p)+(o.st?" (arxiv)":"")).join(", ")}. Mənbələr və qeydə alınmış qiymət tarixçəsi.`,upd:db.last_updated,crumbs:[["","Ana səhifə"],[`qiymetler/${c.t}/`,"Kateqoriya"]],h1:esc(c.name),lead:`${offers.length} mağazada qiymət məlumatı · ${c.a.kg?"1 kq üçün":"qablaşdırma üçün"}`,app:`#/c/${c.t}/${c.pid}`,body});
     fs.writeFileSync(path.join(tmp,c.pid+".html"),html);urls.push(rel);
     // Old ids remain valid when two previously separate cards are merged.
     for(const k of S.aliases(c)){ const old=db.product_ids[k]; if(old&&old!==c.pid&&!seen.has(old)&&!activeIds.has(old)){fs.writeFileSync(path.join(tmp,old+".html"),html);seen.add(old);} }

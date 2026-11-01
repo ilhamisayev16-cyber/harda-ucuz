@@ -283,9 +283,9 @@ def test_big_own_discount_preserves_both_observed_online_and_wolt_prices():
            {"name": "Kivi kq", "price": 1.0, "rp": 4.0}]
     wolt = [{"name": "Avokado əd", "wolt_price": 1.99}, {"name": "Banan kq", "wolt_price": 2.2}]
     out = {i["name"]: i for i in S.merge_own_wolt(own, wolt)}
-    assert out["Avokado əd"] == {"name": "Avokado əd", "price": 0.99, "wolt_price": 1.99, "online_offer": True}      # 72% aksiya → Wolt
-    assert out["Banan kq"] == {"name": "Banan kq", "price": 2.0, "wolt_price": 2.2}   # kiçik aksiya: öz qiymət
-    assert out["Kivi kq"] == {"name": "Kivi kq", "price": 1.0}                  # Wolt yoxdur: öz qiymət qalır
+    assert out["Avokado əd"] == {"name": "Avokado əd", "price": 0.99, "op": 3.49, "wolt_price": 1.99, "online_offer": True}   # 72% aksiya → Wolt
+    assert out["Banan kq"] == {"name": "Banan kq", "price": 2.0, "op": 2.5, "wolt_price": 2.2}   # kiçik aksiya: öz qiymət; op = saytın adi qiyməti
+    assert out["Kivi kq"] == {"name": "Kivi kq", "price": 1.0, "op": 4.0}       # Wolt yoxdur: öz qiymət + saytın endirimi
     assert len(out) == 3 and all("rp" not in i for i in out.values())
 
 
@@ -315,6 +315,69 @@ def test_reassign_other_by_keyword_brand_word_and_duplicate():
     assert {i["name"] for i in st["siqaret"]["stores"]["Bazarstore"]} == {"Kent Nanotek Neo 4"}
     assert st["oyuncaq"]["stores"]["Bazarstore"][0]["name"].startswith("St Skuter")
     assert st["mesis"]["stores"]["Bazarstore"][0]["name"].startswith("Urojay Qapaq")
+
+
+def test_wolt_old_price_is_kept_only_when_higher_and_plausible():
+    item = lambda p, op: {"name": "Selpak Tualet Kağızı 16əd", "price": p, "original_price": op}
+    assert S._wolt_entry(item(999, 2670))[1]["op"] == 26.7
+    assert "op" not in S._wolt_entry(item(999, 999))[1]       # eyni qiymət: endirim deyil
+    assert "op" not in S._wolt_entry(item(999, None))[1]
+    assert "op" not in S._wolt_entry(item(100, 5000))[1]      # 50 dəfə: ağlasığmaz
+    assert "op" not in S._stale({"name": "x", "wolt_price": 1.0, "op": 2.0})
+
+
+def test_multi_branch_regular_price_is_median_of_regular_prices(monkeypatch):
+    res = {"b1": [{"name": "Fairy 1 L", "wolt_price": 2.0, "op": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0, "op": 5.0}],
+           "b2": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0, "op": 5.0}],
+           "b3": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.5}]}
+    monkeypatch.setattr(S, "scrape_wolt_full", lambda store, slug: {"temizlik": [dict(e) for e in res[slug]]})
+    monkeypatch.setattr(S.time, "sleep", lambda *_: None)
+    monkeypatch.setenv("WOLT_BRANCHES_BRAVO", "b1,b2,b3")
+    out = {e["name"]: e for e in S.scrape_wolt_multi("Bravo")["temizlik"]}
+    assert out["Fairy 1 L"]["wolt_price"] == 5.0 and "op" not in out["Fairy 1 L"]
+    assert out["Pril 1 L"]["wolt_price"] == 3.0 and out["Pril 1 L"]["op"] == 5.0
+
+
+def test_wolt_discount_kept_with_old_price_and_store_discount_marked():
+    own = [{"name": "Klar Maye Qabyuyan 1 L", "price": 3.99},                      # OBA saytı: köhnə qiymət → endirim yalnız Wolt-da
+           {"name": "Natura Albalı Şirəsi 1 L", "price": 1.99},                    # saytda da endirimli → mağazanın endirimi
+           {"name": "Eti Adicto Intense 35qr", "price": 0.79, "rp": 1.0}]          # Araz saytı adi qiyməti verir
+    wolt = [{"name": "Klar Maye Qabyuyan 1 L", "wolt_price": 2.99, "op": 3.99},
+            {"name": "Natura Albalı Şirəsi 1 L", "wolt_price": 1.99, "op": 2.49},
+            {"name": "Selpak Tualet Kağızı 16əd", "wolt_price": 9.99, "op": 26.7}]   # yalnız Wolt-da
+    m = {e["name"]: e for e in S.merge_own_wolt(own, wolt)}
+    assert m["Klar Maye Qabyuyan 1 L"] == {"name": "Klar Maye Qabyuyan 1 L", "price": 3.99, "wolt_price": 2.99}
+    assert m["Natura Albalı Şirəsi 1 L"] == {"name": "Natura Albalı Şirəsi 1 L", "price": 1.99, "op": 2.49}
+    assert m["Eti Adicto Intense 35qr"]["op"] == 1.0
+    assert m["Selpak Tualet Kağızı 16əd"] == {"name": "Selpak Tualet Kağızı 16əd", "wolt_price": 9.99, "op": 26.7}
+
+
+def test_unify_cats_moves_minority_store_to_majority_group():
+    d = S.empty_data()
+    st = d["categories"]
+    st["araq"]["stores"]["Araz"] = [{"name": "Fortuna Premium 1 Lt", "price": 9.0}]
+    st["araq"]["stores"]["SPAR"] = [{"name": "Fortuna Premium 1 Lt", "wolt_price": 9.0}]
+    st["kola"]["stores"]["Rahat"] = [{"name": "Fortuna Premium 1 Lt", "wolt_price": 8.5}]                  # 2 mağaza araq, 1 kola → araq
+    st["temizlik"]["stores"]["Araz"] = [{"name": "Cif Krem Limon 500ml", "price": 3.0, "gtin": "8683130029459"}]
+    st["temizlik"]["stores"]["SPAR"] = [{"name": "Cif Krem Limon 500ml", "wolt_price": 3.0, "gtin": "8683130029459"}]
+    st["sire"]["stores"]["Rahat"] = [{"name": "Pfanner Moruq Siropu 1 l", "wolt_price": 6.0, "gtin": "8683130029459"}]  # səhv barkod: ad fərqli → qalır
+    st["sokolad"]["stores"]["Tamstore"] = [{"name": "Praxi Hamam Təmizləyici 500ml", "wolt_price": 2.0, "gtin": "123456789012"}]
+    st["temizlik"]["stores"]["Bravo"] = [{"name": "Praxi Hamam Təmizləyicisi 500 ml", "wolt_price": 2.1, "gtin": "123456789012"}]  # 1:1 → dəyişmir
+    assert S.unify_cats(d) == 1
+    assert st["kola"]["stores"]["Rahat"] == [] and [i["name"] for i in st["araq"]["stores"]["Rahat"]] == ["Fortuna Premium 1 Lt"]
+    assert st["sire"]["stores"]["Rahat"][0]["name"].startswith("Pfanner")
+    assert st["sokolad"]["stores"]["Tamstore"] and st["temizlik"]["stores"]["Bravo"]
+    assert S.unify_cats(d) == 0
+
+
+def test_unify_cats_on_real_data_keeps_every_item():
+    d = copy.deepcopy(PRICES)
+    n0 = sum(len(l) for c in d["categories"].values() for l in c["stores"].values())
+    S.unify_cats(d)
+    assert sum(len(l) for c in d["categories"].values() for l in c["stores"].values()) <= n0
+    assert S.unify_cats(d) == 0
+    ok, errs = SRC.validate_prices(d)
+    assert ok, errs
 
 
 def test_reassign_other_on_real_data_never_grows_other():

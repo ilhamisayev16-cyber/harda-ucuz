@@ -5,5 +5,7 @@
   "name": "harda-ucuz",
   "main": "cloudflare/worker.js",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": ".", "binding": "ASSETS" }
+  "assets": { "directory": ".", "binding": "ASSETS" },
+  // PR-lar üçün Workers Builds "npx wrangler preview" işlədir; bu blok olmasa build düşür. Boş ola bilər: assets və s. yuxarıdakılardan gəlir.
+  "previews": {}
 }

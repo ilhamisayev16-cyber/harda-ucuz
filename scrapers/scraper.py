@@ -942,6 +942,73 @@ def reassign_other(data):
         cats["diger"]["stores"][store] = keep
     return moved
 
+def unify_cats(data):
+    """Eyni məhsul (eyni barkod və ya eyni ad) mağazalarda fərqli QRUPA düşübsə, azlıqda qalan mağazalar çoxluğun kateqoriyasına
+    köçürülür; köçənlərin sayını qaytarır. Sayt məhsulları yalnız bir qrupun içində müqayisə edir: "Fortuna Premium 1 Lt" Araz-da
+    araqdır, Rahat-da kola rəfindədir, "Praxi hamam təmizləyici" Tamstore-da şokoladdadır — belə məhsul mağazalar arasında
+    müqayisə olunmurdu. Qayda: hər qrup neçə fərqli mağazada var; ən çox mağazası olan qrup digərlərindən AÇIQ çoxdursa
+    (bərabərlikdə heç nə dəyişmir) qalibdir. Hədəf kateqoriya: qalib qrupda ən çox mağazanın verdiyi (bərabərdə adın öz təsnifatı).
+    Eyni qrupun içində alt kateqoriya fərqinə toxunulmur, "diger" heç vaxt hədəf olmur."""
+    from collections import Counter
+    cats = data.get("categories", {})
+    rows = []   # (cid, store, item)
+    for cid, c in cats.items():
+        if cid not in CATEGORIES: continue
+        for s, items in c.get("stores", {}).items():
+            for it in items: rows.append((cid, s, it))
+    par = list(range(len(rows)))
+    def root(i):
+        while par[i] != i: par[i] = par[par[i]]; i = par[i]
+        return i
+    # Wolt barkodu bəzən səhvdir (Pfanner siropu ilə Cif kremi eyni GTIN-də): barkod yalnız adlarda ən azı 2 ortaq söz olanda birləşdirir
+    W = [{w[:5] for w in re.findall(r"[a-z]{3,}", _f(it["name"]))} for _, _, it in rows]
+    first, byg = {}, {}
+    for i, (cid, s, it) in enumerate(rows):
+        j = first.setdefault(name_key(it["name"]), i)
+        if j != i: par[root(i)] = root(j)
+        if it.get("gtin"):
+            b = byg.setdefault(it["gtin"], [])
+            for j in b:
+                if len(W[i] & W[j]) >= 2: par[root(i)] = root(j)
+            b.append(i)
+    cl = {}
+    for i in range(len(rows)): cl.setdefault(root(i), []).append(i)
+    grp = lambda cid: None if cid == "diger" else CAT2GROUP.get(cid)
+    move = []   # (i, hədəf)
+    for ix in cl.values():
+        if len(ix) < 2: continue
+        G = {}
+        for i in ix:
+            g = grp(rows[i][0])
+            if g: G.setdefault(g, set()).add(rows[i][1])
+        if len(G) < 2 and not any(rows[i][0] == "diger" for i in ix): continue
+        if not G: continue
+        rank = sorted(((len(v), g) for g, v in G.items()), reverse=True)
+        if len(rank) > 1 and rank[0][0] == rank[1][0]: continue   # bərabər: hansının düz olduğu bilinmir
+        win = rank[0][1]
+        cc = Counter()
+        for i in ix:
+            if grp(rows[i][0]) == win: cc[rows[i][0]] += 1
+        top = cc.most_common()
+        tgt = top[0][0]
+        if len(top) > 1 and top[0][1] == top[1][1]:
+            nc = _name_cat(rows[ix[0]][2]["name"])[0]
+            tgt = nc if cc.get(nc) == top[0][1] else min(c for c, k in top if k == top[0][1])
+        for i in ix:
+            if grp(rows[i][0]) != win: move.append((i, tgt))
+    if not move: return 0
+    gone = {id(rows[i][2]) for i, _ in move}
+    for c in cats.values():
+        for s, items in c.get("stores", {}).items():
+            if any(id(it) in gone for it in items): c["stores"][s] = [it for it in items if id(it) not in gone]
+    have = {(cid, s, name_key(it["name"])) for cid, c in cats.items() for s, l in c.get("stores", {}).items() for it in l}
+    for i, tgt in move:
+        cid, s, it = rows[i]
+        k = (tgt, s, name_key(it["name"]))
+        if k in have: continue   # mağaza onu hədəfdə artıq verir: təkrar yaranmasın
+        have.add(k); cats[tgt]["stores"].setdefault(s, []).append(it)
+    return len(move)
+
 def tidy(data):
     """Bütün mağazalar: adlar təmizlənir, dublikatlar (kateqoriyalar arası da) birləşir, köhnə şəkil linkləri silinir (sayt şəkil göstərmir)."""
     cats = data.get("categories", {})
@@ -1364,6 +1431,23 @@ def _wolt_price(item):
             return round(v / 100, 2)
     return None
 
+def _wolt_old_price(item, price):
+    """Wolt-un göstərdiyi köhnə (üstündən xətt çəkilmiş) qiymət: original_price > price olanda endirimdir.
+    Wolt endirimin yalnız Wolt-a aid olub-olmadığını demir (məhsulda heç bir sahə/yazı bunu ayırmır, 2026-11-01 yoxlanıb). Ona görə:
+    Wolt qiymətində kartda "Wolt-da endirim · əvvəl X" yazılır (_wolt_regular); mağaza saytı da eyni endirimli qiyməti verirsə, bu
+    mağazanın öz endirimidir və "Endirim · əvvəl X" yazılır (merge_own_wolt). Ağlasığmaz fərq (10 dəfədən çox) atılır."""
+    v = item.get("original_price")
+    if isinstance(v, dict): v = v.get("amount") or v.get("value")
+    if not isinstance(v, (int, float)) or not price: return None
+    op = round(v / 100, 2)
+    return op if price * 1.01 < op <= price * 10 else None
+
+def _wolt_regular(w):
+    """Yalnız Wolt-dan gələn məhsul: qiymət Wolt-dakı kimidir (endirimli), op = Wolt-un adi qiyməti — kartda "Wolt-da endirim · əvvəl X".
+    Endirimin mağazada da olub-olmadığı bilinmir (Wolt ayırmır; 2026-11-01: Araz-da 96%-i saytda da var, OBA-da 71%-i yoxdur),
+    ona görə yazı "Wolt-da" deyir; sahibin qərarı (2026-11-01): Wolt endirimi gizlədilmir."""
+    return {k: w[k] for k in ("name", "wolt_price", "wt", "gtin", "op") if k in w}
+
 def _wolt_weight(item):
     """Çəkiyə görə satılan "ədəd" məhsulda bir ədədin təxmini çəkisi (qram): sell_by_weight_config.grams_per_step.
     input_type="grams" olanlarda (meyvə-tərəvəz) parça çəkisi yoxdur, qiymət 1 kq üçün qalır."""
@@ -1382,6 +1466,8 @@ def _wolt_entry(item, path=""):
     price = _wolt_price(item)
     if not name or price is None or price >= 999: return None
     e = {"name": name, "wolt_price": price}
+    op = _wolt_old_price(item, price)
+    if op: e["op"] = op
     wt = _wolt_weight(item)
     if wt: e["wt"] = wt
     g = item.get("barcode_gtin")   # ştrix-kod: məhsul kimliyi və şəkli üçün saxlanır
@@ -1536,9 +1622,9 @@ def scrape_wolt_multi(store):
                 k = name_key(clean_name(e["name"])) or e["name"]
                 m = merged.get(k)
                 if m is None:
-                    merged[k] = {"cid": cid, "p": [e["wolt_price"]], "e": dict(e)}
+                    merged[k] = {"cid": cid, "p": [e["wolt_price"]], "r": [e.get("op") or e["wolt_price"]], "e": dict(e)}
                 else:
-                    m["p"].append(e["wolt_price"])
+                    m["p"].append(e["wolt_price"]); m["r"].append(e.get("op") or e["wolt_price"])
                     if "wt" not in m["e"] and e.get("wt"): m["e"]["wt"] = e["wt"]
                     if "gtin" not in m["e"] and e.get("gtin"): m["e"]["gtin"] = e["gtin"]
         print(f"  [Wolt/{store}] {slug}: +{len(merged) - before} yeni (cəmi {len(merged)}); {round(time.time() - t0)} san", flush=True)
@@ -1547,6 +1633,9 @@ def scrape_wolt_multi(store):
     results = {c: [] for c in CATEGORIES}
     for m in merged.values():
         e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
+        e.pop("op", None)   # endirimsiz (adi) qiymət də filiallar üzrə median
+        r = round(statistics.median_low(m["r"]), 2)
+        if r > e["wolt_price"]: e["op"] = r
         results[m["cid"]].append(e)
     print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
     WOLT_SRC[store] = wolt_src_multi(slugs)
@@ -1634,9 +1723,13 @@ def merge_own_wolt(own_list, wolt_list):
         if item.get("gtin"): entry["gtin"] = item["gtin"]
         if item.get("ph"): entry["ph"] = item["ph"]
         if item.get("u"): entry["u"] = item["u"]
+        if (item.get("rp") or 0) > item["price"]: entry["op"] = item["rp"]   # mağaza saytının öz endirimi (Araz: adi qiymət)
         j = match.get(i)
         if j is not None:
             w = wolt_list[j]
+            # Wolt endirimi mağazanın saytındakı qiymətlə eynidirsə, mağazanın öz endirimidir (OBA saytı köhnə qiyməti vermir)
+            same = abs(w["wolt_price"] - item["price"]) <= 0.011
+            if "op" not in entry and w.get("op") and same: entry["op"] = w["op"]
             if abs(w["wolt_price"] - item["price"]) > 0.005: entry["wolt_price"] = w["wolt_price"]
             if w.get("wt"): entry["wt"] = w["wt"]
             if w.get("gtin"): entry["gtin"] = w["gtin"]
@@ -1645,7 +1738,7 @@ def merge_own_wolt(own_list, wolt_list):
         merged.append(entry)
     for j, w in enumerate(wolt_list):   # yalnız Wolt-da olanlar
         if j not in used:
-            merged.append({k: w[k] for k in ("name", "wolt_price", "wt", "gtin") if k in w})
+            merged.append(_wolt_regular(w))
     return merged
 
 # ── Qiymət dəyişikliyi: məhsulda "pp" (əvvəlki qiymət) + "pd" (dəyişmə tarixi); tam tarixçə data/history.json-da ───────
@@ -1720,7 +1813,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     new = {}
     for cid in CATEGORIES:
         if wolt_only:
-            items = [{k: w[k] for k in ("name", "wolt_price", "wt", "gtin") if k in w}
+            items = [_wolt_regular(w)
                      for w in wolt_res.get(cid,[])]
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))
@@ -1748,7 +1841,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
 def _stale(it):
     """Arxiv (yenidən yoxlanmamış) qiymət: köhnə dəyişiklik nişanı (pp/pd) atılır — yoxlanmamış qiymət ana səhifədə "ucuzlayan" kimi
     və kartda "↓30%" ilə göstərilməsin (renderDrops arxiv məhsulu ayırmır)."""
-    return {**{k: v for k, v in it.items() if k not in ("pp", "pd")}, "stale": True}
+    return {**{k: v for k, v in it.items() if k not in ("pp", "pd", "op")}, "stale": True}
 
 def mark_stale(store, data):
     """Wolt söndürülüb və başqa mənbə yoxdur: mövcud məhsullar silinmir, amma yenidən yoxlanmadığı işarələnir."""
@@ -1768,6 +1861,7 @@ STORE_KEYS = {s.lower(): s for s in ALL_STORES}   # --store açarı -> mağaza a
 def _save(data, out):
     data["groups"] = GROUPS
     reassign_other(data)
+    unify_cats(data)
     data["last_updated"] = now().strftime("%d.%m.%Y %H:%M")
     ok, errs = validate_prices(data)
     if not ok:   # səhv/natamam data əvvəlki etibarlı faylın yerinə yazılmır

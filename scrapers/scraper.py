@@ -1431,6 +1431,17 @@ def _wolt_price(item):
             return round(v / 100, 2)
     return None
 
+def _wolt_old_price(item, price):
+    """Wolt-un göstərdiyi köhnə (üstündən xətt çəkilmiş) qiymət: original_price > price olanda endirimdir.
+    Qiymətə təsir etmir, yalnız kartda "Wolt-da endirim, əvvəl X ₼" yazılır. "Wolt özəl" rəfindəki məhsullar onsuz da götürülmür;
+    Wolt endirimin yalnız Wolt-a aid olub-olmadığını demir, ona görə sayt onu "Wolt-da endirim" adlandırır.
+    Ağlasığmaz fərq (10 dəfədən çox) atılır."""
+    v = item.get("original_price")
+    if isinstance(v, dict): v = v.get("amount") or v.get("value")
+    if not isinstance(v, (int, float)) or not price: return None
+    op = round(v / 100, 2)
+    return op if price * 1.01 < op <= price * 10 else None
+
 def _wolt_weight(item):
     """Çəkiyə görə satılan "ədəd" məhsulda bir ədədin təxmini çəkisi (qram): sell_by_weight_config.grams_per_step.
     input_type="grams" olanlarda (meyvə-tərəvəz) parça çəkisi yoxdur, qiymət 1 kq üçün qalır."""
@@ -1449,6 +1460,8 @@ def _wolt_entry(item, path=""):
     price = _wolt_price(item)
     if not name or price is None or price >= 999: return None
     e = {"name": name, "wolt_price": price}
+    op = _wolt_old_price(item, price)
+    if op: e["op"] = op
     wt = _wolt_weight(item)
     if wt: e["wt"] = wt
     g = item.get("barcode_gtin")   # ştrix-kod: məhsul kimliyi və şəkli üçün saxlanır
@@ -1603,9 +1616,10 @@ def scrape_wolt_multi(store):
                 k = name_key(clean_name(e["name"])) or e["name"]
                 m = merged.get(k)
                 if m is None:
-                    merged[k] = {"cid": cid, "p": [e["wolt_price"]], "e": dict(e)}
+                    merged[k] = {"cid": cid, "p": [e["wolt_price"]], "op": {e["wolt_price"]: e["op"]} if e.get("op") else {}, "e": dict(e)}
                 else:
                     m["p"].append(e["wolt_price"])
+                    if e.get("op"): m["op"].setdefault(e["wolt_price"], e["op"])
                     if "wt" not in m["e"] and e.get("wt"): m["e"]["wt"] = e["wt"]
                     if "gtin" not in m["e"] and e.get("gtin"): m["e"]["gtin"] = e["gtin"]
         print(f"  [Wolt/{store}] {slug}: +{len(merged) - before} yeni (cəmi {len(merged)}); {round(time.time() - t0)} san", flush=True)
@@ -1614,6 +1628,9 @@ def scrape_wolt_multi(store):
     results = {c: [] for c in CATEGORIES}
     for m in merged.values():
         e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
+        e.pop("op", None)   # köhnə qiymət yalnız median qiyməti verən filialda endirim varsa
+        op = m["op"].get(e["wolt_price"])
+        if op and op > e["wolt_price"]: e["op"] = op
         results[m["cid"]].append(e)
     print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
     WOLT_SRC[store] = wolt_src_multi(slugs)
@@ -1712,7 +1729,7 @@ def merge_own_wolt(own_list, wolt_list):
         merged.append(entry)
     for j, w in enumerate(wolt_list):   # yalnız Wolt-da olanlar
         if j not in used:
-            merged.append({k: w[k] for k in ("name", "wolt_price", "wt", "gtin") if k in w})
+            merged.append({k: w[k] for k in ("name", "wolt_price", "wt", "gtin", "op") if k in w})
     return merged
 
 # ── Qiymət dəyişikliyi: məhsulda "pp" (əvvəlki qiymət) + "pd" (dəyişmə tarixi); tam tarixçə data/history.json-da ───────
@@ -1787,7 +1804,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     new = {}
     for cid in CATEGORIES:
         if wolt_only:
-            items = [{k: w[k] for k in ("name", "wolt_price", "wt", "gtin") if k in w}
+            items = [{k: w[k] for k in ("name", "wolt_price", "wt", "gtin", "op") if k in w}
                      for w in wolt_res.get(cid,[])]
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))
@@ -1815,7 +1832,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
 def _stale(it):
     """Arxiv (yenidən yoxlanmamış) qiymət: köhnə dəyişiklik nişanı (pp/pd) atılır — yoxlanmamış qiymət ana səhifədə "ucuzlayan" kimi
     və kartda "↓30%" ilə göstərilməsin (renderDrops arxiv məhsulu ayırmır)."""
-    return {**{k: v for k, v in it.items() if k not in ("pp", "pd")}, "stale": True}
+    return {**{k: v for k, v in it.items() if k not in ("pp", "pd", "op")}, "stale": True}
 
 def mark_stale(store, data):
     """Wolt söndürülüb və başqa mənbə yoxdur: mövcud məhsullar silinmir, amma yenidən yoxlanmadığı işarələnir."""

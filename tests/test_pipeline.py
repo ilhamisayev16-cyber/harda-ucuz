@@ -317,6 +317,27 @@ def test_reassign_other_by_keyword_brand_word_and_duplicate():
     assert st["mesis"]["stores"]["Bazarstore"][0]["name"].startswith("Urojay Qapaq")
 
 
+def test_wolt_old_price_is_kept_only_when_higher_and_plausible():
+    item = lambda p, op: {"name": "Selpak Tualet Kağızı 16əd", "price": p, "original_price": op}
+    assert S._wolt_entry(item(999, 2670))[1]["op"] == 26.7
+    assert "op" not in S._wolt_entry(item(999, 999))[1]       # eyni qiymət: endirim deyil
+    assert "op" not in S._wolt_entry(item(999, None))[1]
+    assert "op" not in S._wolt_entry(item(100, 5000))[1]      # 50 dəfə: ağlasığmaz
+    assert "op" not in S._stale({"name": "x", "wolt_price": 1.0, "op": 2.0})
+
+
+def test_multi_branch_old_price_follows_median_branch(monkeypatch):
+    res = {"b1": [{"name": "Fairy 1 L", "wolt_price": 2.0, "op": 4.0}, {"name": "Pril 1 L", "wolt_price": 3.0, "op": 5.0}],
+           "b2": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0}],
+           "b3": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0}]}
+    monkeypatch.setattr(S, "scrape_wolt_full", lambda store, slug: {"temizlik": [dict(e) for e in res[slug]]})
+    monkeypatch.setattr(S.time, "sleep", lambda *_: None)
+    monkeypatch.setenv("WOLT_BRANCHES_BRAVO", "b1,b2,b3")
+    out = {e["name"]: e for e in S.scrape_wolt_multi("Bravo")["temizlik"]}
+    assert out["Fairy 1 L"]["wolt_price"] == 5.0 and "op" not in out["Fairy 1 L"]   # endirim median filialda deyil
+    assert out["Pril 1 L"]["op"] == 5.0
+
+
 def test_unify_cats_moves_minority_store_to_majority_group():
     d = S.empty_data()
     st = d["categories"]

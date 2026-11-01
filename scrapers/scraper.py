@@ -942,6 +942,73 @@ def reassign_other(data):
         cats["diger"]["stores"][store] = keep
     return moved
 
+def unify_cats(data):
+    """Eyni məhsul (eyni barkod və ya eyni ad) mağazalarda fərqli QRUPA düşübsə, azlıqda qalan mağazalar çoxluğun kateqoriyasına
+    köçürülür; köçənlərin sayını qaytarır. Sayt məhsulları yalnız bir qrupun içində müqayisə edir: "Fortuna Premium 1 Lt" Araz-da
+    araqdır, Rahat-da kola rəfindədir, "Praxi hamam təmizləyici" Tamstore-da şokoladdadır — belə məhsul mağazalar arasında
+    müqayisə olunmurdu. Qayda: hər qrup neçə fərqli mağazada var; ən çox mağazası olan qrup digərlərindən AÇIQ çoxdursa
+    (bərabərlikdə heç nə dəyişmir) qalibdir. Hədəf kateqoriya: qalib qrupda ən çox mağazanın verdiyi (bərabərdə adın öz təsnifatı).
+    Eyni qrupun içində alt kateqoriya fərqinə toxunulmur, "diger" heç vaxt hədəf olmur."""
+    from collections import Counter
+    cats = data.get("categories", {})
+    rows = []   # (cid, store, item)
+    for cid, c in cats.items():
+        if cid not in CATEGORIES: continue
+        for s, items in c.get("stores", {}).items():
+            for it in items: rows.append((cid, s, it))
+    par = list(range(len(rows)))
+    def root(i):
+        while par[i] != i: par[i] = par[par[i]]; i = par[i]
+        return i
+    # Wolt barkodu bəzən səhvdir (Pfanner siropu ilə Cif kremi eyni GTIN-də): barkod yalnız adlarda ən azı 2 ortaq söz olanda birləşdirir
+    W = [{w[:5] for w in re.findall(r"[a-z]{3,}", _f(it["name"]))} for _, _, it in rows]
+    first, byg = {}, {}
+    for i, (cid, s, it) in enumerate(rows):
+        j = first.setdefault(name_key(it["name"]), i)
+        if j != i: par[root(i)] = root(j)
+        if it.get("gtin"):
+            b = byg.setdefault(it["gtin"], [])
+            for j in b:
+                if len(W[i] & W[j]) >= 2: par[root(i)] = root(j)
+            b.append(i)
+    cl = {}
+    for i in range(len(rows)): cl.setdefault(root(i), []).append(i)
+    grp = lambda cid: None if cid == "diger" else CAT2GROUP.get(cid)
+    move = []   # (i, hədəf)
+    for ix in cl.values():
+        if len(ix) < 2: continue
+        G = {}
+        for i in ix:
+            g = grp(rows[i][0])
+            if g: G.setdefault(g, set()).add(rows[i][1])
+        if len(G) < 2 and not any(rows[i][0] == "diger" for i in ix): continue
+        if not G: continue
+        rank = sorted(((len(v), g) for g, v in G.items()), reverse=True)
+        if len(rank) > 1 and rank[0][0] == rank[1][0]: continue   # bərabər: hansının düz olduğu bilinmir
+        win = rank[0][1]
+        cc = Counter()
+        for i in ix:
+            if grp(rows[i][0]) == win: cc[rows[i][0]] += 1
+        top = cc.most_common()
+        tgt = top[0][0]
+        if len(top) > 1 and top[0][1] == top[1][1]:
+            nc = _name_cat(rows[ix[0]][2]["name"])[0]
+            tgt = nc if cc.get(nc) == top[0][1] else min(c for c, k in top if k == top[0][1])
+        for i in ix:
+            if grp(rows[i][0]) != win: move.append((i, tgt))
+    if not move: return 0
+    gone = {id(rows[i][2]) for i, _ in move}
+    for c in cats.values():
+        for s, items in c.get("stores", {}).items():
+            if any(id(it) in gone for it in items): c["stores"][s] = [it for it in items if id(it) not in gone]
+    have = {(cid, s, name_key(it["name"])) for cid, c in cats.items() for s, l in c.get("stores", {}).items() for it in l}
+    for i, tgt in move:
+        cid, s, it = rows[i]
+        k = (tgt, s, name_key(it["name"]))
+        if k in have: continue   # mağaza onu hədəfdə artıq verir: təkrar yaranmasın
+        have.add(k); cats[tgt]["stores"].setdefault(s, []).append(it)
+    return len(move)
+
 def tidy(data):
     """Bütün mağazalar: adlar təmizlənir, dublikatlar (kateqoriyalar arası da) birləşir, köhnə şəkil linkləri silinir (sayt şəkil göstərmir)."""
     cats = data.get("categories", {})
@@ -1768,6 +1835,7 @@ STORE_KEYS = {s.lower(): s for s in ALL_STORES}   # --store açarı -> mağaza a
 def _save(data, out):
     data["groups"] = GROUPS
     reassign_other(data)
+    unify_cats(data)
     data["last_updated"] = now().strftime("%d.%m.%Y %H:%M")
     ok, errs = validate_prices(data)
     if not ok:   # səhv/natamam data əvvəlki etibarlı faylın yerinə yazılmır

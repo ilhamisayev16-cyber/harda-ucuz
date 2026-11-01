@@ -317,6 +317,34 @@ def test_reassign_other_by_keyword_brand_word_and_duplicate():
     assert st["mesis"]["stores"]["Bazarstore"][0]["name"].startswith("Urojay Qapaq")
 
 
+def test_unify_cats_moves_minority_store_to_majority_group():
+    d = S.empty_data()
+    st = d["categories"]
+    st["araq"]["stores"]["Araz"] = [{"name": "Fortuna Premium 1 Lt", "price": 9.0}]
+    st["araq"]["stores"]["SPAR"] = [{"name": "Fortuna Premium 1 Lt", "wolt_price": 9.0}]
+    st["kola"]["stores"]["Rahat"] = [{"name": "Fortuna Premium 1 Lt", "wolt_price": 8.5}]                  # 2 mağaza araq, 1 kola → araq
+    st["temizlik"]["stores"]["Araz"] = [{"name": "Cif Krem Limon 500ml", "price": 3.0, "gtin": "8683130029459"}]
+    st["temizlik"]["stores"]["SPAR"] = [{"name": "Cif Krem Limon 500ml", "wolt_price": 3.0, "gtin": "8683130029459"}]
+    st["sire"]["stores"]["Rahat"] = [{"name": "Pfanner Moruq Siropu 1 l", "wolt_price": 6.0, "gtin": "8683130029459"}]  # səhv barkod: ad fərqli → qalır
+    st["sokolad"]["stores"]["Tamstore"] = [{"name": "Praxi Hamam Təmizləyici 500ml", "wolt_price": 2.0, "gtin": "123456789012"}]
+    st["temizlik"]["stores"]["Bravo"] = [{"name": "Praxi Hamam Təmizləyicisi 500 ml", "wolt_price": 2.1, "gtin": "123456789012"}]  # 1:1 → dəyişmir
+    assert S.unify_cats(d) == 1
+    assert st["kola"]["stores"]["Rahat"] == [] and [i["name"] for i in st["araq"]["stores"]["Rahat"]] == ["Fortuna Premium 1 Lt"]
+    assert st["sire"]["stores"]["Rahat"][0]["name"].startswith("Pfanner")
+    assert st["sokolad"]["stores"]["Tamstore"] and st["temizlik"]["stores"]["Bravo"]
+    assert S.unify_cats(d) == 0
+
+
+def test_unify_cats_on_real_data_keeps_every_item():
+    d = copy.deepcopy(PRICES)
+    n0 = sum(len(l) for c in d["categories"].values() for l in c["stores"].values())
+    S.unify_cats(d)
+    assert sum(len(l) for c in d["categories"].values() for l in c["stores"].values()) <= n0
+    assert S.unify_cats(d) == 0
+    ok, errs = SRC.validate_prices(d)
+    assert ok, errs
+
+
 def test_reassign_other_on_real_data_never_grows_other():
     # prices.json scraper tərəfindən artıq emal olunub: "diger"-də qalanlar köçürülə bilməyənlərdir, ona görə yalnız artmamasını yoxlayırıq
     # (azalma məntiqi yuxarıdakı sintetik testlə örtülür)

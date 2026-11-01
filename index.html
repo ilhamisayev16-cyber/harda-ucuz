@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-PIKNN4ZXrwysVPBTNK4r/mYs2+HmJs+CFM8i69NkL/E='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-wVxtYDptNOyFeGTUUppxU4K5fmT9AaDnIJ8QLg/XBoY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -1181,7 +1181,7 @@ function usePre(it,pre){
 /* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
-  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",im_match:it.im_match||"",im_by:it.im_by||"",ph:it.ph||"",u:it.u||"",gtin:it.gtin||"",wp:own?it.wolt_price||0:0,online:!!it.online_offer,op:!own&&!it.stale&&it.op>(it.wolt_price||0)?it.op:0};
+  return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",im_match:it.im_match||"",im_by:it.im_by||"",ph:it.ph||"",u:it.u||"",gtin:it.gtin||"",wp:own?it.wolt_price||0:0,online:!!it.online_offer,op:own&&it.op>it.price?it.op:0};
 }
 
 /* ─────────── state ─────────── */
@@ -1460,7 +1460,7 @@ function offer(g,s){
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
-  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${o.op?`<small class="kgp" title="Wolt-da üstündən xətt çəkilmiş qiymət">Wolt-da endirim · əvvəl <s>${fmt(o.op)}</s></small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
+  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${o.op?`<small class="kgp" title="Mağazanın öz endirimi (saytındakı qiymət)">Endirim · əvvəl <s>${fmt(o.op)}</s></small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
 /* ən ucuz mağaza: arxiv (yenidən yoxlanmayan) qiymət g.min kimi hesaba girmir; hamısı arxivdirsə ən ucuzu */
 const cheap=g=>loOf(g)||(([s,o])=>({s,p:o.p}))(Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0]);

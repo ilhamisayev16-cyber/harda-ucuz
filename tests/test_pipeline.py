@@ -283,9 +283,9 @@ def test_big_own_discount_preserves_both_observed_online_and_wolt_prices():
            {"name": "Kivi kq", "price": 1.0, "rp": 4.0}]
     wolt = [{"name": "Avokado əd", "wolt_price": 1.99}, {"name": "Banan kq", "wolt_price": 2.2}]
     out = {i["name"]: i for i in S.merge_own_wolt(own, wolt)}
-    assert out["Avokado əd"] == {"name": "Avokado əd", "price": 0.99, "wolt_price": 1.99, "online_offer": True}      # 72% aksiya → Wolt
-    assert out["Banan kq"] == {"name": "Banan kq", "price": 2.0, "wolt_price": 2.2}   # kiçik aksiya: öz qiymət
-    assert out["Kivi kq"] == {"name": "Kivi kq", "price": 1.0}                  # Wolt yoxdur: öz qiymət qalır
+    assert out["Avokado əd"] == {"name": "Avokado əd", "price": 0.99, "op": 3.49, "wolt_price": 1.99, "online_offer": True}   # 72% aksiya → Wolt
+    assert out["Banan kq"] == {"name": "Banan kq", "price": 2.0, "op": 2.5, "wolt_price": 2.2}   # kiçik aksiya: öz qiymət; op = saytın adi qiyməti
+    assert out["Kivi kq"] == {"name": "Kivi kq", "price": 1.0, "op": 4.0}       # Wolt yoxdur: öz qiymət + saytın endirimi
     assert len(out) == 3 and all("rp" not in i for i in out.values())
 
 
@@ -326,16 +326,30 @@ def test_wolt_old_price_is_kept_only_when_higher_and_plausible():
     assert "op" not in S._stale({"name": "x", "wolt_price": 1.0, "op": 2.0})
 
 
-def test_multi_branch_old_price_follows_median_branch(monkeypatch):
-    res = {"b1": [{"name": "Fairy 1 L", "wolt_price": 2.0, "op": 4.0}, {"name": "Pril 1 L", "wolt_price": 3.0, "op": 5.0}],
-           "b2": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0}],
-           "b3": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0}]}
+def test_multi_branch_regular_price_is_median_of_regular_prices(monkeypatch):
+    res = {"b1": [{"name": "Fairy 1 L", "wolt_price": 2.0, "op": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0, "op": 5.0}],
+           "b2": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.0, "op": 5.0}],
+           "b3": [{"name": "Fairy 1 L", "wolt_price": 5.0}, {"name": "Pril 1 L", "wolt_price": 3.5}]}
     monkeypatch.setattr(S, "scrape_wolt_full", lambda store, slug: {"temizlik": [dict(e) for e in res[slug]]})
     monkeypatch.setattr(S.time, "sleep", lambda *_: None)
     monkeypatch.setenv("WOLT_BRANCHES_BRAVO", "b1,b2,b3")
     out = {e["name"]: e for e in S.scrape_wolt_multi("Bravo")["temizlik"]}
-    assert out["Fairy 1 L"]["wolt_price"] == 5.0 and "op" not in out["Fairy 1 L"]   # endirim median filialda deyil
-    assert out["Pril 1 L"]["op"] == 5.0
+    assert out["Fairy 1 L"]["wolt_price"] == 5.0 and "op" not in out["Fairy 1 L"]
+    assert out["Pril 1 L"]["wolt_price"] == 3.0 and out["Pril 1 L"]["op"] == 5.0
+
+
+def test_wolt_discount_is_not_shown_only_store_own_discount_is():
+    own = [{"name": "Klar Maye Qabyuyan 1 L", "price": 3.99},                      # OBA saytı: köhnə qiymət → Wolt-özəl endirim
+           {"name": "Natura Albalı Şirəsi 1 L", "price": 1.99},                    # saytda da endirimli → mağazanın endirimi
+           {"name": "Eti Adicto Intense 35qr", "price": 0.79, "rp": 1.0}]          # Araz saytı adi qiyməti verir
+    wolt = [{"name": "Klar Maye Qabyuyan 1 L", "wolt_price": 2.99, "op": 3.99},
+            {"name": "Natura Albalı Şirəsi 1 L", "wolt_price": 1.99, "op": 2.49},
+            {"name": "Selpak Tualet Kağızı 16əd", "wolt_price": 9.99, "op": 26.7}]   # yalnız Wolt-da
+    m = {e["name"]: e for e in S.merge_own_wolt(own, wolt)}
+    assert m["Klar Maye Qabyuyan 1 L"] == {"name": "Klar Maye Qabyuyan 1 L", "price": 3.99}
+    assert m["Natura Albalı Şirəsi 1 L"]["op"] == 2.49 and "wolt_price" not in m["Natura Albalı Şirəsi 1 L"]
+    assert m["Eti Adicto Intense 35qr"]["op"] == 1.0
+    assert m["Selpak Tualet Kağızı 16əd"] == {"name": "Selpak Tualet Kağızı 16əd", "wolt_price": 26.7}
 
 
 def test_unify_cats_moves_minority_store_to_majority_group():

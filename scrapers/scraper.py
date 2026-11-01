@@ -1433,14 +1433,21 @@ def _wolt_price(item):
 
 def _wolt_old_price(item, price):
     """Wolt-un göstərdiyi köhnə (üstündən xətt çəkilmiş) qiymət: original_price > price olanda endirimdir.
-    Qiymətə təsir etmir, yalnız kartda "Wolt-da endirim, əvvəl X ₼" yazılır. "Wolt özəl" rəfindəki məhsullar onsuz da götürülmür;
-    Wolt endirimin yalnız Wolt-a aid olub-olmadığını demir, ona görə sayt onu "Wolt-da endirim" adlandırır.
-    Ağlasığmaz fərq (10 dəfədən çox) atılır."""
+    Wolt endirimin yalnız Wolt-a aid olub-olmadığını demir (məhsulda heç bir sahə/yazı bunu ayırmır, 2026-11-01 yoxlanıb). Ona görə:
+    yalnız Wolt-dakı məhsulda adi qiymət götürülür (_wolt_regular); mağaza saytı da eyni endirimli qiyməti verirsə, bu mağazanın
+    öz endirimidir və kartda "Endirim · əvvəl X" yazılır (merge_own_wolt). Ağlasığmaz fərq (10 dəfədən çox) atılır."""
     v = item.get("original_price")
     if isinstance(v, dict): v = v.get("amount") or v.get("value")
     if not isinstance(v, (int, float)) or not price: return None
     op = round(v / 100, 2)
     return op if price * 1.01 < op <= price * 10 else None
+
+def _wolt_regular(w):
+    """Yalnız Wolt-dan gələn məhsul: Wolt-un endirimi mağazanın rəfdə də olduğu yoxlanıla bilmir (Wolt bunu ayırmır; 2026-11-01:
+    OBA-da Wolt endirimlərinin 71%-i saytda yoxdur), ona görə qiymət endirimsiz adi qiymətdir və endirim nişanı qoyulmur."""
+    e = {k: w[k] for k in ("name", "wolt_price", "wt", "gtin") if k in w}
+    if w.get("op"): e["wolt_price"] = w["op"]
+    return e
 
 def _wolt_weight(item):
     """Çəkiyə görə satılan "ədəd" məhsulda bir ədədin təxmini çəkisi (qram): sell_by_weight_config.grams_per_step.
@@ -1585,8 +1592,8 @@ def scrape_wolt_full(store, slug=None):
 # Qiymətin mənbə üsulu (tək filial / filiallar üzrə median). Üsul dəyişən gün qiymət fərqləri
 # real qiymət dəyişikliyi deyil, ona görə həmin gün dəyişiklik nişanı və tarixçə yazılmır.
 WOLT_SRC = {}
-# Üsul versiyası: v2 = Wolt-özəl endirimli məhsullar çıxarılır.
-WOLT_SRC_VER = "v2"
+# Üsul versiyası: v2 = Wolt-özəl endirimli məhsullar çıxarılır; v3 = Wolt endirimi əvəzinə adi (üstündən xətt çəkilmiş) qiymət.
+WOLT_SRC_VER = "v3"   # v3 (2026-11-01): Wolt-dakı endirim yerinə adi qiymət
 
 def wolt_src_multi(slugs):
     """Filiallar üzrə median üsulunun adı + filial siyahısının imzası: siyahı dəyişəndə (filial əlavə/silinir) median dəyişir, bu da üsul
@@ -1616,10 +1623,9 @@ def scrape_wolt_multi(store):
                 k = name_key(clean_name(e["name"])) or e["name"]
                 m = merged.get(k)
                 if m is None:
-                    merged[k] = {"cid": cid, "p": [e["wolt_price"]], "op": {e["wolt_price"]: e["op"]} if e.get("op") else {}, "e": dict(e)}
+                    merged[k] = {"cid": cid, "p": [e["wolt_price"]], "r": [e.get("op") or e["wolt_price"]], "e": dict(e)}
                 else:
-                    m["p"].append(e["wolt_price"])
-                    if e.get("op"): m["op"].setdefault(e["wolt_price"], e["op"])
+                    m["p"].append(e["wolt_price"]); m["r"].append(e.get("op") or e["wolt_price"])
                     if "wt" not in m["e"] and e.get("wt"): m["e"]["wt"] = e["wt"]
                     if "gtin" not in m["e"] and e.get("gtin"): m["e"]["gtin"] = e["gtin"]
         print(f"  [Wolt/{store}] {slug}: +{len(merged) - before} yeni (cəmi {len(merged)}); {round(time.time() - t0)} san", flush=True)
@@ -1628,9 +1634,9 @@ def scrape_wolt_multi(store):
     results = {c: [] for c in CATEGORIES}
     for m in merged.values():
         e = m["e"]; e["wolt_price"] = round(statistics.median_low(m["p"]), 2)
-        e.pop("op", None)   # köhnə qiymət yalnız median qiyməti verən filialda endirim varsa
-        op = m["op"].get(e["wolt_price"])
-        if op and op > e["wolt_price"]: e["op"] = op
+        e.pop("op", None)   # endirimsiz (adi) qiymət də filiallar üzrə median
+        r = round(statistics.median_low(m["r"]), 2)
+        if r > e["wolt_price"]: e["op"] = r
         results[m["cid"]].append(e)
     print(f"  [Wolt/{store}] {ok}/{len(slugs)} filial, {len(merged)} məhsul", flush=True)
     WOLT_SRC[store] = wolt_src_multi(slugs)
@@ -1718,10 +1724,15 @@ def merge_own_wolt(own_list, wolt_list):
         if item.get("gtin"): entry["gtin"] = item["gtin"]
         if item.get("ph"): entry["ph"] = item["ph"]
         if item.get("u"): entry["u"] = item["u"]
+        if (item.get("rp") or 0) > item["price"]: entry["op"] = item["rp"]   # mağaza saytının öz endirimi (Araz: adi qiymət)
         j = match.get(i)
         if j is not None:
             w = wolt_list[j]
-            if abs(w["wolt_price"] - item["price"]) > 0.005: entry["wolt_price"] = w["wolt_price"]
+            # Wolt endirimi mağazanın saytındakı qiymətlə eynidirsə, mağazanın öz endirimidir (OBA saytı köhnə qiyməti vermir)
+            same = abs(w["wolt_price"] - item["price"]) <= 0.011
+            if "op" not in entry and w.get("op") and same: entry["op"] = w["op"]
+            wr = w["wolt_price"] if same else w.get("op") or w["wolt_price"]   # Wolt-un yalnız özündəki endirim göstərilmir: Wolt sətrində adi qiymət
+            if abs(wr - item["price"]) > 0.005: entry["wolt_price"] = wr
             if w.get("wt"): entry["wt"] = w["wt"]
             if w.get("gtin"): entry["gtin"] = w["gtin"]
             if item.get("rp") and item["price"] <= 0.5 * item["rp"]:
@@ -1729,7 +1740,7 @@ def merge_own_wolt(own_list, wolt_list):
         merged.append(entry)
     for j, w in enumerate(wolt_list):   # yalnız Wolt-da olanlar
         if j not in used:
-            merged.append({k: w[k] for k in ("name", "wolt_price", "wt", "gtin", "op") if k in w})
+            merged.append(_wolt_regular(w))
     return merged
 
 # ── Qiymət dəyişikliyi: məhsulda "pp" (əvvəlki qiymət) + "pd" (dəyişmə tarixi); tam tarixçə data/history.json-da ───────
@@ -1804,7 +1815,7 @@ def apply_to_data(own_res, wolt_res, store, data, hist=None, wolt_on=True):
     new = {}
     for cid in CATEGORIES:
         if wolt_only:
-            items = [{k: w[k] for k in ("name", "wolt_price", "wt", "gtin", "op") if k in w}
+            items = [_wolt_regular(w)
                      for w in wolt_res.get(cid,[])]
         else:
             items = merge_own_wolt(own_res.get(cid,[]), wolt_res.get(cid,[]))

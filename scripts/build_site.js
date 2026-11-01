@@ -208,7 +208,7 @@ function buildProducts(db,CARDS,S,built){
     const rel=`mehsullar/${c.pid}.html`, offers=Object.entries(c.offers).sort((a,b)=>a[1].p-b[1].p);
     const body=`<h2>Mağazalar üzrə qiymətlər</h2>`+items([c],S)+`<h2>Qiymət tarixçəsi</h2>`+offers.map(([store,o])=>{
       const h=history[S.hash(store,o.n)]||[], rows=h.slice(-30);
-      return `<details><summary>${esc(store)} · ${o.w?"Wolt":"Mağazanın onlayn qiyməti"}${o.st?" · köhnə məlumat":""}</summary><p class="mute">Qeydə alınmış qiymət dəyişiklikləri; gündəlik stok göstəricisi deyil.</p>`+(rows.length?`<ul>${rows.map(([d,p])=>`<li>${esc(String(d).split("-").reverse().join("."))} — ${fmt(p)}</li>`).join("")}</ul>`:`<p>Hələ qiymət dəyişikliyi qeydə alınmayıb.</p>`)+`</details>`;
+      return `<details><summary>${esc(store)} · ${o.w?"Çatdırılma xidməti":"Mağazanın onlayn qiyməti"}${o.st?" · köhnə məlumat":""}</summary><p class="mute">Qeydə alınmış qiymət dəyişiklikləri; gündəlik stok göstəricisi deyil.</p>`+(rows.length?`<ul>${rows.map(([d,p])=>`<li>${esc(String(d).split("-").reverse().join("."))} — ${fmt(p)}</li>`).join("")}</ul>`:`<p>Hələ qiymət dəyişikliyi qeydə alınmayıb.</p>`)+`</details>`;
     }).join("")+`<h2>Oxşar məhsulları araşdır</h2>`+(built.has(`qiymetler/${c.t}/${c.c}.html`)?`<a href="../qiymetler/${c.t}/${c.c}.html">${esc(S.catName(c.c))} qiymətləri</a>`:`<a href="../qiymetler/${c.t}/">${esc((db.groups.find(g=>g.id===c.t)||{}).name||"Kateqoriya")} qiymətləri</a>`);
     const html=page({path:rel,title:c.name+" — qiymət müqayisəsi",desc:`${c.name}: ${offers.map(([s,o])=>s+" "+fmt(o.p)).join(", ")}. Mənbələr və qeydə alınmış qiymət tarixçəsi.`,upd:db.last_updated,crumbs:[["","Ana səhifə"],[`qiymetler/${c.t}/`,"Kateqoriya"]],h1:esc(c.name),lead:`${offers.length} mağazada qiymət məlumatı · ${c.a.kg?"1 kq üçün":"qablaşdırma üçün"}`,app:`#/c/${c.t}/${c.pid}`,body});
     fs.writeFileSync(path.join(tmp,c.pid+".html"),html);urls.push(rel);
@@ -250,10 +250,10 @@ function champion(cards) {
    hamısında eynidirsə "N mağazada eyni qiymət". save: qənaət məbləği də göstərilir ("Ən çox qənaət" siyahısı) */
 function items(list, S, save) {
   return `<ul class="items">\n` + list.map(c => {
-    const u = c.a && c.a.kg ? "/kq" : "", W = o => o.w ? "<sup>W</sup>" : "";
+    const u = c.a && c.a.kg ? "/kq" : "", W = o => o.w ? "<sup>*</sup>" : "";
     const offs = Object.entries(c.offers).sort((a, b) => a[1].p - b[1].p), live = offs.filter(([, o]) => !o.st);
     const low = c.n > 1 ? live.filter(([, o]) => o.p === c.min) : [], same = low.length > 1 && low.length === live.length;
-    const lbl = ([s, o]) => `<span>${esc(s)} ${fmt(o.p)}${u}${o.w ? W(o) : " (onlayn)"}${o.wp ? " · Wolt: " + fmt(o.wp) : ""}${o.op ? (o.w ? " (Wolt-da endirim, əvvəl " : " (endirim, əvvəl ") + fmt(o.op) + ")" : ""}${o.st ? " (arxiv)" : ""}</span>`, name = ([s, o]) => `<span>${esc(s)}${W(o)}</span>`;
+    const lbl = ([s, o]) => `<span>${esc(s)} ${fmt(o.p)}${u}${o.w ? W(o) : " (onlayn)"}${o.wp ? " · çatdırılmada: " + fmt(o.wp) : ""}${o.op ? " (endirim, əvvəl " + fmt(o.op) + ")" : ""}${o.st ? " (arxiv)" : ""}</span>`, name = ([s, o]) => `<span>${esc(s)}${W(o)}</span>`;
     const head = !low.length ? "" : low.length === 1 ? `<i style="background:var(--${esc(low[0][0])})"></i>Ən ucuz: ${lbl(low[0])}`
       : same ? `${low.length} mağazada eyni qiymət: <span>${fmt(c.min)}${u}</span>` : `Ən ucuz: ${low.map(name).join(", ")} — <span>${fmt(c.min)}${u}</span>`;
     const first = (low[0] || live[0] || offs[0] || [])[1], up = S.upr && first ? S.upr(c, first.p) : null;   // vahid qiymət (₼/kq, ₼/L), saytdakı kimi
@@ -301,8 +301,8 @@ function page({ path: p, title, desc, upd, crumbs, h1, lead, app, body }) {
 <p class="mute">${lead}<br>Son yenilənmə: ${esc(upd || "—")}</p>
 <a class="go" href="${up}${app}">Saytda aç: axtar, süz, səbətə əlavə et →</a>
 ${body}
-<footer>Qiymətlər mağazaların açıq saytlarından gündə bir dəfə avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
-<sup>W</sup> — Wolt-dan alınan qiymət (rəfdəki qiymətdən fərqli ola bilər). Sayt heç bir mağaza ilə əlaqəli deyil.
+<footer>Qiymətlər açıq onlayn mənbələrdən gündə bir dəfə avtomatik toplanır və yalnız məlumat xarakterlidir; kassadakı qiymət fərqlənə bilər.
+<sup>*</sup> — çatdırılma xidmətindəki qiymət (rəfdəki qiymətdən fərqli ola bilər). Sayt heç bir mağaza ilə əlaqəli deyil.
 <a href="${up}haqqinda.html">Haqqında, şərtlər və məxfilik</a></footer>
 ${STATS ? `<img src="${esc(STATS)}?p=${encodeURIComponent("/" + p)}" alt="" width="1" height="1" style="position:absolute;left:-9px">` : ""}
 </main>

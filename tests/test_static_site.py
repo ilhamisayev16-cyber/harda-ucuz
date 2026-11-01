@@ -130,9 +130,9 @@ def test_cheapest_label_ties_prices_and_grammar(tmp_path):
     html = (out / "qiymetler" / "sud" / "sud.html").read_text(encoding="utf-8")
     li = {re.search(r"<b>(?:<a [^>]*>)?([^<]+)", x)[1]: x for x in re.findall(r"<li><b>.*?</li>", html)}   # ad məhsul səhifəsinə linkdir
     assert "3 mağazada eyni qiymət: <span>2.80\u00a0₼</span>" in li["Azərsüd Süd 3.2% 1 l"] and "Ən ucuz" not in li["Azərsüd Süd 3.2% 1 l"]
-    assert "Ən ucuz: <span>Araz</span>, <span>Bravo<sup>W</sup></span> — <span>2.50\u00a0₼</span>" in li["Milla Süd 2.5% 1 l"]
-    assert "<span>OBA 2.90\u00a0₼ (onlayn)</span>" in li["Milla Süd 2.5% 1 l"]   # Wolt olmayan qiymət onlayn qiymət kimi işarələnir
-    assert "Ən ucuz: <span>Bravo 2.70\u00a0₼<sup>W</sup></span>" in li["Atena Süd 3.2% 0.5 l"]
+    assert "Ən ucuz: <span>Araz</span>, <span>Bravo<sup>*</sup></span> — <span>2.50\u00a0₼</span>" in li["Milla Süd 2.5% 1 l"]
+    assert "<span>OBA 2.90\u00a0₼ (onlayn)</span>" in li["Milla Süd 2.5% 1 l"]   # çatdırılma xidmətindən olmayan qiymət onlayn qiymət kimi işarələnir
+    assert "Ən ucuz: <span>Bravo 2.70\u00a0₼<sup>*</sup></span>" in li["Atena Süd 3.2% 0.5 l"]
     assert "5.40\u00a0₼/L" in li["Atena Süd 3.2% 0.5 l"]   # vahid qiymət (0.5 l → 1 L)
     # hər qiymət iki onluq rəqəmlə və ₼-dan əvvəl bölünməz boşluqla (₼ ayrı sətrə keçmir)
     text = re.sub(r"<[^>]+>", "", html)
@@ -200,3 +200,14 @@ def test_service_worker_network_first_offline_page_and_5xx_fallback():
     assert R["img1"] == [200, "şəkil"] and R["img2"] == [200, "şəkil"]
     assert R["ext"] is None                                               # xarici ünvanlara toxunulmur
 
+
+
+@node
+def test_delivery_service_is_never_named_on_the_site(real):
+    """istifadəçinin istəyi (2026-11-01): çatdırılma xidmətinin adı saytda heç yerdə çəkilmir; datadakı daxili açar (wolt_price) görünmür"""
+    files = [ROOT / "index.html", ROOT / "haqqinda.html", ROOT / "manifest.webmanifest", ROOT / "sw.js"]
+    files += sorted((real / "qiymetler").rglob("*.html")) + sorted((real / "mehsullar").rglob("*.html"))[:300]
+    assert len(files) > 50
+    for f in files:
+        text = re.sub(r"wolt_price", "", f.read_text(encoding="utf-8"), flags=re.I)
+        assert not re.search(r"wolt|<sup>W</sup>", text, re.I), f

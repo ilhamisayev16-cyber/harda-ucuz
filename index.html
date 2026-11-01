@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-KvQSrOnEv76705uSHIOgDj+CSRvD7JIpGsPY2RfmX1s='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-UtzIE4MmNxWFwBPiX8pNe1pl96NkhBjPubwpagOUAm0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://qiymetmuqayise.goatcounter.com https://images.openfoodfacts.org https://obafiles.blob.core.windows.net https://arazmarket.az https://bazarstore.az; connect-src 'self'; manifest-src 'self'; worker-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Harda Ucuz — Bakı supermarket qiymətləri</title>
 <meta name="description" content="Bravo, OBA, Araz, Neptun, SPAR və digər supermarketlərin qiymətlərini bir yerdə müqayisə edin.">
@@ -428,7 +428,7 @@ body{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
     <div class="list" id="list"></div>
     <button class="btn primary more" id="more" hidden>Daha çox göstər</button>
     <p class="note"><b style="color:var(--good)">Yaşıl</b> — ən ucuz, <b style="color:var(--bad)">qırmızı</b> — ən baha.
-      <sup>W</sup> — qiymət Wolt-dan götürülüb, rəf qiymətindən bir qədər yüksək ola bilər.</p>
+      <sup>*</sup> — çatdırılma xidmətindəki qiymət, rəf qiymətindən bir qədər yüksək ola bilər.</p>
   </section>
   <div class="zoom" id="zoom" hidden role="dialog" aria-label="Məhsul fotosu"><img id="zoomImg" alt=""><b id="zoomN"></b><small id="zoomBy"></small></div>
   <div class="toast" id="toast" hidden><span>Səbətə əlavə olundu</span><button type="button" id="toastGo">Səbətə bax →</button></div>
@@ -516,7 +516,7 @@ const icon1=(L,s)=>{ for(const [r,e] of L) if(r.test(s)) return e; };
 const iconOf=g=>g.em||(g.em=(()=>{ const n=nrm(g.name), c=core(n), L=ICONS[g.t]||ICON_ALL;
   return (c!==n&&icon1(L,c))||icon1(L,n)||(ICON_MIX.has(g.c)&&icon1(ICON_FOOD,c))||EMOJI[g.c]||"📦"; })());
 /* məhsul şəkli: mağazanın öz saytındakı şəkil (ph), yoxdursa Open Food Facts (açıq baza, CC BY-SA, ştrix-koda görə,
-   scrapers/off_images.py). Wolt şəkli istifadə olunmur. Heç biri yoxdursa və ya yüklənməsə ikon (aşağıdakı "error" dinləyicisi) */
+   scrapers/off_images.py). Çatdırılma xidmətinin şəkli istifadə olunmur. Heç biri yoxdursa və ya yüklənməsə ikon (aşağıdakı "error" dinləyicisi) */
 const OFF_IMG="https://images.openfoodfacts.org/images/products/", IM_RX=/^\d{3}\/\d{3}\/\d{3}\/\d+\/front_[a-z]{2,3}\.\d+$/;
 /* mağazanın öz saytındakı şəkil ("ph" = "o|a|b:<fayl>", scraper.py store_photo); Open Food Facts-dən əvvəl gəlir */
 const PH_BASE={o:"https://obafiles.blob.core.windows.net/oba-plus/",b:"https://bazarstore.az/images/thumbs/"},
@@ -541,7 +541,7 @@ function photoCredit(g){
 }
 /* böyük baxış üçün: Arazın kiçildilmiş şəklinin 640 px variantı (~18 KB); digərləri olduğu kimi */
 const bigUrl=u=>u.replace(/([?&]w=)256(?=&|$)/,"$1640");
-/* mağazanın öz saytında bax (Wolt linki verilmir): öz saytdan gələn məhsulda məhsulun səhifəsi ("u" = scraper.py-ın yazdığı slug)
+/* mağazanın öz saytında bax (çatdırılma xidmətinə link verilmir): öz saytdan gələn məhsulda məhsulun səhifəsi ("u" = scraper.py-ın yazdığı slug)
    və ya mağaza saytında axtarış; öz kataloqu olmayan mağazada saytının kampaniya / əsas səhifəsi.
    Link yalnız bu sabit ünvanlardan qurulur; datadan yalnız formatı yoxlanmış slug və ya kodlanmış (encodeURIComponent) ad qoşulur */
 const SHOP={
@@ -1010,7 +1010,7 @@ function group(cat,prod,pre,rec){   // pre: serverdə hazırlanmış kartlar (da
   for(const store of Object.keys(cat.stores||{})){ const L=cat.stores[store]||[], R=(cat.cats||{})[store]||[]; let ri=0;
    for(let i=0;i<L.length;i++){ const x=L[i]; while(ri<R.length-1&&i>=R[ri][0]) ri++;   // məhsulun alt kateqoriyası
     const f=fold(x.name); let a=attrs(x.name);
-    if(x.wt>0&&!(x.price!=null&&a.wv!=null&&norm(a.wv,a.wu)<1000&&!/\d\s*-\s*\d/.test(x.name)))   // Wolt çəki (wt): qiymət 1 kq üçündür;
+    if(x.wt>0&&!(x.price!=null&&a.wv!=null&&norm(a.wv,a.wu)<1000&&!/\d\s*-\s*\d/.test(x.name)))   // çəki ilə satış (wt): qiymət 1 kq üçündür;
       a={...a,kg:true,wv:null,wu:null,pack:0,unit:0,uu:""};             // mağazanın öz qiyməti + 1 kq-dan kiçik sabit ölçü ("Gerda 250qr") isə qablaşdırma
     if(pre){ it.push({i:it.length,x,store,f,a,c:R.length?R[ri][1]:null,p:x.price??x.wolt_price??0}); continue; }   // hazır kartlar: söz/oxşarlıq hesabı lazım deyil
     const tk=tokens(f), ta=[...tk], e={i:it.length,x,store,f,a,tk,ta,tid:null,ids:null,tkey:"",key:"",c:R.length?R[ri][1]:null,lead:tk.lead,mat:tk.mat,p:x.price??x.wolt_price??0}; it.push(e);
@@ -1178,7 +1178,7 @@ function usePre(it,pre){
     for(const i of ix){ const x=Number.isInteger(i)&&it[i]; if(!x||x.C.k) return false; x.C=C; C.m.push(x); } }
   return true;
 }
-/* təklif: qiymət, Wolt?, şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
+/* təklif: qiymət, mənbə (w), şəkil, mağazadakı ad; "~250 q" parça (wt) üçün qiymət 1 kq-dır */
 function mk(it){
   const own=it.price!=null;
   return {p:own?it.price:(it.wolt_price||0),w:!own,n:it.name,wt:it.wt||0,pp:it.pp||0,pd:it.pd||"",st:it.stale?1:0,im:it.im||"",im_match:it.im_match||"",im_by:it.im_by||"",ph:it.ph||"",u:it.u||"",gtin:it.gtin||"",wp:own?it.wolt_price||0:0,online:!!it.online_offer,op:!it.stale&&it.op>(own?it.price:it.wolt_price||0)?it.op:0};
@@ -1269,7 +1269,7 @@ function sane(d){
   dropImplausible(cats);
   return {last_updated:typeof d.last_updated==="string"?d.last_updated.slice(0,20):"",stores,categories:cats,groups,product_ids:validIds(d.product_ids)};
 }
-/* ağlasığmaz qiymət — mənbədə yazı səhvi (Rahat-ın Wolt menyusu, 2026-10: "Heinz ... Kasa 170 qr" 644.15 ₼, "Domestos ... 1 l" 256.25 ₼,
+/* ağlasığmaz qiymət — mənbədə yazı səhvi (Rahat-ın onlayn menyusu, 2026-10: "Heinz ... Kasa 170 qr" 644.15 ₼, "Domestos ... 1 l" 256.25 ₼,
    "Lipton Soyuq Çay 330 ml" 42.49 ₼): 1 kq / 1 L qiyməti eyni kateqoriyada eyni markanın (adın ilk sözü) digər məhsullarından ≥40 dəfə, marka
    3-dən azdırsa kateqoriyanın medianından ≥100 dəfə baha olan məhsul göstərilmir. Yalnız ölçüsü ≥50 q/ml və qiyməti ≥20 ₼ olan yoxlanır: ölçü yazı
    səhvi ("0.75ml" = 0.75 L) və ucuz məhsul toxunulmur, baha markalar (Venchi, viski) öz markası ilə müqayisə olunur — bütün datada 3 məhsul.
@@ -1349,7 +1349,7 @@ function renderHome(){
      <small>${esc(tops(g).join(" · "))}</small><span class="n"><i>${n.toLocaleString("az")}</i> məhsul</span></span><span class="go">›</span></button>`).join("");
   renderDrops();
   $("srcNote").innerHTML=`Son yenilənmə: <b>${esc(DB.last_updated||"—")}</b>. Mağazaların onlayn qiymətləri göstərilir;
-    Wolt-dan alınanlar <sup>W</sup> ilə işarələnib və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
+    <sup>*</sup> ilə işarələnənlər çatdırılma xidmətindən götürülüb və rəfdəki qiymətdən bir qədər yüksək ola bilər.`;
 }
 
 /* son günlərdə ucuzlayanlar (data-dakı pp/pd-dən; qruplaşdırma tələb olunmur) */
@@ -1460,7 +1460,7 @@ function offer(g,s){
   if(!o) return "";   // məhsul bu mağazada yoxdursa göstərilmir
   const c=g.n>1?(o.p===g.min?" min":o.p===g.max?" max":""):"";
   const u=upr(g,o.p);
-  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>W</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Wolt: ${fmt(o.wp)}</small>`:""}${o.op?`<small class="kgp" title="${o.w?"Wolt-un göstərdiyi endirim: mağazada da olub-olmadığı bilinmir":"Mağazanın öz saytındakı endirim"}">${o.w?"Wolt-da endirim":"Endirim"} · əvvəl <s>${fmt(o.op)}</s></small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
+  return `<div class="o${c}" data-s="${esc(s)}" title="${esc(o.n)}"><span>${c0}${chg(o)}</span><b class="mono">${fmt(o.p)}${unit(g)}${o.w?"<sup>*</sup>":""}${g.a.kg&&o.wt&&o.wt!==1000?`<small class="kgp">~${+o.wt} q ≈ ${fmt(o.p*o.wt/1000)}</small>`:""}${u?`<small class="kgp">${fmt(u.v)}/${u.u}</small>`:""}${!o.w?`<small class="kgp">Onlayn qiymət${o.online?" · böyük aksiya":""}</small>`:""}${o.wp?`<small class="kgp">Çatdırılmada: ${fmt(o.wp)}</small>`:""}${o.op?`<small class="kgp" title="${o.w?"Çatdırılma xidmətindəki endirim: mağazanın özündə də olub-olmadığı bilinmir":"Mağazanın öz saytındakı endirim"}">Endirim · əvvəl <s>${fmt(o.op)}</s></small>`:""}${o.st?`<small class="kgp" title="Yenidən yoxlanmayıb">arxiv qiymət</small>`:""}</b></div>`;
 }
 /* ən ucuz mağaza: arxiv (yenidən yoxlanmayan) qiymət g.min kimi hesaba girmir; hamısı arxivdirsə ən ucuzu */
 const cheap=g=>loOf(g)||(([s,o])=>({s,p:o.p}))(Object.entries(g.offers).sort((x,y)=>x[1].p-y[1].p)[0]);
@@ -1592,7 +1592,7 @@ function renderList(){
    (və ya isim şəkilçili: Kökəsi), marka olmayan sözlər, iki adda tam eyni olmalıdır (Ice, Decaf, Bel tiri, Kökə ≠ Çörək); rəqəmli sözlər (N6, 3ü 1də) eyni.
    Oxşar məhsul (başqa marka): səbətdəkinin sadə forması — yalnız xətt / sort sözləri (SOFT: İveriya, Halal, Premium) atılır, yeni söz əlavə olunmur, dad / ət növü eyni.
    Qiymət: adda yazılan ölçüdən vahid qiymət (qablaşdırılmış: 100 q / 100 ml, kq ilə satılan: 1 kq, ədəd: 1 ədəd) — fərqli ölçülər də müqayisə olunur
-   (410 q 2.20 ₼ ↔ 600 q 3.30 ₼); kq ilə satılan yalnız kq ilə satılanla (Wolt-da "kq" yazılan qablaşdırma ola bilər). Növ və ya ölçü oxunmursa təklif yoxdur.
+   (410 q 2.20 ₼ ↔ 600 q 3.30 ₼); kq ilə satılan yalnız kq ilə satılanla (onlayn menyuda "kq" yazılan qablaşdırma ola bilər). Növ və ya ölçü oxunmursa təklif yoxdur.
    Arxiv qiymətlər götürülmür. */
 const TW={}, GI={};
 const tkOf=x=>x.tk||(x.tk=tokens(x.fd));
@@ -1782,7 +1782,7 @@ $("sort").onchange=e=>{F.sort=e.target.value;apply();};
 /* global search */
 /* nəticədə mağazalar ucuzdan bahaya; ən ucuz (arxiv olmayan) yaşıl */
 const offs=g=>Object.entries(g.offers).sort((a,b)=>a[1].p-b[1].p).map(([s,o])=>{
-  const t=esc(s)+" "+fmt(o.p)+(g.a.kg?"/kq":"")+(o.w?"<sup>W</sup>":"");
+  const t=esc(s)+" "+fmt(o.p)+(g.a.kg?"/kq":"")+(o.w?"<sup>*</sup>":"");
   return g.n>1&&!o.st&&o.p===g.min?`<span class="lo">${t}</span>`:t; }).join(" · ");
 $("q").oninput=debounce(async e=>{
   const raw=e.target.value.trim().slice(0,100), box=$("results");
@@ -1845,7 +1845,7 @@ function renderSplit(){
   if(!best){box.innerHTML='<p class="note">Bu siyahı üçün bir və ya iki mağazada tam, aktual qiymət tapılmadı. Məhsulları dəyiş və ya siyahını azalt.</p>';return;}
   const saving=single?single.total-best.total:0;
   box.innerHTML=`<h2>Ən sərfəli plan · ${fmt(best.total)}</h2><p>${best.stores.map(esc).join(" + ")}${saving>.005?` · bir mağazadan ${fmt(saving)} sərfəli`:""}</p><p class="note">Yol / çatdırılma: ${fmt(best.cost)}. Yalnız kataloqda qiyməti olan məhsullar müqayisə edilir; filial stoku təsdiqlənməyib.</p>`+
-    best.stores.map(s=>`<details open><summary><b>${esc(s)}</b></summary>${best.lines.filter(x=>x.s===s).map(x=>`<div class="plan-row">${esc(x.name)} × ${x.q}<b> · ${fmt(x.p)}${x.w?" <sup>W</sup>":""}</b></div>`).join("")}</details>`).join("")+
+    best.stores.map(s=>`<details open><summary><b>${esc(s)}</b></summary>${best.lines.filter(x=>x.s===s).map(x=>`<div class="plan-row">${esc(x.name)} × ${x.q}<b> · ${fmt(x.p)}${x.w?" <sup>*</sup>":""}</b></div>`).join("")}</details>`).join("")+
     (single&&best.stores.length>1?`<p>Bir mağaza seçsən: ${esc(single.stores[0])} · <b>${fmt(single.total)}</b></p>`:"");
 }
 let planChoices=[];
@@ -1880,7 +1880,7 @@ async function checkWatches(){
 }
 function renderWatch(){
   $("watchList").innerHTML=WATCH.length?WATCH.map((w,i)=>{const g=GM[w.t]&&groups(w.t).find(g=>hasProductId(g,w.id)),st=watchStatus(w,g);
-    return `<article class="watch-card${st.state==="reached"?" reached":""}"><h2>${esc(w.n)}</h2><p>${esc(w.store)} · ${w.w?"Wolt":"Mağazanın onlayn qiyməti"} · Hədd: ${fmt(w.target)}</p><p>${st.state==="reached"?"✓ İstədiyin qiymətə çatıb: "+fmt(st.price):st.state==="waiting"?"İndiki qiymət: "+fmt(st.price):st.state==="source"?"Qiymət mənbəyi dəyişib. İzləməni yenidən qur.":"Aktual qiymət tapılmadı."}</p><div class="product-tools"><a href="#/c/${esc(w.t)}/${w.id}">Məhsula bax</a><button data-unwatch="${i}">İzləməni sil</button></div></article>`;
+    return `<article class="watch-card${st.state==="reached"?" reached":""}"><h2>${esc(w.n)}</h2><p>${esc(w.store)} · ${w.w?"Çatdırılma xidməti":"Mağazanın onlayn qiyməti"} · Hədd: ${fmt(w.target)}</p><p>${st.state==="reached"?"✓ İstədiyin qiymətə çatıb: "+fmt(st.price):st.state==="waiting"?"İndiki qiymət: "+fmt(st.price):st.state==="source"?"Qiymət mənbəyi dəyişib. İzləməni yenidən qur.":"Aktual qiymət tapılmadı."}</p><div class="product-tools"><a href="#/c/${esc(w.t)}/${w.id}">Məhsula bax</a><button data-unwatch="${i}">İzləməni sil</button></div></article>`;
   }).join(""):'<div class="empty">Hələ izlədiyin məhsul yoxdur. Məhsul kartında “Qiyməti izlə” seç.</div>';
 }
 $("watchList").onclick=e=>{const b=e.target.closest("[data-unwatch]");if(b){WATCH.splice(+b.dataset.unwatch,1);saveWatch();renderWatch();}};

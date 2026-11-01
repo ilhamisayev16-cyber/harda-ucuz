@@ -186,14 +186,15 @@ def test_price_history_panel_shows_full_dates_and_since_when():
     assert out[4] == f"<b>{m(23)}</b> (25.10.2026) · qiymət dəyişikliyi qeydə alınmayıb"
 
 
-def test_discount_label_names_wolt_or_store_and_skips_archived():
+def test_discount_label_is_plain_and_skips_archived():
     it = lambda **k: {"name": "Selpak Tualet Kağızı 3 Qat 16əd", **k}
     cats = {"a": {"stores": {"Bravo": [it(wolt_price=9.99, op=26.7)], "Rahat": [it(wolt_price=26.95)],
                              "Araz": [it(price=20.0, op=30.0)], "SPAR": [it(wolt_price=21.0, op=25.0, stale=True)]}}}
     out = _node("""T.setDB(raw); const h=T.card(T.groups("a")[0]);
-  console.log(JSON.stringify([...h.matchAll(/data-s="(\\w+)"[\\s\\S]*?<\\/b><\\/div>/g)].map(m=>[m[1],(m[0].match(/(Wolt-da endirim|Endirim) · əvvəl <s>([\\d.]+)/)||[]).slice(1)])));""",
+  console.log(JSON.stringify([...h.matchAll(/data-s="(\\w+)"[\\s\\S]*?<\\/b><\\/div>/g)].map(m=>[m[1],(m[0].match(/>([^<>]+) · əvvəl <s>([\\d.]+)/)||[]).slice(1),(m[0].match(/title="([^"]*endirim[^"]*)"/i)||[])[1]||""])));""",
                 _db(cats, [{"id": "a", "name": "a", "cats": ["a"]}]))
-    d = dict(out)
-    assert d["Bravo"] == ["Wolt-da endirim", "26.70"]
-    assert d["Araz"] == ["Endirim", "30.00"]
-    assert d["Rahat"] == [] and d["SPAR"] == []   # endirim yoxdur / arxiv qiymət
+    d = {s: (lab, t) for s, lab, t in out}
+    assert d["Bravo"][0] == ["Endirim", "26.70"] and "bilinmir" in d["Bravo"][1]   # çatdırılma xidmətinin endirimi: nişan eyni, izah title-da
+    assert d["Araz"] == (["Endirim", "30.00"], "Mağazanın öz saytındakı endirim")
+    assert d["Rahat"][0] == [] and d["SPAR"][0] == []   # endirim yoxdur / arxiv qiymət
+    assert "wolt" not in json.dumps(out, ensure_ascii=False).lower()

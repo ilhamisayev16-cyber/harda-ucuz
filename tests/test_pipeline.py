@@ -1064,3 +1064,54 @@ def test_build_splits_old_shared_id_for_conflicting_gtins(tmp_path):
         assert 'noindex,follow' in archived.read_text() and '999.99' not in archived.read_text()
         identities.append(pair)
     assert identities[0] == identities[1]
+
+
+def test_one_store_error_does_not_stop_the_others(tmp_path, monkeypatch):
+    # 2026-11-05: Neptun-da Wolt 429 istisnası bütün scrape-i dayandırdı, sonrakı mağazalar yenilənmədi
+    out = tmp_path / "prices.json"
+    d = S.empty_data()
+    d["categories"]["sud"]["stores"]["Neptun"] = [{"name": f"Köhnə {i}", "wolt_price": 1.5} for i in range(300)]
+    S._save(d, out)
+    (tmp_path / "history.json").write_text('{"h":{}}')
+    done = []
+    def fake(sname, args, data, hist):
+        if sname == "Neptun": raise RuntimeError("too many 429 error responses")
+        done.append(sname)
+    monkeypatch.setattr(S, "scrape_store", fake)
+    monkeypatch.setattr("sys.argv", ["scraper.py", "--store", "all", "--out", str(out)])
+    with pytest.raises(SystemExit) as ex:
+        S.main()
+    assert "Neptun" in str(ex.value.code)                              # iş yenə uğursuz bitir: xəta görünür
+    assert done == [s for s in S.ALL_STORES if s != "Neptun"]          # qalan mağazaların hamısı işlədi
+    r = json.load(open(out, encoding="utf-8"))
+    assert len(r["categories"]["sud"]["stores"]["Neptun"]) == 300      # xətalı mağazanın köhnə datası qaldı
+
+
+def test_multi_branch_error_skips_only_that_branch(monkeypatch):
+    def full(store, slug):
+        if slug == "b2": raise RuntimeError("429")
+        return {"temizlik": [{"name": "Fairy 1 L", "wolt_price": 2.0 if slug == "b1" else 3.0}]}
+    monkeypatch.setattr(S, "scrape_wolt_full", full)
+    monkeypatch.setattr(S.time, "sleep", lambda *_: None)
+    monkeypatch.setenv("WOLT_BRANCHES_BRAVO", "b1,b2,b3")
+    out = S.scrape_wolt_multi("Bravo")["temizlik"]
+    assert [e["name"] for e in out] == ["Fairy 1 L"]
+
+
+def test_wolt_full_reuses_probed_category_tree(monkeypatch):
+    calls = []
+    class R:
+        status_code = 200
+        def __init__(self, j): self._j = j
+        def json(self): return self._j
+    class Ses:
+        def get(self, url, params=None, timeout=None):
+            calls.append(url)
+            if url.endswith("/assortment"):
+                if len(calls) > 1: raise AssertionError("ağac ikinci dəfə soruşuldu")
+                return R({"categories": [{"name": "Süd", "slug": "sud-c"}]})
+            return R({"items": [], "metadata": {}})
+    monkeypatch.setattr(S, "_session", lambda: Ses())
+    monkeypatch.setattr(S.time, "sleep", lambda *_: None)
+    S.scrape_wolt_full("Neptun", "n1")
+    assert sum(u.endswith("/assortment") for u in calls) == 1

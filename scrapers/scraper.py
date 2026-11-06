@@ -1495,9 +1495,15 @@ def scrape_wolt_full(store, slug=None):
     """Filialın BÜTÜN kataloqu: kateqoriya ağacı -> hər yarpaq kateqoriya (səhifələmə ilə).
     Açar söz axtarışından çox məhsul verir. Uğursuz olarsa None."""
     ses = _session()
+    tree = None
     def probe(slug):
+        # Kateqoriya ağacı yoxlamada alınır, ikinci dəfə soruşulmur: 2026-11-05 yoxlama keçdi, dərhal təkrar sorğu 429 aldı
+        # və istisna bütün scrape-i dayandırdı (Neptun-dan sonrakı mağazalar yenilənmədi)
+        nonlocal tree
         r = ses.get(_wolt_base(slug), params={"language": "az"}, timeout=30)
-        return r.status_code == 200 and bool(r.json().get("categories"))
+        cats = r.json().get("categories") if r.status_code == 200 else None
+        if cats: tree = cats
+        return bool(cats)
     if slug:   # konkret filial (çoxfilialli rejim): 3 cəhd
         ok = False
         for attempt in range(3):
@@ -1513,7 +1519,6 @@ def scrape_wolt_full(store, slug=None):
         slug = _wolt_pick_venue(ses, store, probe)
         if not slug: return None
     base = _wolt_base(slug)
-    tree = ses.get(base, params={"language": "az"}, timeout=30).json()["categories"]
     leaves = []   # (slug, "Üst > Alt")
     def walk(nodes, trail=""):
         for c in nodes:
@@ -1609,7 +1614,11 @@ def scrape_wolt_multi(store):
     if not slugs: return None
     merged, ok, t0 = {}, 0, time.time()
     for slug in slugs:
-        res = scrape_wolt_full(store, slug)
+        try:
+            res = scrape_wolt_full(store, slug)
+        except Exception as e:   # bir filialın xətası (məs. 429) qalan filialları dayandırmasın
+            print(f"  [Wolt/{store}] {slug}: {type(e).__name__}: {e}"[:300], flush=True)
+            res = None
         if not res:
             print(f"  [Wolt/{store}] ✗ {slug} alınmadı", flush=True)
             continue
@@ -1935,33 +1944,20 @@ def main():
             hist = {}
 
     targets = list(STORE_KEYS) if args.store == "all" else [args.store]
+    failed_stores = []
 
     for t in targets:
         sname = STORE_KEYS[t]
         print(f"\n{'─'*50}\n  {sname}\n{'─'*50}")
-        own_res, wolt_res = {}, {}
-
-        # Öz mənbə (Bravo və Neptun üçün yoxdur — yalnız Wolt)
-        if not args.wolt_only:
-            if sname == "OBA":
-                own_res = scrape_oba()
-            elif sname == "Araz":
-                own_res = scrape_araz() or {}
-            elif sname == "Bazarstore":
-                own_res = scrape_bazarstore() or {}
-
-        # Wolt
-        wolt_on = wolt_enabled(sname) and not args.no_wolt
-        if not args.own_only and sname != "Bazarstore":   # Bazarstore Wolt-da yoxdur
-            if wolt_on:
-                wolt_res = scrape_wolt(sname)
-            else:
-                print(f"  [{sname}] Wolt söndürülüb: sorğu göndərilmir, köhnə məlumat saxlanılır")
-
-        if not wolt_on and not any(own_res.values()) and sname in WOLT_ONLY:
-            mark_stale(sname, data)
-        else:
-            apply_to_data(own_res, wolt_res, sname, data, hist, wolt_on)
+        try:
+            scrape_store(sname, args, data, hist)
+        except Exception:
+            # Bir mağazanın xətası qalanlarını dayandırmasın (2026-11-05: Neptun-da Wolt 429 → Tamstore, Rahat, Bazarstore, SPAR
+            # yenilənmədi). Bu mağazanın köhnə datası olduğu kimi qalır; iş sonda yenə uğursuz bitir ki, xəta görünsün.
+            import traceback
+            traceback.print_exc()
+            print(f"  [{sname}] ✗ xəta: köhnə məlumat saxlanılır", flush=True)
+            failed_stores.append(sname)
         _save(data, out)   # timeout olarsa əvvəlki mağazaların nəticəsi itməsin
         _save_hist(hist, hist_path)
 
@@ -1976,6 +1972,33 @@ def main():
         wolt_c = sum(1 for c in data["categories"].values()
                      for p in c["stores"].get(s,[]) if "wolt_price" in p)
         print(f"   {s:10} → öz: {own_c:5}  |  Wolt: {wolt_c:5}")
+    if failed_stores:
+        sys.exit(f"❌  Xəta olan mağazalar: {', '.join(failed_stores)}")
+
+def scrape_store(sname, args, data, hist):
+    own_res, wolt_res = {}, {}
+
+    # Öz mənbə (Bravo və Neptun üçün yoxdur — yalnız Wolt)
+    if not args.wolt_only:
+        if sname == "OBA":
+            own_res = scrape_oba()
+        elif sname == "Araz":
+            own_res = scrape_araz() or {}
+        elif sname == "Bazarstore":
+            own_res = scrape_bazarstore() or {}
+
+    # Wolt
+    wolt_on = wolt_enabled(sname) and not args.no_wolt
+    if not args.own_only and sname != "Bazarstore":   # Bazarstore Wolt-da yoxdur
+        if wolt_on:
+            wolt_res = scrape_wolt(sname)
+        else:
+            print(f"  [{sname}] Wolt söndürülüb: sorğu göndərilmir, köhnə məlumat saxlanılır")
+
+    if not wolt_on and not any(own_res.values()) and sname in WOLT_ONLY:
+        mark_stale(sname, data)
+    else:
+        apply_to_data(own_res, wolt_res, sname, data, hist, wolt_on)
 
 if __name__ == "__main__":
     main()
